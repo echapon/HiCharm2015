@@ -276,11 +276,11 @@ TBranch        *b_Gen_mu_type;   //!
 TBranch        *b_Gen_mu_charge;   //!
 TBranch        *b_Gen_mu_4mom;   //!
 
-TString TreeName("hionia/myTree");
+string TreeName("hionia/myTree");
 
 void initOniaTree(TChain *tree)
 {
-   cout << "[INFO] Initializing TTree " << TreeName.Data() << endl;
+   cout << "[INFO] Initializing TTree " << TreeName.c_str() << endl;
    // The Init() function is called when the selector needs to initialize
    // a new tree or chain. Typically here the branch addresses and branch
    // pointers of the tree will be set.

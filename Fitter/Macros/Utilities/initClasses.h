@@ -9,6 +9,7 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "TH1F.h"
+#include "TF1.h"
 #include "TProfile.h"
 #include "TVectorD.h"
 #include "TCanvas.h"
@@ -20,6 +21,7 @@
 #include "TLegend.h"
 
 #include "RooWorkspace.h"
+#include "RooChi2Var.h"
 #include "RooDataSet.h"
 #include "RooDataHist.h"
 #include "RooHist.h"
@@ -48,6 +50,7 @@
 
 #include <ctime>
 #include <iostream>
+#include <sstream>
 
 using namespace std;
 using namespace RooFit;
@@ -66,7 +69,7 @@ typedef struct EvtPar {
 } EvtPar;
 
 typedef struct DiMuonPar {
-  MinMax M, Pt, AbsRap;
+  MinMax ctau, ctauErr, M, Pt, AbsRap;
 } DiMuonPar;
 
 typedef struct SiMuonPar {
@@ -75,7 +78,7 @@ typedef struct SiMuonPar {
 
 typedef struct InputOpt {
   int        oniaMode;
-  bool       isData, doFit, inExcStat, doSimulFit;
+  bool       isData, do2DFit, inExcStat, doSimulFit;
   EvtPar     PbPb, pp;
 } InputOpt;
 
@@ -88,5 +91,44 @@ typedef struct KinCuts {
 
 struct ParticleMass { double JPsi, Psi2S, Y1S, Y2S, Y3S, Z; };
 ParticleMass Mass = {3.096, 3.686, 9.460, 10.023, 10.355, 91.188};
+
+
+enum class MassModel 
+  { 
+    SingleGaussian, DoubleGaussian, SingleCrystalBall, DoubleCrystalBall, GaussianAndCrystalBall, 
+    FirstOrderPolynomial, SecondOrderPolynomial, ThirdOrderPolynomial, FourthOrderPolynomial, 
+    FirstOrderChebychev, SecondOrderChebychev, ThirdOrderChebychev, FourthOrderChebychev,
+    Exponential
+  };
+
+enum class CtauModel 
+  {     
+    DoubleGaussianResolution, SingleGaussianResolution,
+    TripleDecay, SingleSidedDecay, Delta
+  };
+
+typedef struct CtauPNP {
+  CtauModel    Prompt, NonPrompt;
+} CtauPNP;
+
+typedef struct CtauMassModel {
+  MassModel  Mass;
+  CtauPNP    Ctau;
+} FitModel;
+
+typedef struct CharmModel {
+  CtauMassModel  Jpsi, Psi2S, Bkg;
+  CtauModel CtauRes;
+} CharmModel;
+
+typedef struct OniaModel {
+  CharmModel  PbPb, PP;
+} OniaModel;
+
+typedef struct SignDataSets {
+  RooDataSet* SS, OS;
+} SignDataSets; 
+
+
 
 #endif // #ifndef initClasses_h
