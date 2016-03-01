@@ -213,12 +213,16 @@ void drawMassPlot(RooWorkspace& myws, struct InputOpt opt, struct KinCuts cut, b
     gSystem->mkdir("./Plots/DATA/png/", kTRUE);
     cFig->SaveAs(Form("./Plots/DATA/png/DATA_%s_%sPrompt_pt%.0f%.0f_rap%.0f%.0f_cent%d%d_%d_%d.png", (opt.oniaMode==1?"Psi2SJpsi":"Upsilon"), (isPbPb?"PbPb":"PP"), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End, opt.PbPb.RunNb.Start, opt.PbPb.RunNb.End));
     gSystem->mkdir("./Plots/DATA/pdf/", kTRUE);
+    cFig->SaveAs(Form("./Plots/DATA/pdf/DATA_%s_%sPrompt_pt%.0f%.0f_rap%.0f%.0f_cent%d%d_%d_%d.pdf", (opt.oniaMode==1?"Psi2SJpsi":"Upsilon"), (isPbPb?"PbPb":"PP"), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End, opt.PbPb.RunNb.Start, opt.PbPb.RunNb.End));
+    gSystem->mkdir("./Plots/DATA/pdf/", kTRUE);
     //cFig->SaveAs(Form("./Plots/DATA/pdf/DATA_%s_%sPrompt_pt%.0f%.0f_rap%.0f%.0f_cent%d%d_%d_%d.pdf", (opt.oniaMode==1?"Psi2SJpsi":"Upsilon"), (isPbPb?"PbPb":"PP"), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End, opt.PbPb.RunNb.Start, opt.PbPb.RunNb.End));
   } else {
     gSystem->mkdir("./Plots/MC/root/", kTRUE); 
     cFig->SaveAs(Form("./Plots/MC/root/MC%s_%s_%sPrompt_pt%.0f%.0f_rap%.0f%.0f_cent%d%d_%d_%d.root", MCTYPE.c_str(), (opt.oniaMode==1?"Psi2SJpsi":"Upsilon"), (isPbPb?"PbPb":"PP"), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End, opt.PbPb.RunNb.Start, opt.PbPb.RunNb.End));
     gSystem->mkdir("./Plots/MC/png/", kTRUE);
     cFig->SaveAs(Form("./Plots/MC/png/MC%s_%s_%sPrompt_pt%.0f%.0f_rap%.0f%.0f_cent%d%d_%d_%d.png", MCTYPE.c_str(), (opt.oniaMode==1?"Psi2SJpsi":"Upsilon"), (isPbPb?"PbPb":"PP"), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End, opt.PbPb.RunNb.Start, opt.PbPb.RunNb.End));
+    gSystem->mkdir("./Plots/MC/pdf/", kTRUE);
+    cFig->SaveAs(Form("./Plots/MC/pdf/MC%s_%s_%sPrompt_pt%.0f%.0f_rap%.0f%.0f_cent%d%d_%d_%d.pdf", MCTYPE.c_str(), (opt.oniaMode==1?"Psi2SJpsi":"Upsilon"), (isPbPb?"PbPb":"PP"), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End, opt.PbPb.RunNb.Start, opt.PbPb.RunNb.End));
     gSystem->mkdir("./Plots/MC/pdf/", kTRUE);
     cFig->SaveAs(Form("./Plots/MC/pdf/MC%s_%s_%sPrompt_pt%.0f%.0f_rap%.0f%.0f_cent%d%d_%d_%d.pdf", MCTYPE.c_str(), (opt.oniaMode==1?"Psi2SJpsi":"Upsilon"), (isPbPb?"PbPb":"PP"), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End, opt.PbPb.RunNb.Start, opt.PbPb.RunNb.End));
     cFig->Close();
