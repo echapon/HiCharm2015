@@ -49,7 +49,8 @@ void fit2015(
 	     bool do2DFit     = false,     // 
 	     bool getMeanPT   = false,     // Compute the mean PT
              bool inExcStat   = false,    // if inExcStat is true, then the excited states are fitted
-	     bool doSimulFit  = true     // Do simultaneous fit
+	     bool doSimulFit  = true,     // Do simultaneous fit
+        bool doBkgStudy = false     // Do background shape study
              ) 
 {
 
@@ -99,6 +100,17 @@ void fit2015(
     }
   }      
 
+  // list of alternative shapes for the background study
+  vector<MassModel> bkgs;
+  bkgs.push_back(isPbPb ? model.PbPb.Bkg.Mass : model.PP.Bkg.Mass);
+  bkgs.push_back(MassModel::FirstOrderChebychev);
+  bkgs.push_back(MassModel::SecondOrderChebychev);
+  bkgs.push_back(MassModel::ThirdOrderChebychev);
+  bkgs.push_back(MassModel::FourthOrderChebychev);
+  bkgs.push_back(MassModel::Exponential);
+
+  for (unsigned int ibkg=0; ibkg<bkgs.size(); ibkg++) 
+
   if (doSimulFit) { 
     // Build the Fit Model
     if (opt.oniaMode==1) { 
@@ -123,23 +135,51 @@ void fit2015(
     drawMassPlot(myws, opt, cut, false, zoomPsi, setLogScale, incSS, getMeanPT, rangeY_PP, nbins);
  
   } else {
-    if (isPbPb) {
-      // Build the Fit Model
-      if (opt.oniaMode==1) { if (!buildCharmoniaCtauMassModel(myws, opt, model.PbPb, true, do2DFit)) { return; } }
-      // Fit the Datasets
-      myws.pdf("pdfMASS_Tot_PbPb")->fitTo(*myws.data("dOS_DATA_PbPb"), SumW2Error(kTRUE), Extended(kTRUE), Range("MassWindow"),NormRange("MassWindow"), NumCPU(8));
-      if (getMeanPT && opt.oniaMode==1) { fitMeanPTJpsi2015(myws, opt, cut, isPbPb, nbins); }
-      drawMassPlot(myws, opt, cut, true, zoomPsi, setLogScale, incSS, getMeanPT, rangeY_PbPb, nbins);
-    } else {
-      // Build the Fit Model
-      if (opt.oniaMode==1) { if (!buildCharmoniaCtauMassModel(myws, opt, model.PP, false, do2DFit)) { return; } }
-      // Fit the Datasets
-      myws.pdf("pdfMASS_Tot_PP")->fitTo(*myws.data("dOS_DATA_PP"), SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(8), Range("MassWindow"),NormRange("MassWindow"));
-      if (getMeanPT && opt.oniaMode==1) { fitMeanPTJpsi2015(myws, opt, cut, isPbPb, nbins); }
-      drawMassPlot(myws, opt, cut, false, zoomPsi, setLogScale, incSS, getMeanPT, rangeY_PP, nbins);
-    }
-  }	
-};
+     vector<double> nlls;
+     for (unsigned int ibkg=0; ibkg<bkgs.size(); ibkg++) {
+        if (ibkg!=0 && !doBkgStudy) break; 
+        
+        model.PbPb.Bkg.Mass = bkgs[ibkg];
+        model.PP.Bkg.Mass = bkgs[ibkg];
+
+        if (isPbPb) {
+           // Build the Fit Model
+           if (opt.oniaMode==1) { if (!buildCharmoniaCtauMassModel(myws, opt, model.PbPb, true, do2DFit, ibkg)) { return; } }
+           TString PDFname = Form("pdfMASS_Tot_v%i_PbPb",ibkg);
+           RooAbsReal* nll = myws.pdf(PDFname)->createNLL(*myws.data("dOS_DATA_PbPb"));
+           // Fit the Datasets
+           myws.pdf(PDFname)->fitTo(*myws.data("dOS_DATA_PbPb"), SumW2Error(kTRUE), Extended(kTRUE), Range("MassWindow"),NormRange("MassWindow"), NumCPU(8));
+           nlls.push_back(nll->getVal());
+           if (getMeanPT && opt.oniaMode==1) { fitMeanPTJpsi2015(myws, opt, cut, isPbPb, nbins); }
+           drawMassPlot(myws, opt, cut, true, zoomPsi, setLogScale, incSS, getMeanPT, rangeY_PbPb, nbins, isData, "", massModelName(bkgs[ibkg]));
+        } else {
+           // Build the Fit Model
+           if (opt.oniaMode==1) { if (!buildCharmoniaCtauMassModel(myws, opt, model.PP, false, do2DFit, ibkg)) { return; } }
+           TString PDFname = Form("pdfMASS_Tot_v%i_PP",ibkg);
+           RooAbsReal* nll = myws.pdf(PDFname)->createNLL(*myws.data("dOS_DATA_PP"));
+           // Fit the Datasets
+           myws.pdf(PDFname)->fitTo(*myws.data("dOS_DATA_PP"), SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(8), Range("MassWindow"),NormRange("MassWindow"));
+           nlls.push_back(nll->getVal());
+           if (getMeanPT && opt.oniaMode==1) { fitMeanPTJpsi2015(myws, opt, cut, isPbPb, nbins); }
+           drawMassPlot(myws, opt, cut, false, zoomPsi, setLogScale, incSS, getMeanPT, rangeY_PP, nbins, isData, "", massModelName(bkgs[ibkg]));
+        }
+     } // for (ibkg)
+
+     // print results of the background study
+     if (doBkgStudy) {
+        for (unsigned int ibkg=0; ibkg<bkgs.size(); ibkg++) {
+           MassModel bm = bkgs[ibkg];
+           cout << massModelName(bm) << " (" << massModelNpar(bm) << ") " << nlls[ibkg];
+           for (unsigned int ibkg2=1; ibkg2<=ibkg; ibkg2++) {
+              double deltanll = 2.*fabs(nlls[ibkg]-nlls[ibkg2]);
+              int deltanpar = abs(massModelNpar(bm)-massModelNpar(bkgs[ibkg2]));
+              cout << "\t" << 100.*TMath::Prob(deltanll,deltanpar);
+           } // for (ibkg2)
+           cout << endl;
+        } // for (ibkg)
+     } // if (doBkgStudy)
+  } // if (doSimulFit)	
+}; // void fit2015()
 
 void SetOptions(struct InputOpt* opt, bool isData, int oniamode, bool do2DFit, bool inExcStat, bool doSimulFit) 
 {

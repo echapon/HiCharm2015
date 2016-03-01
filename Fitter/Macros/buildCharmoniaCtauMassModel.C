@@ -2,14 +2,14 @@
 
 
 void setDefaultParameters(map<string, string> &parIni, int nt, bool isPbPb);
-bool addSignalMassModel(RooWorkspace& ws, string object, MassModel model, map<string,string> parIni, bool isPbPb); 
-bool addBackgroundMassModel(RooWorkspace& ws, string object, MassModel model, map<string,string> parIni, bool isPbPb);
+bool addSignalMassModel(RooWorkspace& ws, string object, MassModel model, map<string,string> parIni, bool isPbPb, int version=0); 
+bool addBackgroundMassModel(RooWorkspace& ws, string object, MassModel model, map<string,string> parIni, bool isPbPb, int version=0);
 bool defineCtauResolModel(RooWorkspace& ws, CtauModel model, map<string,string> parIni, bool isPbPb); 
 bool addSignalCtauModel(RooWorkspace& ws, string object, CtauModel model, map<string,string> parIni, bool isPbPb); 
 bool addBackgroundCtauModel(RooWorkspace& ws, string object, CtauModel model, map<string,string> parIni, bool isPbPb);
 
 
-bool buildCharmoniaCtauMassModel(RooWorkspace& ws, struct InputOpt opt, struct CharmModel model, bool isPbPb, bool do2DFit)
+bool buildCharmoniaCtauMassModel(RooWorkspace& ws, struct InputOpt opt, struct CharmModel model, bool isPbPb, bool do2DFit, int version=0)
 {
   
   int nt= 0; 
@@ -57,28 +57,28 @@ bool buildCharmoniaCtauMassModel(RooWorkspace& ws, struct InputOpt opt, struct C
 
     // C r e a t e   m o d e l  
     
-    if(!addSignalMassModel(ws, "Jpsi", model.Jpsi.Mass, parIni, isPbPb)) { cout << "[ERROR] Adding Jpsi Mass Model failed" << endl; return false; }
+    if(!addSignalMassModel(ws, "Jpsi", model.Jpsi.Mass, parIni, isPbPb, version)) { cout << "[ERROR] Adding Jpsi Mass Model failed" << endl; return false; }
     if (opt.inExcStat) { 
-      if (!addSignalMassModel(ws, "Psi2S", model.Psi2S.Mass, parIni, isPbPb)) { cout << "[ERROR] Adding Psi(2S) Mass Model failed" << endl; return false; }  
+      if (!addSignalMassModel(ws, "Psi2S", model.Psi2S.Mass, parIni, isPbPb, version)) { cout << "[ERROR] Adding Psi(2S) Mass Model failed" << endl; return false; }  
     }
-    if(!addBackgroundMassModel(ws, "Bkg", model.Bkg.Mass, parIni, isPbPb)) { cout << "[ERROR] Adding Background Mass Model failed" << endl; return false; }
+    if(!addBackgroundMassModel(ws, "Bkg", model.Bkg.Mass, parIni, isPbPb, version)) { cout << "[ERROR] Adding Background Mass Model failed" << endl; return false; }
     
     // Total PDF = Signal + Background
     if (opt.inExcStat) {
-      ws.factory(Form("SUM::%s(%s*%s, %s*%s, %s*%s)", Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP")),
+      ws.factory(Form("SUM::%s(%s*%s, %s*%s, %s*%s)", Form("pdfMASS_Tot_v%i_%s", version, (isPbPb?"PbPb":"PP")),
 		      parIni[Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP"))].c_str(),
-		      Form("pdfMASS_Jpsi_%s", (isPbPb?"PbPb":"PP")),
+		      Form("pdfMASS_Jpsi_v%i_%s", (isPbPb?"PbPb":"PP"), version),
 		      parIni[Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP"))].c_str(),
-		      Form("pdfMASS_Psi2S_%s", (isPbPb?"PbPb":"PP")),
+		      Form("pdfMASS_Psi2S_v%i_%s", (isPbPb?"PbPb":"PP"), version),
 		      parIni[Form("N_Bkg_%s", (isPbPb?"PbPb":"PP"))].c_str(),
-		      Form("pdfMASS_Bkg_%s", (isPbPb?"PbPb":"PP"))
+		      Form("pdfMASS_Bkg_v%i_%s", (isPbPb?"PbPb":"PP"), version)
 		      ));
     } else {
-      ws.factory(Form("SUM::%s(%s*%s, %s*%s)", Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP")),
+      ws.factory(Form("SUM::%s(%s*%s, %s*%s)", Form("pdfMASS_Tot_v%i_%s", version, (isPbPb?"PbPb":"PP")),
 		      parIni[Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP"))].c_str(),
-		      Form("pdfMASS_Jpsi_%s", (isPbPb?"PbPb":"PP")),
+		      Form("pdfMASS_Jpsi_v%i_%s", (isPbPb?"PbPb":"PP"), version),
 		      parIni[Form("N_Bkg_%s", (isPbPb?"PbPb":"PP"))].c_str(),
-		      Form("pdfMASS_Bkg_%s", (isPbPb?"PbPb":"PP"))
+		      Form("pdfMASS_Bkg_v%i_%s", (isPbPb?"PbPb":"PP"), version)
 		      ));
     }
     ws.pdf(Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP")))->setNormRange("MassWindow");
@@ -333,7 +333,7 @@ bool addBackgroundMassModel(RooWorkspace& ws, string object, MassModel model, ma
 };
 
 
-bool addSignalMassModel(RooWorkspace& ws, string object, MassModel model, map<string,string> parIni, bool isPbPb) 
+bool addSignalMassModel(RooWorkspace& ws, string object, MassModel model, map<string,string> parIni, bool isPbPb, int version) 
 {
   cout << Form("[INFO] Implementing %s Mass Model", object.c_str()) << endl;
   
@@ -410,7 +410,7 @@ bool addSignalMassModel(RooWorkspace& ws, string object, MassModel model, map<st
 	     && parIni.count(Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && parIni.count(Form("f_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")))  )) { 
 	cout << Form("[ERROR] Initial parameters where not found for %s Gaussian and Crystal Ball Model in %s", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; return false;
       }  
-      ws.factory(Form("SUM::%s(%s*%s, %s)", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+      ws.factory(Form("SUM::%s(%s*%s, %s)", Form("pdfMASS_%s_v%i_%s", object.c_str(), version, (isPbPb?"PbPb":"PP")),
 		      parIni[Form("f%s%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(),
 		      Form("Gaussian::%s(%s, %s, %s)", Form("pdfMASSG1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
 			   parIni[Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(), 
