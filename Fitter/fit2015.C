@@ -55,8 +55,11 @@ void fit2015(
 
   if (inExcStat==false) { doSimulFit = false; }
   struct map< string, vector<TString> > FileNames;
-  FileNames["DATA_PbPb"].push_back(TString("/home/andre/MCSAMPLES/OniaTree_HIOniaL1DoubleMu0ABCD_HIRun2015-PromptReco-v1_Run_262548_263757_withOLDNEWCUT_withTRIG_MASSCUT.root"));
-  FileNames["DATA_PP"].push_back(TString("/home/andre/MCSAMPLES/OniaTree_DoubleMu_Run2015E-PromptReco-v1_Run_262157_262328_with2011CUT_withTRIG_MASSCUT.root"));
+  FileNames["DATA_PbPb"].push_back(TString("root://eoscms//eos/cms/store/group/phys_heavyions/dileptons/Data2015/PbPb502TeV/TTrees/PromptAOD/OniaTree_HIOniaL1DoubleMu0_HIRun2015-PromptReco-v1_Run_262620_263757.root"));
+  FileNames["DATA_PbPb"].push_back(TString("root://eoscms//eos/cms/store/group/phys_heavyions/dileptons/Data2015/PbPb502TeV/TTrees/PromptAOD/OniaTree_HIOniaL1DoubleMu0B_HIRun2015-PromptReco-v1_Run_263322_263757.root"));
+  FileNames["DATA_PbPb"].push_back(TString("root://eoscms//eos/cms/store/group/phys_heavyions/dileptons/Data2015/PbPb502TeV/TTrees/PromptAOD/OniaTree_HIOniaL1DoubleMu0C_HIRun2015-PromptReco-v1_Run_263322_263757.root"));
+  FileNames["DATA_PbPb"].push_back(TString("root://eoscms//eos/cms/store/group/phys_heavyions/dileptons/Data2015/PbPb502TeV/TTrees/PromptAOD/OniaTree_HIOniaL1DoubleMu0D_HIRun2015-PromptReco-v1_Run_263322_263757.root"));
+  FileNames["DATA_PP"].push_back(TString("root://eoscms//eos/cms/store/group/phys_heavyions/dileptons/Data2015/pp502TeV/TTrees/PromptAOD/OniaTree_DoubleMu_Run2015E-PromptReco-v1_Run_262157_262328.root"));
   
   struct InputOpt opt; SetOptions(&opt, isData, oniamode, do2DFit, inExcStat, doSimulFit);
   struct KinCuts  cut; SetKinCuts(&cut, oniamode, inExcStat);
