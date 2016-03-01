@@ -114,7 +114,7 @@ void makeWorkspace2015(RooWorkspace& ws, vector<TString> FileNames, struct Input
 
 TString findMyTree(TString FileName)
 {
-  TFile *f = new TFile(FileName.Data(), "READ");
+  TFile *f = TFile::Open(FileName.Data(), "READ");
   if(f->GetListOfKeys()->Contains("hionia")){ return TString("hionia/myTree"); }
   else if(f->GetListOfKeys()->Contains("myTree")){ return TString("myTree"); }
   return TString(); 
