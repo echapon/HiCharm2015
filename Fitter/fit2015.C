@@ -77,7 +77,7 @@ void fit2015(
    for (unsigned int ibkg=0; ibkg<bkgs.size(); ibkg++) {
       if (ibkg!=0 && !doBkgStudy) break; 
 
-      RooWorkspace myws;
+      RooWorkspace myws("myws", "workspace for HI charm 2015");
       if (doSimulFit || isPbPb) {
          makeWorkspace2015(myws, FileNames["DATA_PbPb"], &opt, &cut, nbins, true, true);
       }
@@ -148,6 +148,7 @@ void fit2015(
             if (opt.oniaMode==1) { if (!buildCharmoniaCtauMassModel(myws, opt, model.PbPb, true, do2DFit)) { return; } }
             TString PDFname = "pdfMASS_Tot_PbPb";
             RooAbsReal* nll = myws.pdf(PDFname)->createNLL(*myws.data("dOS_DATA_PbPb"));
+            // myws.import(*nll);
             // Fit the Datasets
             myws.pdf(PDFname)->fitTo(*myws.data("dOS_DATA_PbPb"), SumW2Error(kTRUE), Extended(kTRUE), Range("MassWindow"),NormRange("MassWindow"), NumCPU(8));
             nlls.push_back(nll->getVal());
@@ -158,6 +159,7 @@ void fit2015(
             if (opt.oniaMode==1) { if (!buildCharmoniaCtauMassModel(myws, opt, model.PP, false, do2DFit)) { return; } }
             TString PDFname = "pdfMASS_Tot_PP";
             RooAbsReal* nll = myws.pdf(PDFname)->createNLL(*myws.data("dOS_DATA_PP"));
+            // myws.import(*nll);
             // Fit the Datasets
             myws.pdf(PDFname)->fitTo(*myws.data("dOS_DATA_PP"), SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(8), Range("MassWindow"),NormRange("MassWindow"));
             nlls.push_back(nll->getVal());
