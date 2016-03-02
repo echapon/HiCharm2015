@@ -2,6 +2,6 @@
 
 wd=$PWD
 
-cmd="rm -rf ${wd}/DBFiles ${wd}/Plots"
+cmd="rm -rf ${wd}/Output ${wd}/DataSet"
 echo $cmd
 $cmd
