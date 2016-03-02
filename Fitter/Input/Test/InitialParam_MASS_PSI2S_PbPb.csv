@@ -1,0 +1,5 @@
+rap;pt;cent;Model_Psi2S_PbPb;N_Psi2S_PbPb;sigma1_Psi2S_PbPb;sigma2_Psi2S_PbPb;m_Psi2S_PbPb;alpha_Psi2S_PbPb;n_Psi2S_PbPb;f_Psi2S_PbPb
+0.0-1.6;6.5-30.0;0.0-100.0;DoubleCrystalBall;;;;;;;
+0.0-1.6;6.5-30.0;0.0-20.0;DoubleCrystalBall;;;;;;;
+0.0-1.6;6.5-30.0;20.0-40.0;DoubleCrystalBall;;;;;;;
+0.0-1.6;6.5-30.0;40.0-100.0;DoubleCrystalBall;;;;;;;

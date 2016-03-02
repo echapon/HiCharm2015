@@ -6,9 +6,11 @@
 void printParameters(RooWorkspace myws, TPad* Pad, bool isPbPb);
 void printChi2(RooWorkspace& myws, TPad* Pad, RooHist* hpull, string varLabel, string dataLabel, string pdfLabel); 
 
-void drawMassPlot(RooWorkspace& myws, struct InputOpt opt, struct KinCuts cut, bool isPbPb, bool zoomPsi, bool setLogScale, 
-		  bool incSS, bool getMeanPT, float rangeY = 100, int nbins = 54, bool isData=true, string MCTYPE="") 
+void drawMassPlot(RooWorkspace& myws, string outputDir, string plotLabel, 
+		  struct InputOpt opt, struct KinCuts cut, bool isPbPb, bool zoomPsi, bool setLogScale, 
+		  bool incSS, bool getMeanPT, int nbins = 54, bool isData=true, string MCTYPE="") 
 {
+
 
   if(zoomPsi) { setLogScale=false; }
   RooPlot*   frame     = myws.var("invMass")->frame(Bins(nbins), Range(cut.dMuon.M.Min, cut.dMuon.M.Max)); RooPlot* frame2 = NULL;
@@ -64,8 +66,8 @@ void drawMassPlot(RooWorkspace& myws, struct InputOpt opt, struct KinCuts cut, b
   pad4->SetBottomMargin(0.21);
   pad4->SetTopMargin(0.072);
 
-  float txtSize = opt.oniaMode==1 ? 0.032 : 0.028;
-  float dx = opt.oniaMode==1 ? 0.63 : 0.61;
+  float txtSize = 0.032;
+  float dx = 0.63;
   frame->SetTitle("");
   frame->GetXaxis()->SetTitle("");
   frame->GetXaxis()->CenterTitle(kTRUE);
@@ -106,28 +108,25 @@ void drawMassPlot(RooWorkspace& myws, struct InputOpt opt, struct KinCuts cut, b
   pad1->SetLogy(setLogScale);
 
   TLatex *t = new TLatex(); t->SetNDC(); t->SetTextSize(txtSize);
-  float dy = 0; float deltaY = 0.001;
-  if (opt.oniaMode==1) { deltaY = 0.08; } 
+  float dy = 0; float deltaY = 0.08; 
   
   t->SetTextSize(0.03);
   t->DrawLatex(0.21, 0.86-dy, "2015 Soft Muon ID"); dy+=0.045;
-  if (opt.oniaMode==1){
-    if (isPbPb) {
-      t->DrawLatex(0.21, 0.86-dy, "HLT_HIL1DoubleMu0_v1"); dy+=0.045;
-    } else {
-      t->DrawLatex(0.21, 0.86-dy, "HLT_HIL1DoubleMu0_v1"); dy+=0.045;
-    } 
-    if (isPbPb) {t->DrawLatex(0.21, 0.86-dy, Form("Cent. %d-%d%%", (int)(cut.Centrality.Start/2), (int)(cut.Centrality.End/2))); dy+=0.045;}
-    t->DrawLatex(0.21, 0.86-dy, Form("%.1f < p_{T}^{#mu#mu} < %.1f GeV/c",cut.dMuon.Pt.Min,cut.dMuon.Pt.Max)); dy+=0.045;
-    t->DrawLatex(0.21, 0.86-dy, Form("%.1f < |y^{#mu#mu}| < %.1f",cut.dMuon.AbsRap.Min,cut.dMuon.AbsRap.Max)); dy+=1.5*0.045;
-    if (getMeanPT){
-      t->DrawLatex(0.19, 0.86-dy, Form("<pt_{J/#psi}> = %.2f#pm%.2f GeV/c", myws.var(Form("ptJpsi%s", (isPbPb?"PbPb":"PP")))->getValV(), myws.var(Form("ptJpsi%s", (isPbPb?"PbPb":"PP")))->getError())); dy+=0.045;
-      if (opt.inExcStat) {
-	t->DrawLatex(0.19, 0.86-dy, Form("<pt_{#psi(2S)}> = %.2f#pm%.2f GeV/c", myws.var(Form("ptPsi2S%s", (isPbPb?"PbPb":"PP")))->getValV(), myws.var(Form("ptPsi2S%s", (isPbPb?"PbPb":"PP")))->getError())); dy+=0.045;
-      }
-      t->DrawLatex(0.19, 0.86-dy, Form("<pt_{bkg}> = %.2f#pm%.2f GeV/c", myws.var(Form("ptBkg%s", (isPbPb?"PbPb":"PP")))->getValV(), myws.var(Form("ptBkg%s", (isPbPb?"PbPb":"PP")))->getError())); dy+=0.045;
-    }
+  if (isPbPb) {
+    t->DrawLatex(0.21, 0.86-dy, "HLT_HIL1DoubleMu0_v1"); dy+=0.045;
+  } else {
+    t->DrawLatex(0.21, 0.86-dy, "HLT_HIL1DoubleMu0_v1"); dy+=0.045;
   } 
+  if (isPbPb) {t->DrawLatex(0.21, 0.86-dy, Form("Cent. %d-%d%%", (int)(cut.Centrality.Start/2), (int)(cut.Centrality.End/2))); dy+=0.045;}
+  t->DrawLatex(0.21, 0.86-dy, Form("%.1f < p_{T}^{#mu#mu} < %.1f GeV/c",cut.dMuon.Pt.Min,cut.dMuon.Pt.Max)); dy+=0.045;
+  t->DrawLatex(0.21, 0.86-dy, Form("%.1f < |y^{#mu#mu}| < %.1f",cut.dMuon.AbsRap.Min,cut.dMuon.AbsRap.Max)); dy+=1.5*0.045;
+  if (getMeanPT){
+    t->DrawLatex(0.19, 0.86-dy, Form("<pt_{J/#psi}> = %.2f#pm%.2f GeV/c", myws.var(Form("ptJpsi%s", (isPbPb?"PbPb":"PP")))->getValV(), myws.var(Form("ptJpsi%s", (isPbPb?"PbPb":"PP")))->getError())); dy+=0.045;
+    if (opt.inExcStat) {
+      t->DrawLatex(0.19, 0.86-dy, Form("<pt_{#psi(2S)}> = %.2f#pm%.2f GeV/c", myws.var(Form("ptPsi2S%s", (isPbPb?"PbPb":"PP")))->getValV(), myws.var(Form("ptPsi2S%s", (isPbPb?"PbPb":"PP")))->getError())); dy+=0.045;
+    }
+    t->DrawLatex(0.19, 0.86-dy, Form("<pt_{bkg}> = %.2f#pm%.2f GeV/c", myws.var(Form("ptBkg%s", (isPbPb?"PbPb":"PP")))->getValV(), myws.var(Form("ptBkg%s", (isPbPb?"PbPb":"PP")))->getError())); dy+=0.045;
+  }
 
   TLegend* leg = new TLegend(0.5175, 0.7802, 0.7180, 0.8809); leg->SetTextSize(0.03);
   leg->AddEntry(frame->findObject("dOS"), (incSS?"Opposite Charge":"Data"),"pe");
@@ -208,25 +207,27 @@ void drawMassPlot(RooWorkspace& myws, struct InputOpt opt, struct KinCuts cut, b
   pad2->Update();
   
   if(isData){
-    gSystem->mkdir("./Plots/DATA/root/", kTRUE); 
-    cFig->SaveAs(Form("./Plots/DATA/root/DATA_%s_%sPrompt_pt%.0f%.0f_rap%.0f%.0f_cent%d%d_%d_%d.root", (opt.oniaMode==1?"Psi2SJpsi":"Upsilon"), (isPbPb?"PbPb":"PP"), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End, opt.PbPb.RunNb.Start, opt.PbPb.RunNb.End));
-    gSystem->mkdir("./Plots/DATA/png/", kTRUE);
-    cFig->SaveAs(Form("./Plots/DATA/png/DATA_%s_%sPrompt_pt%.0f%.0f_rap%.0f%.0f_cent%d%d_%d_%d.png", (opt.oniaMode==1?"Psi2SJpsi":"Upsilon"), (isPbPb?"PbPb":"PP"), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End, opt.PbPb.RunNb.Start, opt.PbPb.RunNb.End));
-    gSystem->mkdir("./Plots/DATA/pdf/", kTRUE);
-    //cFig->SaveAs(Form("./Plots/DATA/pdf/DATA_%s_%sPrompt_pt%.0f%.0f_rap%.0f%.0f_cent%d%d_%d_%d.pdf", (opt.oniaMode==1?"Psi2SJpsi":"Upsilon"), (isPbPb?"PbPb":"PP"), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End, opt.PbPb.RunNb.Start, opt.PbPb.RunNb.End));
-  } else {
-    gSystem->mkdir("./Plots/MC/root/", kTRUE); 
-    cFig->SaveAs(Form("./Plots/MC/root/MC%s_%s_%sPrompt_pt%.0f%.0f_rap%.0f%.0f_cent%d%d_%d_%d.root", MCTYPE.c_str(), (opt.oniaMode==1?"Psi2SJpsi":"Upsilon"), (isPbPb?"PbPb":"PP"), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End, opt.PbPb.RunNb.Start, opt.PbPb.RunNb.End));
-    gSystem->mkdir("./Plots/MC/png/", kTRUE);
-    cFig->SaveAs(Form("./Plots/MC/png/MC%s_%s_%sPrompt_pt%.0f%.0f_rap%.0f%.0f_cent%d%d_%d_%d.png", MCTYPE.c_str(), (opt.oniaMode==1?"Psi2SJpsi":"Upsilon"), (isPbPb?"PbPb":"PP"), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End, opt.PbPb.RunNb.Start, opt.PbPb.RunNb.End));
-    gSystem->mkdir("./Plots/MC/pdf/", kTRUE);
-    cFig->SaveAs(Form("./Plots/MC/pdf/MC%s_%s_%sPrompt_pt%.0f%.0f_rap%.0f%.0f_cent%d%d_%d_%d.pdf", MCTYPE.c_str(), (opt.oniaMode==1?"Psi2SJpsi":"Upsilon"), (isPbPb?"PbPb":"PP"), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End, opt.PbPb.RunNb.Start, opt.PbPb.RunNb.End));
-    cFig->Close();
-  }
-
+    gSystem->mkdir(Form("%splot/root/", outputDir.c_str()), kTRUE); 
+    cFig->SaveAs(Form("%splot/root/DATA_%s_%sPrompt_Bkg_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d_%d_%d.root", outputDir.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End, opt.PbPb.RunNb.Start, opt.PbPb.RunNb.End));
+    gSystem->mkdir(Form("%splot/png/", outputDir.c_str()), kTRUE);
+    cFig->SaveAs(Form("%splot/png/DATA_%s_%sPrompt_Bkg_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d_%d_%d.png", outputDir.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End, opt.PbPb.RunNb.Start, opt.PbPb.RunNb.End));
+    gSystem->mkdir(Form("%splot/pdf/", outputDir.c_str()), kTRUE);
+    cFig->SaveAs(Form("%splot/pdf/DATA_%s_%sPrompt_Bkg_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d_%d_%d.pdf", outputDir.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End, opt.PbPb.RunNb.Start, opt.PbPb.RunNb.End));
+    
+    gSystem->mkdir(Form("%sresult/", outputDir.c_str()), kTRUE); 
+    TFile *file = new TFile(Form("%sresult/FIT_DATA_%s_%sPrompt_Bkg_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d_%d_%d.root", outputDir.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End, opt.PbPb.RunNb.Start, opt.PbPb.RunNb.End), "RECREATE");
+    if (!file) { cout << "[ERROR] Output root file with fit results could not be created!" << endl; }
+    file->cd();    
+    myws.Write("workspace"); 
+    file->Write(); file->Close(); delete file;
+  } 
+  
+  cFig->Clear();
+  cFig->Close(); 
 }
 
 #endif // #ifndef drawMassPlot_C
+
 
 
 void printParameters(RooWorkspace myws, TPad* Pad, bool isPbPb)
@@ -258,7 +259,7 @@ void printChi2(RooWorkspace& myws, TPad* Pad, RooHist* hpull, string varLabel, s
   Pad->cd();
   TLatex *t = new TLatex(); t->SetNDC(); t->SetTextSize(0.1); 
   unsigned int nbins = hpull->GetN();
-  TH1 *hdatact = myws.data(dataLabel.c_str())->createHistogram("hdatact", *myws.var(varLabel.c_str()), Binning(nbins));
+  TH1 *hdatact = myws.data(dataLabel.c_str())->createHistogram(Form("hdatact_%s", dataLabel.c_str()), *myws.var(varLabel.c_str()), Binning(nbins));
   unsigned int nFitPar = myws.pdf(pdfLabel.c_str())->getParameters(*myws.data(dataLabel.c_str()))->selectByAttrib("Constant",kFALSE)->getSize(); 
   double* ypulls = hpull->GetY();
   unsigned int nFullBins = 0;
@@ -269,5 +270,5 @@ void printChi2(RooWorkspace& myws, TPad* Pad, RooHist* hpull, string varLabel, s
     }
   }
   ndof = nFullBins - nFitPar;
-  t->DrawLatex(0.7, 0.8, Form("#chi^{2}/ndof = %.0f / %d", chi2, ndof));
+  t->DrawLatex(0.7, 0.85, Form("#chi^{2}/ndof = %.0f / %d", chi2, ndof));
 };

@@ -48,9 +48,12 @@
 #include "../CMS/tdrstyle.C"
 #include "../CMS/CMS_lumi.C"
 
-#include <ctime>
 #include <iostream>
 #include <sstream>
+#include <fstream>
+#include <string>
+#include <stdio.h>
+
 
 using namespace std;
 using namespace RooFit;
@@ -88,18 +91,61 @@ typedef struct KinCuts {
   DiMuonPar  dMuon;
 } KinCuts;
 
+bool isEqualKinCuts(struct KinCuts cutA, struct KinCuts cutB) 
+{
+  bool cond = true;
+
+  cond = cond && (cutA.Centrality.Start    == cutB.Centrality.Start);
+  cond = cond && (cutA.Centrality.End      == cutB.Centrality.End);
+
+  cond = cond && (cutA.sMuon.Pt.Min        == cutB.sMuon.Pt.Min);
+  cond = cond && (cutA.sMuon.Pt.Max        == cutB.sMuon.Pt.Max);
+  cond = cond && (cutA.sMuon.Eta.Min       == cutB.sMuon.Eta.Min);
+  cond = cond && (cutA.sMuon.Eta.Max       == cutB.sMuon.Eta.Max);
+
+  cond = cond && (cutA.dMuon.ctau.Min      == cutB.dMuon.ctau.Min);
+  cond = cond && (cutA.dMuon.ctau.Max      == cutB.dMuon.ctau.Max);
+  cond = cond && (cutA.dMuon.ctauErr.Min   == cutB.dMuon.ctauErr.Min);
+  cond = cond && (cutA.dMuon.ctauErr.Max   == cutB.dMuon.ctauErr.Max);
+  cond = cond && (cutA.dMuon.M.Min         == cutB.dMuon.M.Min);
+  cond = cond && (cutA.dMuon.M.Max         == cutB.dMuon.M.Max);
+  cond = cond && (cutA.dMuon.Pt.Min        == cutB.dMuon.Pt.Min);
+  cond = cond && (cutA.dMuon.Pt.Max        == cutB.dMuon.Pt.Max);
+  cond = cond && (cutA.dMuon.AbsRap.Min    == cutB.dMuon.AbsRap.Min);
+  cond = cond && (cutA.dMuon.AbsRap.Max    == cutB.dMuon.AbsRap.Max);
+
+  return cond;
+}
+
 
 struct ParticleMass { double JPsi, Psi2S, Y1S, Y2S, Y3S, Z; };
 ParticleMass Mass = {3.096, 3.686, 9.460, 10.023, 10.355, 91.188};
 
 
 enum class MassModel 
-  { 
-    SingleGaussian, DoubleGaussian, SingleCrystalBall, DoubleCrystalBall, GaussianAndCrystalBall, 
-    FirstOrderPolynomial, SecondOrderPolynomial, ThirdOrderPolynomial, FourthOrderPolynomial, 
-    FirstOrderChebychev, SecondOrderChebychev, ThirdOrderChebychev, FourthOrderChebychev,
-    Exponential
-  };
+{ 
+  SingleGaussian, DoubleGaussian, SingleCrystalBall, DoubleCrystalBall, GaussianAndCrystalBall, 
+  FirstOrderPolynomial, SecondOrderPolynomial, ThirdOrderPolynomial, FourthOrderPolynomial, 
+  FirstOrderChebychev, SecondOrderChebychev, ThirdOrderChebychev, FourthOrderChebychev,
+  Exponential
+};
+map< string , MassModel > MassModelDictionary = {
+  {"SingleGuassian",          MassModel::SingleGaussian},
+  {"DoubleGuassian",          MassModel::DoubleGaussian},
+  {"SingleCrystalBall",       MassModel::SingleCrystalBall},
+  {"DoubleCrystalBall",       MassModel::DoubleCrystalBall},
+  {"GaussianAndCrystalBall",  MassModel::GaussianAndCrystalBall},
+  {"FirstOrderPolynomial",    MassModel::FirstOrderPolynomial},
+  {"SecondOrderPolynomial",   MassModel::SecondOrderPolynomial},
+  {"ThirdOrderPolynomial",    MassModel::ThirdOrderPolynomial},
+  {"FourthOrderPolynomial",   MassModel::FourthOrderPolynomial},
+  {"FirstOrderChebychev",     MassModel::FirstOrderChebychev},
+  {"SecondOrderChebychev",    MassModel::SecondOrderChebychev},
+  {"ThirdOrderChebychev",     MassModel::ThirdOrderChebychev},
+  {"FourthOrderChebychev",    MassModel::FourthOrderChebychev},
+  {"Exponential",             MassModel::Exponential}
+};
+
 
 enum class CtauModel 
   {     
@@ -125,9 +171,6 @@ typedef struct OniaModel {
   CharmModel  PbPb, PP;
 } OniaModel;
 
-typedef struct SignDataSets {
-  RooDataSet* SS, OS;
-} SignDataSets; 
 
 
 
