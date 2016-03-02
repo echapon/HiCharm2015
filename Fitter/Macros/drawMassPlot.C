@@ -215,8 +215,11 @@ void drawMassPlot(RooWorkspace& myws, string outputDir, string plotLabel,
     cFig->SaveAs(Form("%splot/pdf/DATA_%s_%sPrompt_Bkg_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d_%d_%d.pdf", outputDir.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End, opt.PbPb.RunNb.Start, opt.PbPb.RunNb.End));
     
     gSystem->mkdir(Form("%sresult/", outputDir.c_str()), kTRUE); 
-    if (!myws.writeToFile(Form("%sresult/FIT_DATA_%s_%sPrompt_Bkg_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d_%d_%d.root", outputDir.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End, opt.PbPb.RunNb.Start, opt.PbPb.RunNb.End), kTRUE))
-      { cout << "[ERROR] Output root file with fit results could not be created!" << endl; }
+    TFile *file = new TFile(Form("%sresult/FIT_DATA_%s_%sPrompt_Bkg_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d_%d_%d.root", outputDir.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End, opt.PbPb.RunNb.Start, opt.PbPb.RunNb.End), "RECREATE");
+    if (!file) { cout << "[ERROR] Output root file with fit results could not be created!" << endl; }
+    file->cd();    
+    myws.Write("workspace"); 
+    file->Write(); file->Close(); delete file;
   } 
   
   cFig->Clear();

@@ -37,7 +37,7 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
   struct InputOpt opt; SetOptions(&opt, inExcStat, doSimulFit);
   
   struct OniaModel model;
-  RooWorkspace     myws;
+  RooWorkspace     myws("workspace", "local workspace");
   if (doSimulFit || isPbPb) {
     // Set models based on initial parameters
     if (!setModel(model, parIni, true, inExcStat)) { return false; }
