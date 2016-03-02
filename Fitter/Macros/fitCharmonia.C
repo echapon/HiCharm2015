@@ -143,7 +143,8 @@ bool importDataset(RooWorkspace& myws, RooWorkspace& inputWS, struct KinCuts cut
   string indMuonCtauErr = Form("(%.6f < ctauErr && ctauErr < %.6f)",       cut.dMuon.ctauErr.Min, cut.dMuon.ctauErr.Max);
   string inCentrality   = Form("(%d <= cent && cent <= %d)",               cut.Centrality.Start,  cut.Centrality.End);
 
-  string strCut         = indMuonMass +"&&"+ indMuonRap +"&&"+ indMuonPt +"&&"+ indMuonCtau +"&&"+ indMuonCtauErr +"&&"+ inCentrality;
+  string strCut         = indMuonMass +"&&"+ indMuonRap +"&&"+ indMuonPt +"&&"+ indMuonCtau +"&&"+ indMuonCtauErr;
+  if (label.find("PbPb")!=std::string::npos){ strCut = strCut +"&&"+ inCentrality; } 
 
   // Reduce and import the datasets
   if (!(inputWS.data(Form("dOS_%s", label.c_str())))){ 
@@ -179,8 +180,10 @@ bool importDataset(RooWorkspace& myws, RooWorkspace& inputWS, struct KinCuts cut
   myws.var("ctau")->setMax(cut.dMuon.ctau.Max);
   myws.var("ctauErr")->setMin(cut.dMuon.ctauErr.Min);  
   myws.var("ctauErr")->setMax(cut.dMuon.ctauErr.Max);
-  myws.var("cent")->setMin(cut.Centrality.Start);      
-  myws.var("cent")->setMax(cut.Centrality.End);
+  if (label.find("PbPb")!=std::string::npos){
+    myws.var("cent")->setMin(cut.Centrality.Start);      
+    myws.var("cent")->setMax(cut.Centrality.End);
+  }
 
   myws.var("invMass")->setRange("MassWindow", cut.dMuon.M.Min, cut.dMuon.M.Max);
 

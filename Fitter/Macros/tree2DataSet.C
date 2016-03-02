@@ -84,7 +84,7 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
 	  }
       }
     }
-    TFile *DBFile = new TFile(OutputFileName.c_str(),"RECREATE");
+    TFile *DBFile = TFile::Open(OutputFileName.c_str(),"RECREATE");
     DBFile->cd();
     dataOS->Write(Form("dOS_%s", DSName.c_str())); 
     dataSS->Write(Form("dSS_%s", DSName.c_str())); 
@@ -94,7 +94,7 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
 
     cout << "[INFO] Loading RooDataSet from " << OutputFileName << endl;
     
-    TFile *DBFile = new TFile(OutputFileName.c_str(),"READ");
+    TFile *DBFile = TFile::Open(OutputFileName.c_str(),"READ");
     dataOS = (RooDataSet*)DBFile->Get(Form("dOS_%s", DSName.c_str()));  
     dataSS = (RooDataSet*)DBFile->Get(Form("dSS_%s", DSName.c_str()));
   }
@@ -107,7 +107,7 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
 
 string findMyTree(string FileName)
 {
-  TFile *f = new TFile(FileName.c_str(), "READ");
+  TFile *f = TFile::Open(FileName.c_str(), "READ");
   if(f->GetListOfKeys()->Contains("hionia")){ return "hionia/myTree"; }
   else if(f->GetListOfKeys()->Contains("myTree")){ return "myTree"; }
   else { cout << "[ERROR] myTree was not found in: " << FileName << endl; }
