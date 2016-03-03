@@ -69,6 +69,12 @@ bool buildCharmoniaMassModel(RooWorkspace& ws, struct InputOpt opt, struct Charm
 		    ));
   }
   ws.pdf(Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP")))->setNormRange("MassWindow");
+
+  // save the initial values of the model we've just created
+  RooAbsPdf *themodel = ws.pdf(Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP")));
+  RooRealVar *x = ws.var("invMass");
+  RooArgSet* params = (RooArgSet*) themodel->getParameters(*x) ;
+  ws.saveSnapshot(Form("pdfMASS_Tot_%s_parIni", (isPbPb?"PbPb":"PP")),*params,kTRUE) ;
   
   //ws.Print();
   return true;
