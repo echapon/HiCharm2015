@@ -25,7 +25,8 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
 		   bool getMeanPT   = false,      // Compute the mean PT
 		   bool inExcStat   = false,      // if inExcStat is true, then the excited states are fitted
 		   bool doSimulFit  = true,       // Do simultaneous fit
-		   int nbins        = 74
+		   int nbins        = 74,         // Number of bins for fitting
+                   int numCores     = 2           // Number of cores used for fitting
 		   )  
 {
   if (inExcStat==false) { 
@@ -82,7 +83,7 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
     RooSimultaneous* simPdf = new RooSimultaneous("simPdf", "simultaneous pdf", *sample);
     simPdf->addPdf(*myws.pdf("pdfMASS_Tot_PbPb"), "PbPb"); simPdf->addPdf(*myws.pdf("pdfMASS_Tot_PP"), "PP"); 
     // Do the simultaneous fit
-    RooFitResult* fitMass = simPdf->fitTo(*combData, SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(32), Range("MassWindow")); 
+    RooFitResult* fitMass = simPdf->fitTo(*combData, SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(numCores), Range("MassWindow")); 
     // Draw the mass plots
 
     drawMassPlot(myws, outputDir, parIni["Model_Bkg_PbPb"], TAG, opt, cut, true, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
@@ -102,7 +103,7 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
         }
 
         // Fit the Datasets
-        myws.pdf("pdfMASS_Tot_PbPb")->fitTo(*myws.data("dOS_DATA_PbPb"), SumW2Error(kTRUE), Extended(kTRUE), Range("MassWindow"), NumCPU(32));
+        myws.pdf("pdfMASS_Tot_PbPb")->fitTo(*myws.data("dOS_DATA_PbPb"), SumW2Error(kTRUE), Extended(kTRUE), Range("MassWindow"), NumCPU(numCores));
         drawMassPlot(myws, outputDir, parIni["Model_Bkg_PbPb"], TAG,  opt, cut, true, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
      } else {
         // Build the Fit Model
@@ -117,7 +118,7 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
         }
 
         // Fit the Datasets
-        myws.pdf("pdfMASS_Tot_PP")->fitTo(*myws.data("dOS_DATA_PP"), SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(32), Range("MassWindow"));
+        myws.pdf("pdfMASS_Tot_PP")->fitTo(*myws.data("dOS_DATA_PP"), SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(numCores), Range("MassWindow"));
         drawMassPlot(myws, outputDir, parIni["Model_Bkg_PP"], TAG, opt, cut, false, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
      }
   }
@@ -198,8 +199,7 @@ bool importDataset(RooWorkspace& myws, RooWorkspace& inputWS, struct KinCuts cut
   } 
   RooDataSet* dataSS = (RooDataSet*)inputWS.data(Form("dSS_%s", label.c_str()))->reduce(strCut.c_str());
   if (dataSS->sumEntries()==0){ 
-    cout << "[ERROR] No events from dataset " <<  Form("dSS_%s", label.c_str()) << " passed the kinematic cuts!" << endl;
-    return false;
+    cout << "[WARNING] No events from dataset " <<  Form("dSS_%s", label.c_str()) << " passed the kinematic cuts!" << endl;
   }
   myws.import(*dataSS);
 

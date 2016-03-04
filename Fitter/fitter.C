@@ -14,7 +14,17 @@ bool setParameters(map<string, string> row,  string mass, string ctau, struct Ki
 bool addParamters(string InputFile,  vector< struct KinCuts > cutVector, vector< map<string, string> >&  parIniVector);
 
 
-void fitter(const string workDirName="Test") 
+void fitter(
+            const string workDirName="Test", // Working directory
+            bool isPbPb      = false,        // isPbPb = false for pp, true for PbPb
+            bool doSimulFit  = true,         // Do simultaneous fit
+            bool inExcStat   = false,        // if inExcStat is true, then the excited states are fitted
+            bool zoomPsi     = false,        // Zoom Psi(2S) peak on extra pad
+            bool setLogScale = true,         // Draw plot with log scale
+            bool incSS       = false,        // Include Same Sign data
+            int  nbins       = 74,           // Number of bins used for fitting
+            int  numCores    = 2             // Number of cores used for fitting
+            ) 
 {
   // -------------------------------------------------------------------------------
   // STEP 0: INITIALIZE THE FITTER WORK ENVIROMENT
@@ -71,7 +81,7 @@ void fitter(const string workDirName="Test")
   if(!parseFile(InputFile, data)) { return; }
   for(vector< map<string, string> >::iterator row=data.begin(); row!=data.end(); ++row) {
     struct KinCuts cut; map<string, string> parIni;
-    setParameters(*row, "2.2-4.5", "-100.0->100.0", cut, parIni);
+    if(!setParameters(*row, "2.2-4.5", "-100.0->100.0", cut, parIni)) { return; }
     cutVector.push_back(cut);  parIniVector.push_back(parIni);
   }
 
@@ -113,14 +123,15 @@ void fitter(const string workDirName="Test")
       // DATA datasets were loaded
       string outputDir = DIR["output"];
       if (!fitCharmonia( Workspace["DATA"], cutVector.at(i), parIniVector.at(i), outputDir, "DATA",
-		    true,      // isPbPb = false for pp, true for PbPb
-		    false,     // Zoom Psi(2S) peak on extra pad
-		    true,      // Draw plot with log scale
-		    false,     // Include Same Sign data
-		    false,     // Compute the mean PT (NEED TO FIX)
-		    true,     // if inExcStat is true, then the excited states are fitted
-		    true,     // Do simultaneous fit
-		    74         // number of bins
+                         isPbPb,           // isPbPb = false for pp, true for PbPb
+                         zoomPsi,          // Zoom Psi(2S) peak on extra pad
+                         setLogScale,      // Draw plot with log scale
+                         incSS,            // Include Same Sign data
+                         false,            // Compute the mean PT (NEED TO FIX)
+                         inExcStat,        // if inExcStat is true, then the excited states are fitted
+                         doSimulFit,       // Do simultaneous fit
+                         nbins,            // number of bins
+                         numCores 
 			 )
 	  ) { return; } 
     }
@@ -136,7 +147,7 @@ bool addParamters(string InputFile,  vector< struct KinCuts > cutVector, vector<
   if (data.size()!=cutVector.size()) { cout << "[ERROR] The initial parameters in file " << InputFile << " are not consistent with previous files!" << endl; return false; }
   for (unsigned int i=0; i<data.size(); i++) {
     struct KinCuts cut;
-    setParameters(data.at(i), "2.2-4.5", "-100.0->100.0", cut, parIniVector.at(i));
+    if (!setParameters(data.at(i), "2.2-4.5", "-100.0->100.0", cut, parIniVector.at(i))) { return false; };
     if (!isEqualKinCuts(cut, cutVector.at(i))) { cout << "[ERROR] The bins in file " << InputFile << " are not consistent with previous files!" << endl; return false; }
   }
   return true;
