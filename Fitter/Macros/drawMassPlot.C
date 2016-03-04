@@ -6,9 +6,19 @@
 void printParameters(RooWorkspace myws, TPad* Pad, bool isPbPb);
 void printChi2(RooWorkspace& myws, TPad* Pad, RooHist* hpull, string varLabel, string dataLabel, string pdfLabel); 
 
-void drawMassPlot(RooWorkspace& myws, string outputDir, string plotLabel, 
-		  struct InputOpt opt, struct KinCuts cut, bool isPbPb, bool zoomPsi, bool setLogScale, 
-		  bool incSS, bool getMeanPT, int nbins = 54, bool isData=true, string MCTYPE="") 
+void drawMassPlot(RooWorkspace& myws,   // Local workspace
+                  string outputDir,     // Output directory
+                  string plotLabel,     // Plot label, i.e. <Model_NAME>
+                  string TAG,           // Specifies the type of datasets: i.e, DATA, MCJPSINP, ...
+		  struct InputOpt opt,  // Variable with run information (kept for legacy purpose)
+                  struct KinCuts cut,   // Variable with current kinematic cuts
+                  bool isPbPb,          // Define if it is PbPb or PP
+                  bool zoomPsi,         // Zoom on Psi2S peak 
+                  bool setLogScale,     // Set log scale
+		  bool incSS,           // Includes the same sign dimuons
+                  bool getMeanPT,       // Includes the results of the mean pt (not supported yet)
+                  int nbins = 54        // number of bins to plot
+                  ) 
 {
 
 
@@ -16,19 +26,14 @@ void drawMassPlot(RooWorkspace& myws, string outputDir, string plotLabel,
   RooPlot*   frame     = myws.var("invMass")->frame(Bins(nbins), Range(cut.dMuon.M.Min, cut.dMuon.M.Max)); RooPlot* frame2 = NULL;
   RooPlot*   framezoom = myws.var("invMass")->frame(Bins(19), Range(Mass.Psi2S-0.265, Mass.Psi2S+0.265));
 
-  myws.data(Form("dOS_%s_%s", (isData?"DATA":Form("MC%s", MCTYPE.c_str())), (isPbPb?"PbPb":"PP")))->plotOn(frame, Name("dOS"), DataError(RooAbsData::SumW2), XErrorSize(0), 
-													   MarkerColor(kBlack), LineColor(kBlack), MarkerSize(1.2));
+  myws.data(Form("dOS_%s_%s", TAG.c_str(), (isPbPb?"PbPb":"PP")))->plotOn(frame, Name("dOS"), DataError(RooAbsData::SumW2), XErrorSize(0), MarkerColor(kBlack), LineColor(kBlack), MarkerSize(1.2));
   myws.pdf(Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP")))->plotOn(frame,Name("BKG"),Components(*myws.pdf(Form("pdfMASS_Bkg_%s", (isPbPb?"PbPb":"PP")))),
-								 Normalization(myws.data(Form("dOS_%s_%s", (isData?"DATA":Form("MC%s", MCTYPE.c_str())), (isPbPb?"PbPb":"PP")))->sumEntries(),
-									       RooAbsReal::NumEvent), Range(cut.dMuon.M.Min, cut.dMuon.M.Max), 
-								 FillStyle(1001), FillColor(kAzure-9), VLines(), DrawOption("LCF"), LineColor(kBlue), LineStyle(kDashed)
+								 Normalization(myws.data(Form("dOS_%s_%s", TAG.c_str(), (isPbPb?"PbPb":"PP")))->sumEntries(), RooAbsReal::NumEvent), 
+                                                                 Range(cut.dMuon.M.Min, cut.dMuon.M.Max), FillStyle(1001), FillColor(kAzure-9), VLines(), DrawOption("LCF"), LineColor(kBlue), LineStyle(kDashed)
 								 );
-  if (incSS) { myws.data(Form("dSS_%s_%s", (isData?"DATA":Form("MC%s", MCTYPE.c_str())), (isPbPb?"PbPb":"PP")))->plotOn(frame, Name("dSS"), MarkerColor(kRed), LineColor(kRed), MarkerSize(1.2)); }
-  myws.data(Form("dOS_%s_%s", (isData?"DATA":Form("MC%s", MCTYPE.c_str())), (isPbPb?"PbPb":"PP")))->plotOn(frame, Name("dOS"), DataError(RooAbsData::SumW2), XErrorSize(0), 
-													   MarkerColor(kBlack), LineColor(kBlack), MarkerSize(1.2));
-  myws.pdf(Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP")))->plotOn(frame,Name("PDF"), 
-								 Normalization(myws.data(Form("dOS_%s_%s", (isData?"DATA":Form("MC%s", MCTYPE.c_str())), (isPbPb?"PbPb":"PP")))->sumEntries(),
-									       RooAbsReal::NumEvent), 
+  if (incSS) { myws.data(Form("dSS_%s_%s", TAG.c_str(), (isPbPb?"PbPb":"PP")))->plotOn(frame, Name("dSS"), MarkerColor(kRed), LineColor(kRed), MarkerSize(1.2)); }
+  myws.data(Form("dOS_%s_%s", TAG.c_str(), (isPbPb?"PbPb":"PP")))->plotOn(frame, Name("dOS"), DataError(RooAbsData::SumW2), XErrorSize(0), MarkerColor(kBlack), LineColor(kBlack), MarkerSize(1.2));
+  myws.pdf(Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP")))->plotOn(frame,Name("PDF"),  Normalization(myws.data(Form("dOS_%s_%s", TAG.c_str(), (isPbPb?"PbPb":"PP")))->sumEntries(), RooAbsReal::NumEvent), 
 								 LineColor(kBlack), LineStyle(1), Precision(1e-4), Range(cut.dMuon.M.Min, cut.dMuon.M.Max));
 
 
@@ -38,17 +43,12 @@ void drawMassPlot(RooWorkspace& myws, string outputDir, string plotLabel,
   frame2->addPlotable(hpull, "PX"); 
 
   if (zoomPsi) { 
-    myws.data(Form("dOS_%s_%s", (isData?"DATA":Form("MC%s", MCTYPE.c_str())), (isPbPb?"PbPb":"PP")))->plotOn(framezoom, Name("dOS"), DataError(RooAbsData::SumW2), XErrorSize(0), 
-													     MarkerColor(kBlack), LineColor(kBlack), MarkerSize(1.2)); 
+    myws.data(Form("dOS_%s_%s", TAG.c_str(), (isPbPb?"PbPb":"PP")))->plotOn(framezoom, Name("dOS"), DataError(RooAbsData::SumW2), XErrorSize(0), MarkerColor(kBlack), LineColor(kBlack), MarkerSize(1.2)); 
     myws.pdf(Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP")))->plotOn(framezoom, Name("BKG"),Components(*myws.pdf(Form("pdfMASS_Bkg_%s", (isPbPb?"PbPb":"PP")))),
-								   Normalization(myws.data(Form("dOS_%s_%s", (isData?"DATA":Form("MC%s", MCTYPE.c_str())), (isPbPb?"PbPb":"PP")))->sumEntries(),
-										 RooAbsReal::NumEvent), 
+								   Normalization(myws.data(Form("dOS_%s_%s", TAG.c_str(), (isPbPb?"PbPb":"PP")))->sumEntries(), RooAbsReal::NumEvent), 
 								   FillStyle(1001), FillColor(kAzure-9), VLines(), DrawOption("LCF"), LineColor(kBlue), LineStyle(kDashed),Precision(1e-4));
-    myws.data(Form("dOS_%s_%s", (isData?"DATA":Form("MC%s", MCTYPE.c_str())), (isPbPb?"PbPb":"PP")))->plotOn(framezoom, Name("dOS"), DataError(RooAbsData::SumW2), XErrorSize(0), 
-													     MarkerColor(kBlack), LineColor(kBlack), MarkerSize(1.2));
-    myws.pdf(Form("pdfMASS_Tot_%s}", (isPbPb?"PbPb":"PP")))->plotOn(framezoom,Name("PDF"),
-								    Normalization(myws.data(Form("dOS_%s_%s", (isData?"DATA":Form("MC%s", MCTYPE.c_str())), (isPbPb?"PbPb":"PP")))->sumEntries(),
-										  RooAbsReal::NumEvent), 
+    myws.data(Form("dOS_%s_%s", TAG.c_str(), (isPbPb?"PbPb":"PP")))->plotOn(framezoom, Name("dOS"), DataError(RooAbsData::SumW2), XErrorSize(0), MarkerColor(kBlack), LineColor(kBlack), MarkerSize(1.2));
+    myws.pdf(Form("pdfMASS_Tot_%s}", (isPbPb?"PbPb":"PP")))->plotOn(framezoom,Name("PDF"), Normalization(myws.data(Form("dOS_%s_%s", TAG.c_str(), (isPbPb?"PbPb":"PP")))->sumEntries(), RooAbsReal::NumEvent), 
 								    LineColor(kBlack), LineStyle(1),Precision(1e-4));
   }			
   
@@ -66,8 +66,6 @@ void drawMassPlot(RooWorkspace& myws, string outputDir, string plotLabel,
   pad4->SetBottomMargin(0.21);
   pad4->SetTopMargin(0.072);
 
-  float txtSize = 0.032;
-  float dx = 0.63;
   frame->SetTitle("");
   frame->GetXaxis()->SetTitle("");
   frame->GetXaxis()->CenterTitle(kTRUE);
@@ -87,9 +85,9 @@ void drawMassPlot(RooWorkspace& myws, string outputDir, string plotLabel,
   myws.var("invMass")->setRange("YMaxBin",mNMax-binW*0.5,mNMax+binW*0.5);
   myws.var("invMass")->setRange("YMinBin",mNMin-binW*0.5,mNMin+binW*0.5);
   Double_t YMax = (myws.pdf(Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP")))->createIntegral(RooArgSet(*myws.var("invMass")), NormSet(RooArgSet(*myws.var("invMass"))), Range("YMaxBin"))->getVal()*
-		   myws.data(Form("dOS_%s_%s", (isData?"DATA":Form("MC%s", MCTYPE.c_str())), (isPbPb?"PbPb":"PP")))->sumEntries());
+		   myws.data(Form("dOS_%s_%s", TAG.c_str(), (isPbPb?"PbPb":"PP")))->sumEntries());
   Double_t YMin = (myws.pdf(Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP")))->createIntegral(RooArgSet(*myws.var("invMass")), NormSet(RooArgSet(*myws.var("invMass"))), Range("YMinBin"))->getVal()*
-		   myws.data(Form("dOS_%s_%s", (isData?"DATA":Form("MC%s", MCTYPE.c_str())), (isPbPb?"PbPb":"PP")))->sumEntries());
+		   myws.data(Form("dOS_%s_%s", TAG.c_str(), (isPbPb?"PbPb":"PP")))->sumEntries());
   if(setLogScale){ YMin=max(YMin,1.0); frame->GetYaxis()->SetRangeUser(max(YMin/pow((YMax/YMin), 0.05),1.0), YMax*pow((YMax/YMin), 0.4)); } 
   else{ frame->GetYaxis()->SetRangeUser(max(YMin-(YMax-YMin)*0.05,0.0), YMax+(YMax-YMin)*0.4); }
  
@@ -104,14 +102,14 @@ void drawMassPlot(RooWorkspace& myws, string outputDir, string plotLabel,
   pad1->cd(); 
   frame->Draw();
 
-  if (!zoomPsi) { printParameters(myws, pad1, isPbPb); }
+  if (!zoomPsi) { printParameters(myws, pad1, isPbPb); }    
   pad1->SetLogy(setLogScale);
 
-  TLatex *t = new TLatex(); t->SetNDC(); t->SetTextSize(txtSize);
-  float dy = 0; float deltaY = 0.08; 
+  TLatex *t = new TLatex(); t->SetNDC(); t->SetTextSize(0.032);
+  float dy = 0; 
   
   t->SetTextSize(0.03);
-  t->DrawLatex(0.21, 0.86-dy, "2015 Soft Muon ID"); dy+=0.045;
+  t->DrawLatex(0.21, 0.86-dy, "2015 HI Soft Muon ID"); dy+=0.045;
   if (isPbPb) {
     t->DrawLatex(0.21, 0.86-dy, "HLT_HIL1DoubleMu0_v1"); dy+=0.045;
   } else {
@@ -150,7 +148,7 @@ void drawMassPlot(RooWorkspace& myws, string outputDir, string plotLabel,
       label = Form("%s [%s %d-%d]", "PP", "DoubleMu0", opt.pp.RunNb.Start, opt.pp.RunNb.End);
     }
   }
-   
+  
   CMS_lumi(pad1, isPbPb ? 105 : 104, 33, label);
   gStyle->SetTitleFontSize(0.05);
   
@@ -168,12 +166,25 @@ void drawMassPlot(RooWorkspace& myws, string outputDir, string plotLabel,
     framezoom->GetXaxis()->SetLabelSize(0.06);
     framezoom->GetYaxis()->SetTitleSize(0.072);
     framezoom->GetXaxis()->SetTitleSize(0.072);
-       
+
+    // Find maximum and minimum points of Plot to rescale Y axis
+    binW  = 0.53/19;
+    mNMax = myws.pdf(Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP")))->asTF(*myws.var("invMass"))->GetMaximumX(Mass.Psi2S-0.265, Mass.Psi2S+0.265); 
+    myws.pdf(Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP")))->asTF(*myws.var("invMass"))->GetMinimumX(Mass.Psi2S-0.265, Mass.Psi2S+0.265);
+    myws.var("invMass")->setRange("YMaxBinPsi2S",mNMax-binW*0.5,mNMax+binW*0.5);
+    myws.var("invMass")->setRange("YMinBinPsi2S",mNMin-binW*0.5,mNMin+binW*0.5);
+    YMax = (myws.pdf(Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP")))->createIntegral(RooArgSet(*myws.var("invMass")), NormSet(RooArgSet(*myws.var("invMass"))), Range("YMaxBinPsi2S"))->getVal()*
+            myws.data(Form("dOS_%s_%s", TAG.c_str(), (isPbPb?"PbPb":"PP")))->sumEntries());
+    Double_t YMin = (myws.pdf(Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP")))->createIntegral(RooArgSet(*myws.var("invMass")), NormSet(RooArgSet(*myws.var("invMass"))), Range("YMinBinPsi2S"))->getVal()*
+                     myws.data(Form("dOS_%s_%s", TAG.c_str(), (isPbPb?"PbPb":"PP")))->sumEntries());
+    if(setLogScale){ YMin=max(YMin,1.0); framezoom->GetYaxis()->SetRangeUser(max(YMin/pow((YMax/YMin), 0.05),1.0), YMax*pow((YMax/YMin), 0.4)); } 
+    else{ framezoom->GetYaxis()->SetRangeUser(max(YMin-(YMax-YMin)*0.05,0.0), YMax+(YMax-YMin)*0.4); }
+    
     pad4->Draw();
     pad4->cd();
-
+    
     framezoom->Draw();
-
+    
     cFig->cd(); 
   }
 
@@ -197,30 +208,27 @@ void drawMassPlot(RooWorkspace& myws, string outputDir, string plotLabel,
   frame2->Draw(); 
   
   // *** Print chi2/ndof 
-  printChi2(myws, pad2, hpull, 
-	    "invMass", 
-	    Form("dOS_%s_%s", (isData?"DATA":Form("MC%s", MCTYPE.c_str())), (isPbPb?"PbPb":"PP")), 
-	    Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP"))
-	    );
+  printChi2(myws, pad2, hpull, "invMass", Form("dOS_%s_%s", TAG.c_str(), (isPbPb?"PbPb":"PP")), Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP")));
   
   pline->Draw("same");
   pad2->Update();
   
-  if(isData){
-    gSystem->mkdir(Form("%splot/root/", outputDir.c_str()), kTRUE); 
-    cFig->SaveAs(Form("%splot/root/DATA_%s_%sPrompt_Bkg_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d_%d_%d.root", outputDir.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End, opt.PbPb.RunNb.Start, opt.PbPb.RunNb.End));
-    gSystem->mkdir(Form("%splot/png/", outputDir.c_str()), kTRUE);
-    cFig->SaveAs(Form("%splot/png/DATA_%s_%sPrompt_Bkg_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d_%d_%d.png", outputDir.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End, opt.PbPb.RunNb.Start, opt.PbPb.RunNb.End));
-    gSystem->mkdir(Form("%splot/pdf/", outputDir.c_str()), kTRUE);
-    cFig->SaveAs(Form("%splot/pdf/DATA_%s_%sPrompt_Bkg_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d_%d_%d.pdf", outputDir.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End, opt.PbPb.RunNb.Start, opt.PbPb.RunNb.End));
+  gSystem->mkdir(Form("%splot/%s/root/", outputDir.c_str(), TAG.c_str()), kTRUE); 
+  cFig->SaveAs(Form("%splot/%s/root/%s_%s_%s_Bkg_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.root", outputDir.c_str(), TAG.c_str(), TAG.c_str(),  "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End));
+  gSystem->mkdir(Form("%splot/%s/png/", outputDir.c_str(), TAG.c_str()), kTRUE);
+  cFig->SaveAs(Form("%splot/%s/png/%s_%s_%s_Bkg_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.png", outputDir.c_str(), TAG.c_str(), TAG.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End));
+  gSystem->mkdir(Form("%splot/%s/pdf/", outputDir.c_str(), TAG.c_str()), kTRUE);
+  cFig->SaveAs(Form("%splot/%s/pdf/%s_%s_%s_Bkg_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.pdf", outputDir.c_str(), TAG.c_str(), TAG.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End));
     
-    gSystem->mkdir(Form("%sresult/", outputDir.c_str()), kTRUE); 
-    TFile *file = new TFile(Form("%sresult/FIT_DATA_%s_%sPrompt_Bkg_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d_%d_%d.root", outputDir.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End, opt.PbPb.RunNb.Start, opt.PbPb.RunNb.End), "RECREATE");
-    if (!file) { cout << "[ERROR] Output root file with fit results could not be created!" << endl; }
+  gSystem->mkdir(Form("%sresult/%s/", outputDir.c_str(), TAG.c_str()), kTRUE); 
+  TFile *file = new TFile(Form("%sresult/%s/FIT_%s_%s_%s_Bkg_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.root", outputDir.c_str(), TAG.c_str(), TAG.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End), "RECREATE");
+  if (!file) { 
+    cout << "[ERROR] Output root file with fit results could not be created!" << endl; 
+  } else {
     file->cd();    
     myws.Write("workspace"); 
     file->Write(); file->Close(); delete file;
-  } 
+  }
   
   cFig->Clear();
   cFig->Close(); 
@@ -234,21 +242,43 @@ void printParameters(RooWorkspace myws, TPad* Pad, bool isPbPb)
 {
   Pad->cd();
   TLatex *t = new TLatex(); t->SetNDC(); t->SetTextSize(0.026); float dy = 0.025; 
-  RooArgSet* Parameters =  myws.pdf(Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP")))->getParameters(myws.data(Form("dOS_DATA_%s", (isPbPb?"PbPb":"PP"))));
+  RooArgSet* Parameters =  myws.pdf(Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP")))->getParameters(*myws.var("invMass"));
   TIterator* parIt = Parameters->createIterator(); 
   for (RooRealVar* it = (RooRealVar*)parIt->Next(); it!=NULL; it = (RooRealVar*)parIt->Next() ) {
     stringstream ss(it->GetName()); string s1, s2, s3, label; 
     getline(ss, s1, '_'); getline(ss, s2, '_'); getline(ss, s3, '_');
-    if(s1=="RFrac2Svs1S"){s1="R_{#psi(2S)/J/#psi}";} if(s2=="PbPbvsPP"){s2="PbPb/PP";}
-    if(s1.find("sigma")!=std::string::npos || s1.find("lambda")!=std::string::npos || s1.find("alpha")!=std::string::npos){s1=Form("#%s",s1.c_str());}
-    if(s2=="Jpsi"){s2="J/#psi";} else if(s2=="Psi2S"){s2="#psi(2S)";} else if(s2=="Bkg"){s2="bkg";}
-    if(s3!=""){label=Form("%s_{%s}^{%s}", s1.c_str(), s2.c_str(), s3.c_str());} else {label=Form("%s^{%s}", s1.c_str(), s2.c_str());}
+    // Parse the parameter's labels
     if(s1=="invMass"){continue;} else if(s1=="MassRatio"){continue;}
-    else if(s1=="N"){ t->DrawLatex(0.69, 0.75-dy, Form("%s = %.0f#pm%.0f ", label.c_str(), it->getValV(), it->getError())); dy+=0.045; }
-    else if(s1.find("sigma")!=std::string::npos){ t->DrawLatex(0.69, 0.75-dy, Form("%s = %.2f#pm%.2f MeV/c^{2}", label.c_str(), it->getValV()*1000., it->getError()*1000.)); dy+=0.045; } 
-    else if(s1.find("lambda")!=std::string::npos){ t->DrawLatex(0.69, 0.75-dy, Form("%s = %.4f#pm%.4f", label.c_str(), it->getValV(), it->getError())); dy+=0.045; }
-    else if(s1.find("m")!=std::string::npos){ t->DrawLatex(0.69, 0.75-dy, Form("%s = %.5f#pm%.5f GeV/c^{2}", label.c_str(), it->getValV(), it->getError())); dy+=0.045; }
-    else { t->DrawLatex(0.69, 0.75-dy, Form("%s = %.4f#pm%.4f", label.c_str(), it->getValV(), it->getError())); dy+=0.045; }
+    if(s1=="RFrac2Svs1S"){ s1="R_{#psi(2S)/J/#psi}"; } 
+    else if(s1.find("sigma")!=std::string::npos || s1.find("lambda")!=std::string::npos || s1.find("alpha")!=std::string::npos){
+      s1=Form("#%s",s1.c_str());
+    }
+    if(s2=="PbPbvsPP")   { s2="PbPb/PP";  }
+    else if(s2=="Jpsi")  { s2="J/#psi";   } 
+    else if(s2=="Psi2S") { s2="#psi(2S)"; } 
+    else if(s2=="Bkg")   { s2="bkg";      }
+    if(s3!=""){
+      label=Form("%s_{%s}^{%s}", s1.c_str(), s2.c_str(), s3.c_str());
+    } 
+    else {
+      label=Form("%s^{%s}", s1.c_str(), s2.c_str());
+    }
+    // Print the parameter's results
+    if(s1=="N"){ 
+      t->DrawLatex(0.69, 0.75-dy, Form("%s = %.0f#pm%.0f ", label.c_str(), it->getValV(), it->getError())); dy+=0.045; 
+    }
+    else if(s1.find("sigma")!=std::string::npos){ 
+      t->DrawLatex(0.69, 0.75-dy, Form("%s = %.2f#pm%.2f MeV/c^{2}", label.c_str(), it->getValV()*1000., it->getError()*1000.)); dy+=0.045; 
+    } 
+    else if(s1.find("lambda")!=std::string::npos){ 
+      t->DrawLatex(0.69, 0.75-dy, Form("%s = %.4f#pm%.4f", label.c_str(), it->getValV(), it->getError())); dy+=0.045; 
+    }
+    else if(s1.find("m")!=std::string::npos){ 
+      t->DrawLatex(0.69, 0.75-dy, Form("%s = %.5f#pm%.5f GeV/c^{2}", label.c_str(), it->getValV(), it->getError())); dy+=0.045; 
+    }
+    else { 
+      t->DrawLatex(0.69, 0.75-dy, Form("%s = %.4f#pm%.4f", label.c_str(), it->getValV(), it->getError())); dy+=0.045; 
+    }
   }
 }
 
@@ -259,7 +289,7 @@ void printChi2(RooWorkspace& myws, TPad* Pad, RooHist* hpull, string varLabel, s
   Pad->cd();
   TLatex *t = new TLatex(); t->SetNDC(); t->SetTextSize(0.1); 
   unsigned int nbins = hpull->GetN();
-  TH1 *hdatact = myws.data(dataLabel.c_str())->createHistogram(Form("hdatact_%s", dataLabel.c_str()), *myws.var(varLabel.c_str()), Binning(nbins));
+  TH1 *hdatact = myws.data(dataLabel.c_str())->createHistogram("hdatact", *myws.var(varLabel.c_str()), Binning(nbins));
   unsigned int nFitPar = myws.pdf(pdfLabel.c_str())->getParameters(*myws.data(dataLabel.c_str()))->selectByAttrib("Constant",kFALSE)->getSize(); 
   double* ypulls = hpull->GetY();
   unsigned int nFullBins = 0;
@@ -271,4 +301,5 @@ void printChi2(RooWorkspace& myws, TPad* Pad, RooHist* hpull, string varLabel, s
   }
   ndof = nFullBins - nFitPar;
   t->DrawLatex(0.7, 0.85, Form("#chi^{2}/ndof = %.0f / %d", chi2, ndof));
+  delete hdatact;
 };

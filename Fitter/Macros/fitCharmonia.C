@@ -8,9 +8,9 @@
 bool importDataset(RooWorkspace& myws, RooWorkspace& inputWS, struct KinCuts cut, string label);
 bool setModel( struct OniaModel& model, map<string, string>  parIni, bool isPbPb, bool inExcStat);
 
-void SetOptions(struct InputOpt* opt, bool inExcStat = false, bool doSimulFit = false);
+void setOptions(struct InputOpt* opt, bool inExcStat = false, bool doSimulFit = false);
 
-bool isFitAlreadyFound(RooArgSet *newpars, string outputDir, string plotLabel, struct InputOpt opt, struct KinCuts cut, bool isPbPb, bool isData=true);
+bool isFitAlreadyFound(RooArgSet *newpars, string outputDir, string plotLabel, string TAG, struct KinCuts cut, bool isPbPb);
 bool compareSnapshots(RooArgSet *pars1, const RooArgSet *pars2);
 
 bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the input RooDatasets
@@ -38,7 +38,7 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
     parIni["RFrac2Svs1S_PP"]       = Form("%s[%.4f,%.4f,%.4f]", "RFrac2Svs1S_PP", 0.26, 0.0, 1.0);
   }
 
-  struct InputOpt opt; SetOptions(&opt, inExcStat, doSimulFit);
+  struct InputOpt opt; setOptions(&opt, inExcStat, doSimulFit);
   
   struct OniaModel model;
   RooWorkspace     myws("workspace", "local workspace");
@@ -65,9 +65,9 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
     // check if we have already done this fit. If yes, do nothing and return true.
     bool found = true;
     RooArgSet *newpars = myws.pdf("pdfMASS_Tot_PbPb")->getParameters(*(myws.var("invMass")));
-    found = found && isFitAlreadyFound(newpars, outputDir, parIni["Model_Bkg_PbPb"], opt, cut, true);
+    found = found && isFitAlreadyFound(newpars, outputDir, parIni["Model_Bkg_PbPb"], TAG, cut, true);
     newpars = myws.pdf("pdfMASS_Tot_PP")->getParameters(*(myws.var("invMass")));
-    found = found && isFitAlreadyFound(newpars, outputDir, parIni["Model_Bkg_PP"], opt, cut, false);
+    found = found && isFitAlreadyFound(newpars, outputDir, parIni["Model_Bkg_PP"], TAG, cut, false);
     if (found) {
        cout << "[INFO] This fit was already done, so I'll just go to the next one." << endl;
        return true;
@@ -82,10 +82,11 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
     RooSimultaneous* simPdf = new RooSimultaneous("simPdf", "simultaneous pdf", *sample);
     simPdf->addPdf(*myws.pdf("pdfMASS_Tot_PbPb"), "PbPb"); simPdf->addPdf(*myws.pdf("pdfMASS_Tot_PP"), "PP"); 
     // Do the simultaneous fit
-    RooFitResult* fitMass = simPdf->fitTo(*combData, SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(8), Range("MassWindow")); 
+    RooFitResult* fitMass = simPdf->fitTo(*combData, SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(32), Range("MassWindow")); 
     // Draw the mass plots
-    drawMassPlot(myws, outputDir, parIni["Model_Bkg_PbPb"], opt, cut, true, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
-    drawMassPlot(myws, outputDir, parIni["Model_Bkg_PP"], opt, cut, false, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
+
+    drawMassPlot(myws, outputDir, parIni["Model_Bkg_PbPb"], TAG, opt, cut, true, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
+    drawMassPlot(myws, outputDir, parIni["Model_Bkg_PP"], TAG, opt, cut, false, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
     
   } else {
      if (isPbPb) {
@@ -94,30 +95,30 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
 
         // check if we have already done this fit. If yes, do nothing and return true.
         RooArgSet *newpars = myws.pdf("pdfMASS_Tot_PbPb")->getParameters(*(myws.var("invMass")));
-        bool found =  isFitAlreadyFound(newpars, outputDir, parIni["Model_Bkg_PbPb"], opt, cut, true);
+        bool found =  isFitAlreadyFound(newpars, outputDir, parIni["Model_Bkg_PbPb"], TAG, cut, true);
         if (found) {
            cout << "[INFO] This fit was already done, so I'll just go to the next one." << endl;
            return true;
         }
 
         // Fit the Datasets
-        myws.pdf("pdfMASS_Tot_PbPb")->fitTo(*myws.data("dOS_DATA_PbPb"), SumW2Error(kTRUE), Extended(kTRUE), Range("MassWindow"), NumCPU(8));
-        drawMassPlot(myws, outputDir, parIni["Model_Bkg_PbPb"],  opt, cut, true, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
+        myws.pdf("pdfMASS_Tot_PbPb")->fitTo(*myws.data("dOS_DATA_PbPb"), SumW2Error(kTRUE), Extended(kTRUE), Range("MassWindow"), NumCPU(32));
+        drawMassPlot(myws, outputDir, parIni["Model_Bkg_PbPb"], TAG,  opt, cut, true, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
      } else {
         // Build the Fit Model
         if (!buildCharmoniaMassModel(myws, opt, model.PP, parIni, false)) { return false; }
 
         // check if we have already done this fit. If yes, do nothing and return true.
         RooArgSet *newpars = myws.pdf("pdfMASS_Tot_PP")->getParameters(*(myws.var("invMass")));
-        bool found =  isFitAlreadyFound(newpars, outputDir, parIni["Model_Bkg_PP"], opt, cut, false);
+        bool found =  isFitAlreadyFound(newpars, outputDir, parIni["Model_Bkg_PP"], TAG, cut, false);
         if (found) {
            cout << "[INFO] This fit was already done, so I'll just go to the next one." << endl;
            return true;
         }
 
         // Fit the Datasets
-        myws.pdf("pdfMASS_Tot_PP")->fitTo(*myws.data("dOS_DATA_PP"), SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(8), Range("MassWindow"));
-        drawMassPlot(myws, outputDir, parIni["Model_Bkg_PP"], opt, cut, false, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
+        myws.pdf("pdfMASS_Tot_PP")->fitTo(*myws.data("dOS_DATA_PP"), SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(32), Range("MassWindow"));
+        drawMassPlot(myws, outputDir, parIni["Model_Bkg_PP"], TAG, opt, cut, false, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
      }
   }
 
@@ -223,7 +224,7 @@ bool importDataset(RooWorkspace& myws, RooWorkspace& inputWS, struct KinCuts cut
   return true;
 };
 
-void SetOptions(struct InputOpt* opt, bool inExcStat, bool doSimulFit) 
+void setOptions(struct InputOpt* opt, bool inExcStat, bool doSimulFit) 
 {
   opt->inExcStat        = inExcStat; 
   opt->doSimulFit       = doSimulFit;
@@ -234,27 +235,29 @@ void SetOptions(struct InputOpt* opt, bool inExcStat, bool doSimulFit)
   return;
 };
 
-bool isFitAlreadyFound(RooArgSet *newpars, string outputDir, string plotLabel, struct InputOpt opt, struct KinCuts cut, bool isPbPb, bool isData) {
-   TFile *file = new TFile(Form("%sresult/FIT_DATA_%s_%sPrompt_Bkg_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d_%d_%d.root", outputDir.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End, opt.PbPb.RunNb.Start, opt.PbPb.RunNb.End));
-   if (!file) return false;
+bool isFitAlreadyFound(RooArgSet *newpars, string outputDir, string plotLabel, string TAG, struct KinCuts cut, bool isPbPb) {
+  TFile *file = new TFile(Form("%sresult/%s/FIT_%s_%s_%s_Bkg_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.root", outputDir.c_str(), TAG.c_str(), TAG.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End));
+  if (!file) return false;
 
-   RooWorkspace *ws = (RooWorkspace*) file->Get("workspace");
-   if (!ws) return false;
+  RooWorkspace *ws = (RooWorkspace*) file->Get("workspace");
+  if (!ws) return false;
 
-   const RooArgSet *params = ws->getSnapshot(Form("pdfMASS_Tot_%s_parIni", (isPbPb?"PbPb":"PP")));
-   if (!params) return false;
-
-   return compareSnapshots(newpars, params);
+  const RooArgSet *params = ws->getSnapshot(Form("pdfMASS_Tot_%s_parIni", (isPbPb?"PbPb":"PP")));
+  if (!params) return false;
+  
+  return compareSnapshots(newpars, params);
 }
 
 bool compareSnapshots(RooArgSet *pars1, const RooArgSet *pars2) {
-   TIterator* parIt = pars1->createIterator(); 
+  TIterator* parIt = pars1->createIterator(); 
 
-   for (RooRealVar* it = (RooRealVar*)parIt->Next(); it!=NULL; it = (RooRealVar*)parIt->Next() ) {
-      double val = pars2->getRealValue(it->GetName(),-1e99);
-      if (val==-1e99) return false;          // the parameter was not found!
-      if (val != it->getVal()) return false; // the parameter was found, but with a different value!
-   }
+  for (RooRealVar* it = (RooRealVar*)parIt->Next(); it!=NULL; it = (RooRealVar*)parIt->Next() ) {
+    double val = pars2->getRealValue(it->GetName(),-1e99);
+    if (val==-1e99) return false;          // the parameter was not found!
+    if (val != it->getVal()) return false; // the parameter was found, but with a different value!
+    if ( ((RooRealVar&)(*pars2)[it->GetName()]).getMin() != it->getMin() ) return false; // the parameter has different lower limit
+    if ( ((RooRealVar&)(*pars2)[it->GetName()]).getMax() != it->getMax() ) return false; // the parameter has different upper limit
+  }
 
-   return true;
+  return true;
 }
