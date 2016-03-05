@@ -29,6 +29,9 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
                    int numCores     = 2           // Number of cores used for fitting
 		   )  
 {
+
+  int maxFitAttempts = 3;
+
   if (inExcStat==false) { 
     doSimulFit = false; 
     cut.dMuon.M.Min = 2.6;
@@ -91,10 +94,13 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
 					   );
     RooSimultaneous* simPdf = new RooSimultaneous("simPdf", "simultaneous pdf", *sample);
     simPdf->addPdf(*myws.pdf("pdfMASS_Tot_PbPb"), "PbPb"); simPdf->addPdf(*myws.pdf("pdfMASS_Tot_PP"), "PP"); 
-
-    // Do the simultaneous fit
-    RooFitResult* fitMass = simPdf->fitTo(*combData, SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(numCores), Range("MassWindow")); 
-
+    
+    for (int i=0; i<maxFitAttempts; i++) {
+      // Do the simultaneous fit
+      if (simPdf->fitTo(*combData, SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(numCores), Range("MassWindow"))) break;
+      else cout << "[INFO] Simultaneous fit failed, let's try again!" << endl 
+    } 
+      
     // Draw the mass plots
     drawMassPlot(myws, outputDir, plotLabelPbPb, TAG, opt, cut, true, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
     drawMassPlot(myws, outputDir, plotLabelPP, TAG, opt, cut, false, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
@@ -112,8 +118,11 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
          return true;
        }
 
-       // Fit the Datasets
-       myws.pdf("pdfMASS_Tot_PbPb")->fitTo(*myws.data("dOS_DATA_PbPb"), SumW2Error(kTRUE), Extended(kTRUE), Range("MassWindow"), NumCPU(numCores));
+       for (int i=0; i<maxFitAttempts; i++) {
+         // Fit the Datasets
+         if (myws.pdf("pdfMASS_Tot_PbPb")->fitTo(*myws.data("dOS_DATA_PbPb"), SumW2Error(kTRUE), Extended(kTRUE), Range("MassWindow"), NumCPU(numCores))) break;      
+         else cout << "[INFO] Fit failed, let's try again!" << endl 
+       } 
 
        // Draw the mass plot
        drawMassPlot(myws, outputDir, plotLabelPbPb, TAG,  opt, cut, true, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
@@ -130,8 +139,11 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
          return true;
        }
 
-       // Fit the Datasets
-       myws.pdf("pdfMASS_Tot_PP")->fitTo(*myws.data("dOS_DATA_PP"), SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(numCores), Range("MassWindow"));
+       for (int i=0; i<maxFitAttempts; i++) {
+         // Fit the Datasets
+         if (myws.pdf("pdfMASS_Tot_PP")->fitTo(*myws.data("dOS_DATA_PP"), SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(numCores), Range("MassWindow"))) break;
+         else cout << "[INFO] Fit failed, let's try again!" << endl 
+       } 
 
        // Draw the mass plot
        drawMassPlot(myws, outputDir, plotLabelPP, TAG, opt, cut, false, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
