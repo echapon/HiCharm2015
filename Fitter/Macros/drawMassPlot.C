@@ -8,6 +8,7 @@ void printChi2(RooWorkspace& myws, TPad* Pad, RooHist* hpull, string varLabel, s
 
 void drawMassPlot(RooWorkspace& myws,   // Local workspace
                   string outputDir,     // Output directory
+                  string plotSigLabel,  // Plot label, i.e. <Signal_Model_NAME>
                   string plotLabel,     // Plot label, i.e. <Model_NAME>
                   string TAG,           // Specifies the type of datasets: i.e, DATA, MCJPSINP, ...
 		  struct InputOpt opt,  // Variable with run information (kept for legacy purpose)
@@ -214,14 +215,14 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
   pad2->Update();
   
   gSystem->mkdir(Form("%splot/%s/root/", outputDir.c_str(), TAG.c_str()), kTRUE); 
-  cFig->SaveAs(Form("%splot/%s/root/%s_%s_%s_Bkg_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.root", outputDir.c_str(), TAG.c_str(), TAG.c_str(),  "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End));
+  cFig->SaveAs(Form("%splot/%s/root/%s_%s_%s_Sig_%s_Bkg_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.root", outputDir.c_str(), TAG.c_str(), TAG.c_str(),  "Psi2SJpsi", (isPbPb?"PbPb":"PP"),plotSigLabel.c_str(), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End));
   gSystem->mkdir(Form("%splot/%s/png/", outputDir.c_str(), TAG.c_str()), kTRUE);
-  cFig->SaveAs(Form("%splot/%s/png/%s_%s_%s_Bkg_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.png", outputDir.c_str(), TAG.c_str(), TAG.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End));
+  cFig->SaveAs(Form("%splot/%s/png/%s_%s_%s_Sig_%s_Bkg_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.png", outputDir.c_str(), TAG.c_str(), TAG.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"),plotSigLabel.c_str(), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End));
   gSystem->mkdir(Form("%splot/%s/pdf/", outputDir.c_str(), TAG.c_str()), kTRUE);
-  cFig->SaveAs(Form("%splot/%s/pdf/%s_%s_%s_Bkg_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.pdf", outputDir.c_str(), TAG.c_str(), TAG.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End));
+  cFig->SaveAs(Form("%splot/%s/pdf/%s_%s_%s_Sig_%s_Bkg_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.pdf", outputDir.c_str(), TAG.c_str(), TAG.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"),plotSigLabel.c_str(), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End));
     
   gSystem->mkdir(Form("%sresult/%s/", outputDir.c_str(), TAG.c_str()), kTRUE); 
-  TFile *file = new TFile(Form("%sresult/%s/FIT_%s_%s_%s_Bkg_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.root", outputDir.c_str(), TAG.c_str(), TAG.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End), "RECREATE");
+  TFile *file = new TFile(Form("%sresult/%s/FIT_%s_%s_%s_Sig_%s_Bkg_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.root", outputDir.c_str(), TAG.c_str(), TAG.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"),plotSigLabel.c_str(), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End), "RECREATE");
   if (!file) { 
     cout << "[ERROR] Output root file with fit results could not be created!" << endl; 
   } else {

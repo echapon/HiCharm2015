@@ -12,14 +12,14 @@ bins=[
         ]
 
 # provide the signal model for pp and PbPb
-fcn_signal_pp="DoubleCrystalBall"
-fcn_signal_pbpb="DoubleCrystalBall"
-fcn_signal2_pp="DoubleCrystalBall"
-fcn_signal2_pbpb="DoubleCrystalBall"
+fcn_signal_pp=["DoubleCrystalBall","GaussianAndCrystalBall"]
+fcn_signal_pbpb=["DoubleCrystalBall","GaussianAndCrystalBall"]
+fcn_signal2_pp=["DoubleCrystalBall","GaussianAndCrystalBall"]
+fcn_signal2_pbpb=["DoubleCrystalBall","GaussianAndCrystalBall"]
 
 # provide the background model for pp and PbPb
-fcn_bkg_pp="SecondOrderChebychev"
-fcn_bkg_pbpb="SecondOrderChebychev"
+fcn_bkg_pp=["SecondOrderChebychev","SecondOrderPolynomial"]
+fcn_bkg_pbpb=["SecondOrderChebychev","SecondOrderPolynomial"]
 
 # provide the name of the parameters of your models
 parnames_signal_pp="N_Jpsi_PP;sigma1_Jpsi_PP;sigma2_Jpsi_PP;m_Jpsi_PP;alpha_Jpsi_PP;n_Jpsi_PP;f_Jpsi_PP"
@@ -58,37 +58,43 @@ os.mkdir(name)
 file_sig_pp = open(name + '/InitialParam_MASS_JPSI_PP.csv', 'w')
 file_sig_pp.write('rap;pt;cent;Model_Jpsi_PP;' + parnames_signal_pp + '\n')
 for strbin in bins:
-    file_sig_pp.write(strbin + ';' + fcn_signal_pp + ';' + parini_signal_pp + '\n')
+  for strsig in fcn_signal_pp:
+    file_sig_pp.write(strbin + ';' + strsig + ';' + parini_signal_pp + '\n')
 
 # signal, pbpb
 file_sig_pbpb = open(name + '/InitialParam_MASS_JPSI_PbPb.csv', 'w')
 file_sig_pbpb.write('rap;pt;cent;Model_Jpsi_PbPb;' + parnames_signal_pbpb + '\n')
 for strbin in bins:
-    file_sig_pbpb.write(strbin + ';' + fcn_signal_pbpb + ';' + parini_signal_pbpb + '\n')
+  for strsig in fcn_signal_pbpb:
+    file_sig_pbpb.write(strbin + ';' + strsig + ';' + parini_signal_pbpb + '\n')
 
 # signal2, pp
 file_sig_pp = open(name + '/InitialParam_MASS_PSI2S_PP.csv', 'w')
 file_sig_pp.write('rap;pt;cent;Model_Psi2S_PP;' + parnames_signal2_pp + '\n')
 for strbin in bins:
-    file_sig_pp.write(strbin + ';' + fcn_signal2_pp + ';' + parini_signal2_pp + '\n')
+  for strsig in fcn_signal2_pp:
+    file_sig_pp.write(strbin + ';' + strsig + ';' + parini_signal2_pp + '\n')
 
 # signal2, pbpb
 file_sig_pbpb = open(name + '/InitialParam_MASS_PSI2S_PbPb.csv', 'w')
 file_sig_pbpb.write('rap;pt;cent;Model_Psi2S_PbPb;' + parnames_signal2_pbpb + '\n')
 for strbin in bins:
-    file_sig_pbpb.write(strbin + ';' + fcn_signal2_pbpb + ';' + parini_signal2_pbpb + '\n')
+  for strsig in fcn_signal2_pbpb:
+    file_sig_pbpb.write(strbin + ';' + strsig + ';' + parini_signal2_pbpb + '\n')
 
 # bkg, pp
 file_sig_pp = open(name + '/InitialParam_MASS_BKG_PP.csv', 'w')
 file_sig_pp.write('rap;pt;cent;Model_Bkg_PP;' + parnames_bkg_pp + '\n')
 for strbin in bins:
-    file_sig_pp.write(strbin + ';' + fcn_bkg_pp + ';' + parini_bkg_pp + '\n')
+  for strbkg in fcn_bkg_pp:
+    file_sig_pp.write(strbin + ';' + strbkg + ';' + parini_bkg_pp + '\n')
 
 # bkg, pbpb
 file_sig_pbpb = open(name + '/InitialParam_MASS_BKG_PbPb.csv', 'w')
 file_sig_pbpb.write('rap;pt;cent;Model_Bkg_PbPb;' + parnames_bkg_pbpb + '\n')
 for strbin in bins:
-    file_sig_pbpb.write(strbin + ';' + fcn_bkg_pbpb + ';' + parini_bkg_pbpb + '\n')
+  for strbkg in fcn_bkg_pbpb:
+    file_sig_pbpb.write(strbin + ';' + strbkg + ';' + parini_bkg_pbpb + '\n')
 
 # finally, copy the list of input files
 copyfile('InputTrees.txt',name+'/InputTrees.txt')

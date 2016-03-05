@@ -10,7 +10,7 @@ bool setModel( struct OniaModel& model, map<string, string>  parIni, bool isPbPb
 
 void setOptions(struct InputOpt* opt, bool inExcStat = false, bool doSimulFit = false);
 
-bool isFitAlreadyFound(RooArgSet *newpars, string outputDir, string plotLabel, string TAG, struct KinCuts cut, bool isPbPb);
+bool isFitAlreadyFound(RooArgSet *newpars, string outputDir, string plotSigLabel, string plotLabel, string TAG, struct KinCuts cut, bool isPbPb);
 bool compareSnapshots(RooArgSet *pars1, const RooArgSet *pars2);
 
 bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the input RooDatasets
@@ -66,9 +66,9 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
     // check if we have already done this fit. If yes, do nothing and return true.
     bool found = true;
     RooArgSet *newpars = myws.pdf("pdfMASS_Tot_PbPb")->getParameters(*(myws.var("invMass")));
-    found = found && isFitAlreadyFound(newpars, outputDir, parIni["Model_Bkg_PbPb"], TAG, cut, true);
+    found = found && isFitAlreadyFound(newpars, outputDir, parIni["Model_Jpsi_PbPb"], parIni["Model_Bkg_PbPb"], TAG, cut, true);
     newpars = myws.pdf("pdfMASS_Tot_PP")->getParameters(*(myws.var("invMass")));
-    found = found && isFitAlreadyFound(newpars, outputDir, parIni["Model_Bkg_PP"], TAG, cut, false);
+    found = found && isFitAlreadyFound(newpars, outputDir, parIni["Model_Jpsi_PP"], parIni["Model_Bkg_PP"], TAG, cut, false);
     if (found) {
        cout << "[INFO] This fit was already done, so I'll just go to the next one." << endl;
        return true;
@@ -86,8 +86,8 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
     RooFitResult* fitMass = simPdf->fitTo(*combData, SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(numCores), Range("MassWindow")); 
     // Draw the mass plots
 
-    drawMassPlot(myws, outputDir, parIni["Model_Bkg_PbPb"], TAG, opt, cut, true, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
-    drawMassPlot(myws, outputDir, parIni["Model_Bkg_PP"], TAG, opt, cut, false, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
+    drawMassPlot(myws, outputDir,parIni["Model_Jpsi_PbPb"], parIni["Model_Bkg_PbPb"], TAG, opt, cut, true, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
+    drawMassPlot(myws, outputDir,parIni["Model_Jpsi_PP"], parIni["Model_Bkg_PP"], TAG, opt, cut, false, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
     
   } else {
      if (isPbPb) {
@@ -96,7 +96,7 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
 
         // check if we have already done this fit. If yes, do nothing and return true.
         RooArgSet *newpars = myws.pdf("pdfMASS_Tot_PbPb")->getParameters(*(myws.var("invMass")));
-        bool found =  isFitAlreadyFound(newpars, outputDir, parIni["Model_Bkg_PbPb"], TAG, cut, true);
+        bool found =  isFitAlreadyFound(newpars, outputDir, parIni["Model_Jpsi_PbPb"], parIni["Model_Bkg_PbPb"], TAG, cut, true);
         if (found) {
            cout << "[INFO] This fit was already done, so I'll just go to the next one." << endl;
            return true;
@@ -104,14 +104,14 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
 
         // Fit the Datasets
         myws.pdf("pdfMASS_Tot_PbPb")->fitTo(*myws.data("dOS_DATA_PbPb"), SumW2Error(kTRUE), Extended(kTRUE), Range("MassWindow"), NumCPU(numCores));
-        drawMassPlot(myws, outputDir, parIni["Model_Bkg_PbPb"], TAG,  opt, cut, true, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
+        drawMassPlot(myws, outputDir,parIni["Model_Jpsi_PbPb"], parIni["Model_Bkg_PbPb"], TAG,  opt, cut, true, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
      } else {
         // Build the Fit Model
         if (!buildCharmoniaMassModel(myws, opt, model.PP, parIni, false)) { return false; }
 
         // check if we have already done this fit. If yes, do nothing and return true.
         RooArgSet *newpars = myws.pdf("pdfMASS_Tot_PP")->getParameters(*(myws.var("invMass")));
-        bool found =  isFitAlreadyFound(newpars, outputDir, parIni["Model_Bkg_PP"], TAG, cut, false);
+        bool found =  isFitAlreadyFound(newpars, outputDir, parIni["Model_Jpsi_PP"], parIni["Model_Bkg_PP"], TAG, cut, false);
         if (found) {
            cout << "[INFO] This fit was already done, so I'll just go to the next one." << endl;
            return true;
@@ -119,7 +119,7 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
 
         // Fit the Datasets
         myws.pdf("pdfMASS_Tot_PP")->fitTo(*myws.data("dOS_DATA_PP"), SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(numCores), Range("MassWindow"));
-        drawMassPlot(myws, outputDir, parIni["Model_Bkg_PP"], TAG, opt, cut, false, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
+        drawMassPlot(myws, outputDir,parIni["Model_Jpsi_PP"], parIni["Model_Bkg_PP"], TAG, opt, cut, false, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
      }
   }
 
@@ -148,20 +148,20 @@ bool setModel( struct OniaModel& model, map<string, string>  parIni, bool isPbPb
     }
   } else {
     if (parIni.count("Model_Bkg_PP")>0) {
-      model.PP.Bkg.Mass = MassModelDictionary[parIni["Model_Bkg_PbPb"]];
+      model.PP.Bkg.Mass = MassModelDictionary[parIni["Model_Bkg_PP"]];
     } else { 
-      cout << "[ERROR] Background mass model for PbPb was not found in the initial parameters!" << endl; return false;
+      cout << "[ERROR] Background mass model for PP was not found in the initial parameters!" << endl; return false;
     }
-    if (parIni.count("Model_Jpsi_PbPb")>0) {
-      model.PP.Jpsi.Mass = MassModelDictionary[parIni["Model_Jpsi_PbPb"]];
+    if (parIni.count("Model_Jpsi_PP")>0) {
+      model.PP.Jpsi.Mass = MassModelDictionary[parIni["Model_Jpsi_PP"]];
     } else { 
-      cout << "[ERROR] Jpsi mass model for PbPb was not found in the initial parameters!" << endl; return false;
+      cout << "[ERROR] Jpsi mass model for PP was not found in the initial parameters!" << endl; return false;
     }
     if (inExcStat) {
-      if (parIni.count("Model_Psi2S_PbPb")>0) {
-	model.PP.Psi2S.Mass = MassModelDictionary[parIni["Model_Psi2S_PbPb"]];
+      if (parIni.count("Model_Psi2S_PP")>0) {
+	model.PP.Psi2S.Mass = MassModelDictionary[parIni["Model_Psi2S_PP"]];
       } else { 
-	cout << "[ERROR] psi(2S) mass model for PbPb was not found in the initial parameters!" << endl; return false;
+	cout << "[ERROR] psi(2S) mass model for PP was not found in the initial parameters!" << endl; return false;
       }
     }
   }
@@ -235,8 +235,8 @@ void setOptions(struct InputOpt* opt, bool inExcStat, bool doSimulFit)
   return;
 };
 
-bool isFitAlreadyFound(RooArgSet *newpars, string outputDir, string plotLabel, string TAG, struct KinCuts cut, bool isPbPb) {
-  TFile *file = new TFile(Form("%sresult/%s/FIT_%s_%s_%s_Bkg_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.root", outputDir.c_str(), TAG.c_str(), TAG.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End));
+bool isFitAlreadyFound(RooArgSet *newpars, string outputDir, string plotSigLabel, string plotLabel, string TAG, struct KinCuts cut, bool isPbPb) {
+  TFile *file = new TFile(Form("%sresult/%s/FIT_%s_%s_%s_Sig_%s_Bkg_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.root", outputDir.c_str(), TAG.c_str(), TAG.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotSigLabel.c_str(), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End));
   if (!file) return false;
 
   RooWorkspace *ws = (RooWorkspace*) file->Get("workspace");
