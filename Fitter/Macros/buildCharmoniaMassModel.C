@@ -269,7 +269,7 @@ bool addSignalMassModel(RooWorkspace& ws, string object, MassModel model, map<st
 	cout << Form("[ERROR] Initial parameters where not found for %s Gaussian and Crystal Ball Model in %s", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; return false;
       }  
       ws.factory(Form("SUM::%s(%s*%s, %s)", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
-		      parIni[Form("f%s%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(),
+		      parIni[Form("f_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(),
 		      Form("Gaussian::%s(%s, %s, %s)", Form("pdfMASSG1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
 			   parIni[Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(), 
 			   parIni[Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
@@ -277,8 +277,8 @@ bool addSignalMassModel(RooWorkspace& ws, string object, MassModel model, map<st
 		      Form("CBShape::%s(%s, %s, %s, %s, %s)", Form("pdfMASSCB1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
 			   Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
 			   parIni[Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(),
-			   Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
-			   Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
+			   parIni[Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(),
+			   parIni[Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
 			   )
 		      ));   
       cout << Form("[INFO] %s Gaussian and Crystal Ball PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break;
