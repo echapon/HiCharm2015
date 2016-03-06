@@ -30,8 +30,8 @@ parnames_bkg_pp="N_Bkg_PP;lambda1_Bkg_PP;lambda2_Bkg_PP;lambda3_Bkg_PP;lambda4_B
 parnames_bkg_pbpb="N_Bkg_PbPb;lambda1_Bkg_PbPb;lambda2_Bkg_PbPb;lambda3_Bkg_PbPb;lambda4_Bkg_PbPb"
 
 # provide the initial parameters
-parini_signal_pp="[ 0 , 250000 ];[ 0.04 , 0.01 , 0.09 ];[ 0.02 , 0.01 , 0.07 ];[ 3.096 , 2.996 , 3.196 ];[ 2.21 , 0.5 , 3000.0 ];[ 2.0 , 0.5 , 3000.0 ];[ 0.3 , 0.0 , 1.0 ]"
-parini_signal_pbpb="[ 0 , 250000 ];[ 0.04 , 0.01 , 0.09 ];[ 0.02 , 0.01 , 0.07 ];[ 3.096 , 2.996 , 3.196 ];[ 2.21 , 0.5 , 3000.0 ];[ 2.0 , 0.5 , 3000.0 ];[ 0.3 , 0.0 , 1.0 ]"
+parini_signal_pp="[ 0 , 250000 ];[ 0.04 , 0.01 , 0.09 ];[ 0.02 , 0.01 , 0.07 ];[ 3.096 , 2.996 , 3.196 ];[ 2.21 , 0.5 , 10.0 ];[ 2.0 , 0.5 , 20. ];[ 0.3 , 0.0 , 1.0 ]"
+parini_signal_pbpb="[ 0 , 250000 ];[ 0.04 , 0.01 , 0.09 ];[ 0.02 , 0.01 , 0.07 ];[ 3.096 , 2.996 , 3.196 ];[ 2.21 , 0.5 , 10.0 ];[ 2.0 , 0.5 , 20. ];[ 0.3 , 0.0 , 1.0 ]"
 parini_signal2_pp=";;;;;;"
 parini_signal2_pbpb=";;;;;;"
 parini_bkg_pp="[0,300000];[0.05,-1.0,1.0];[0.05,-1.0,1.0];;"
