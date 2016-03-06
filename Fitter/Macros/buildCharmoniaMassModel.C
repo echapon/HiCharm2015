@@ -2,7 +2,7 @@
 
 void fixPsi2StoJpsi(map<string, string>& parIni, bool isPbPb);
 void fixPbPbtoPP(map<string, string>& parIni);
-void setDefaultParameters(map<string, string> &parIni, bool isPbPb);
+void setDefaultParameters(map<string, string> &parIni, bool isPbPb, int numEntries);
 bool addSignalMassModel(RooWorkspace& ws, string object, MassModel model, map<string,string> parIni, bool isPbPb); 
 bool addBackgroundMassModel(RooWorkspace& ws, string object, MassModel model, map<string,string> parIni, bool isPbPb);
 bool defineCtauResolModel(RooWorkspace& ws, CtauModel model, map<string,string> parIni, bool isPbPb); 
@@ -10,34 +10,50 @@ bool addSignalCtauModel(RooWorkspace& ws, string object, CtauModel model, map<st
 bool addBackgroundCtauModel(RooWorkspace& ws, string object, CtauModel model, map<string,string> parIni, bool isPbPb);
 
 
-bool buildCharmoniaMassModel(RooWorkspace& ws, struct InputOpt opt, struct CharmModel model, map<string, string>  parIni, bool isPbPb)
+bool buildCharmoniaMassModel(RooWorkspace& ws, struct InputOpt opt, struct CharmModel model, map<string, string>  parIni, bool isPbPb, int numEntries)
 {
 
   // If the initial parameters are empty, set defaul parameter values
-  if (parIni.size()==0) { setDefaultParameters(parIni, isPbPb); }
+  setDefaultParameters(parIni, isPbPb, numEntries);
+
   // Fix all psi2S parameters to jpsi
   fixPsi2StoJpsi(parIni, isPbPb);
 
+  // Let's define the single and double ratio variables
   if (opt.inExcStat) {
     if (opt.doSimulFit && isPbPb) {
+
       // Fix mean, alpha and n parameters in PbPb to PP values 
       fixPbPbtoPP(parIni);
+
+      // create parameters related to the double ratio
+      ws.factory( parIni["RFrac2Svs1S_PbPbvsPP"].c_str() );                     // Double Ratio
+      ws.factory( parIni[Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP"))].c_str() );    // Number of Jpsi in PbPb
+
       // Asign NPsi2S(PbPb) = DoubleRatio(PbPb/PP) * SingleRatioPP(Psi2S/Jpsi) * NJpsi(PbPb) 
       ws.factory(Form("RooFormulaVar::%s('@0*@1*@2',{%s,%s,%s})", "N_Psi2S_PbPb", 
-		      parIni["RFrac2Svs1S_PbPbvsPP"].c_str(), 
+		      "RFrac2Svs1S_PbPbvsPP", 
 		      "RFrac2Svs1S_PP", 
-		      parIni[Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP"))].c_str() 
+		      Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP"))
 		      )); 
       ws.var("RFrac2Svs1S_PbPbvsPP")->setConstant(kFALSE);
+
     } else {
+
+      // create parameters related to the double ratio
+      ws.factory( parIni[Form("RFrac2Svs1S_%s", (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP"))].c_str() );
 
       // Asign N(Psi2S) = SingleRatio(Psi2S/Jpsi) * N(Jpsi)
       ws.factory(Form("RooFormulaVar::%s('@0*@1',{%s,%s})", Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP")), 
-		      parIni[Form("RFrac2Svs1S_%s", (isPbPb?"PbPb":"PP"))].c_str(), 
-		      parIni[Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP"))].c_str() 
+		      Form("RFrac2Svs1S_%s", (isPbPb?"PbPb":"PP")),
+		      Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP")) 
 		      )); 
       ws.var(Form("RFrac2Svs1S_%s", (isPbPb?"PbPb":"PP")))->setConstant(kFALSE);
+
     }
+    
+    // As we have already declared the Number of Psi2S and Jpsi before, just use their names in their PDFs
     parIni[Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP"));
     parIni[Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP")); 
   }
@@ -87,104 +103,215 @@ bool addBackgroundMassModel(RooWorkspace& ws, string object, MassModel model, ma
   switch(model) 
     {  
     case (MassModel::FirstOrderPolynomial): 
-      if (!( parIni.count(Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) )) { 
+
+      // check that all input parameters are defined
+      if (!( 
+            parIni.count(Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) 
+             )) { 
 	cout << Form("[ERROR] Initial parameters where not found for %s Background First Order Polynomial in %s", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; return false;
       } 
+
+      // create the variables for this model
+      ws.factory( parIni[Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+
+      // create the PDF
       ws.factory(Form("Polynomial::%s(%s, {%s})", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
-		      parIni[Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+		      Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
 		      ));
+      
       cout << Form("[INFO] %s Background 1st Order Polynomial PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break;
  
-    case (MassModel::SecondOrderPolynomial): 
-      if (!( parIni.count(Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && parIni.count(Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) )) { 
+    case (MassModel::SecondOrderPolynomial):
+
+      // check that all input parameters are defined 
+      if (!( 
+            parIni.count(Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) 
+             )) { 
 	cout << Form("[ERROR] Initial parameters where not found for %s Background Second Order Polynomial in %s", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; return false;
       } 
+
+      // create the variables for this model
+      ws.factory( parIni[Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+
+      // create the PDF
       ws.factory(Form("Polynomial::%s(%s, {%s, %s})", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
-		      parIni[Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(), 
-		      parIni[Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+		      Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
 		      ));
+
       cout << Form("[INFO] %s Background 2nd Order Polynomial PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break; 
 
-    case (MassModel::ThirdOrderPolynomial): 
-      if (!( parIni.count(Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && parIni.count(Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")))
-	     && parIni.count(Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) )) { 
+    case (MassModel::ThirdOrderPolynomial):
+
+      // check that all input parameters are defined 
+      if (!( 
+            parIni.count(Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) 
+             )) { 
 	cout << Form("[ERROR] Initial parameters where not found for %s Background Third Order Polynomial in %s", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; return false;
       } 
+
+      // create the variables for this model
+      ws.factory( parIni[Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() ); 
+      ws.factory( parIni[Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+
+      // create the PDF
       ws.factory(Form("Polynomial::%s(%s, {%s, %s, %s})", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
-		      parIni[Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(), 
-		      parIni[Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(), 
-		      parIni[Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+		      Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
 		      ));
+
       cout << Form("[INFO] %s Background 3rd Order Polynomial PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break; 
 
     case (MassModel::FourthOrderPolynomial): 
-      if (!( parIni.count(Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && parIni.count(Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) 
-	     && parIni.count(Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && parIni.count(Form("lambda4_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) )) { 
+
+      // check that all input parameters are defined 
+      if (!( 
+            parIni.count(Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("lambda4_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) 
+             )) { 
 	cout << Form("[ERROR] Initial parameters where not found for %s Background Fourth Order Polynomial in %s", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; return false;
       } 
+
+      // create the variables for this model
+      ws.factory( parIni[Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() ); 
+      ws.factory( parIni[Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("lambda4_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+
+      // create the PDF      
       ws.factory(Form("Polynomial::%s(%s, {%s, %s, %s, %s})", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
-		      parIni[Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(), 
-		      parIni[Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(), 
-		      parIni[Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(), 
-		      parIni[Form("lambda4_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+		      Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("lambda4_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
 		      ));
       cout << Form("[INFO] %s Background 4th Order Polynomial PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break; 
 
     case (MassModel::FirstOrderChebychev): 
-      if (!( parIni.count(Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) )) { 
+
+      // check that all input parameters are defined 
+      if (!( 
+            parIni.count(Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) 
+             )) { 
 	cout << Form("[ERROR] Initial parameters where not found for %s Background First Order Chebychev in %s", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; return false;
       } 
+
+      // create the variables for this model
+      ws.factory( parIni[Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+
+      // create the PDF           
       ws.factory(Form("Chebychev::%s(%s, {%s})", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
-		      parIni[Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+		      Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
 		      ));
+
       cout << Form("[INFO] %s Background 1st Order Chebychev PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break;
  
     case (MassModel::SecondOrderChebychev): 
-      if (!( parIni.count(Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && parIni.count(Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) )) { 
+
+      // check that all input parameters are defined 
+      if (!( 
+            parIni.count(Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) 
+             )) { 
 	cout << Form("[ERROR] Initial parameters where not found for %s Background Second Order Chebychev in %s", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; return false;
       } 
+
+      // create the variables for this model
+      ws.factory( parIni[Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+
+      // create the PDF           
       ws.factory(Form("Chebychev::%s(%s, {%s, %s})", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
-		      parIni[Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(), 
-		      parIni[Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+		      Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
 		      ));
+
       cout << Form("[INFO] %s Background 2nd Order Chebychev PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break; 
 
     case (MassModel::ThirdOrderChebychev): 
-      if (!( parIni.count(Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && parIni.count(Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")))
-	     && parIni.count(Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) )) { 
+
+      // check that all input parameters are defined 
+      if (!( 
+            parIni.count(Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) 
+             )) { 
 	cout << Form("[ERROR] Initial parameters where not found for %s Background Third Order Chebychev in %s", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; return false;
-      } 
+      }
+
+      // create the variables for this model 
+      ws.factory( parIni[Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+
+      // create the PDF                 
       ws.factory(Form("Chebychev::%s(%s, {%s, %s, %s})", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
-		      parIni[Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(), 
-		      parIni[Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(), 
-		      parIni[Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+		      Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
 		      ));
+
       cout << Form("[INFO] %s Background 3rd Order Polynomial PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break; 
 
     case (MassModel::FourthOrderChebychev): 
-      if (!( parIni.count(Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && parIni.count(Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) 
-	     && parIni.count(Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && parIni.count(Form("lambda4_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) )) { 
+
+      // check that all input parameters are defined 
+      if (!( 
+            parIni.count(Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("lambda4_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) 
+             )) { 
 	cout << Form("[ERROR] Initial parameters where not found for %s Background Fourth Order Chebychev in %s", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; return false;
-      } 
+      }
+
+      // create the variables for this model        
+      ws.factory( parIni[Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("lambda4_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+
+      // create the PDF                 
       ws.factory(Form("Polynomial::%s(%s, {%s, %s, %s, %s})", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
-		      parIni[Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(), 
-		      parIni[Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(), 
-		      parIni[Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(), 
-		      parIni[Form("lambda4_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+		      Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("lambda4_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
 		      ));
+
       cout << Form("[INFO] %s Background 4th Order Chebychev PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break; 
 
     case (MassModel::Exponential): 
-      if (!( parIni.count(Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) )) { 
+
+      // check that all input parameters are defined 
+      if (!( 
+            parIni.count(Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) 
+             )) { 
 	cout << Form("[ERROR] Initial parameters where not found for %s Background Exponential in %s", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; return false;
-      } 
+      }
+
+      // create the variables for this model        
+      ws.factory( parIni[Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+
+      // create the PDF                 
       ws.factory(Form("Exponential::%s(%s, %s)", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
-		      parIni[Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+		      Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
 		      ));
+
       cout << Form("[INFO] %s Background Exponential PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break;
       
     default :
-      cout<< Form("[ERROR] Selected Background Mass Model for %s has not been implemented", object.c_str()) << endl; return false;
+      
+      cout << "[ERROR] Selected Background Mass Model: " << parIni[Form("Model_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))] << " has not been implemented" << endl; return false;
+    
     }
   
   return true;
@@ -198,93 +325,185 @@ bool addSignalMassModel(RooWorkspace& ws, string object, MassModel model, map<st
   switch(model) 
     {    
     case (MassModel::SingleGaussian): 
-      if (!( parIni.count(Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && parIni.count(Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) )) { 
+      
+      // check that all input parameters are defined
+      if (!( 
+            parIni.count(Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) 
+             )) { 
 	cout << Form("[ERROR] Initial parameters where not found for %s Single Gaussian Model in %s", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; return false;
       }
+
+      // create the variables for this model        
+      ws.factory( parIni[Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+
+      // create the PDF                       
       ws.factory(Form("Gaussian::%s(%s, %s, %s)", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
-		      parIni[Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(), 
-		      parIni[Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+		      Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
 		      ));
     
       cout << Form("[INFO] %s Single Gaussian PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break;  
       
     case (MassModel::DoubleGaussian): 
-      if (!( parIni.count(Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && parIni.count(Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) 
-	     && parIni.count(Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && parIni.count(Form("f_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) )) { 
+
+      // check that all input parameters are defined
+      if (!( 
+            parIni.count(Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("f_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) 
+             )) { 
 	cout << Form("[ERROR] Initial parameters where not found for %s Double Gaussian Model in %s", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; return false; 
       }
+
+      // create the variables for this model              
+      ws.factory( parIni[Form("f_Jpsi_%s", (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() ); 
+      ws.factory( parIni[Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+
+      // create the two PDFs             
+      ws.factory(Form("Gaussian::%s(%s, %s, %s)", Form("pdfMASSG1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
+                      Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+                      Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
+                      ));    
+      ws.factory(Form("Gaussian::%s(%s, %s, %s)", Form("pdfMASSG2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
+                      Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+                      Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
+                      ));               
+
+      // Sum the PDFs to get the signal PDF
       ws.factory(Form("SUM::%s(%s*%s, %s)", Form("pdfMASS_Jpsi_%s", (isPbPb?"PbPb":"PP")),
-		      parIni[Form("f_Jpsi_%s", (isPbPb?"PbPb":"PP"))].c_str(),
-		      Form("Gaussian::%s(%s, %s, %s)", Form("pdfMASSG1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
-			   parIni[Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(), 
-			   parIni[Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
-			   ),
-		      Form("Gaussian::%s(%s, %s, %s)", Form("pdfMASSG2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
-			   Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
-			   parIni[Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
-			   )
+		      Form("f_Jpsi_%s", (isPbPb?"PbPb":"PP")),
+		      Form("pdfMASSG1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+		      Form("pdfMASSG2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
 		      ));
+
       cout << Form("[INFO] %s Double Gaussian PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break; 
 
     case (MassModel::SingleCrystalBall):  
-      if (!( parIni.count(Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && parIni.count(Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")))
-	     && parIni.count(Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && parIni.count(Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) )) {
+
+      // check that all input parameters are defined
+      if (!( 
+            parIni.count(Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) 
+             )) {
 	cout << Form("[ERROR] Initial parameters where not found for %s Single Crystal Ball Model in %s", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; return false; 
-      }      
+      }
+
+      // create the variables for this model             
+      ws.factory( parIni[Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+
+      // create the PDF              
       ws.factory(Form("CBShape::%s(%s, %s, %s, %s, %s)", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
-		      parIni[Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(), 
-		      parIni[Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(),
-		      parIni[Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(),
-		      parIni[Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+		      Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+		      Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+		      Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
 		      ));
+
       cout << Form("[INFO] %s Single Crystal Ball PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break;
       
     case (MassModel::DoubleCrystalBall): 
-      if (!( parIni.count(Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && parIni.count(Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")))
-	     && parIni.count(Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && parIni.count(Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) 
-	     && parIni.count(Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && parIni.count(Form("f_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) )) { 
+      
+      // check that all input parameters are defined
+      if (!( 
+            parIni.count(Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("f_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) 
+             )) { 
 	cout << Form("[ERROR] Initial parameters where not found for %s Double Crystal Ball Model in %s", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; return false; 
-      }  
+      }
+  
+      // create the variables for this model             
+      ws.factory( parIni[Form("f_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+
+      // create the two PDFs
+      ws.factory(Form("CBShape::%s(%s, %s, %s, %s, %s)", Form("pdfMASSCB1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
+                      Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+                      Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
+                      ));   
+      ws.factory(Form("CBShape::%s(%s, %s, %s, %s, %s)", Form("pdfMASSCB2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
+                      Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+                      Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
+                      ));   
+
+      // Sum the PDFs to get the signal PDF
       ws.factory(Form("SUM::%s(%s*%s, %s)", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
-		      parIni[Form("f_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(),
-		      Form("CBShape::%s(%s, %s, %s, %s, %s)", Form("pdfMASSCB1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
-			   parIni[Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(), 
-			   parIni[Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(),
-			   parIni[Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(),
-			   parIni[Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
-			   ),
-		      Form("CBShape::%s(%s, %s, %s, %s, %s)", Form("pdfMASSCB2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
-			   Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
-			   parIni[Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(),
-			   Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
-			   Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
-			   )
+		      Form("f_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+		      Form("pdfMASSCB1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+		      Form("pdfMASSCB2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
 		      ));   
+
       cout << Form("[INFO] %s Double Crystal Ball PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break;
       
     case (MassModel::GaussianAndCrystalBall):
-      if (!( parIni.count(Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && parIni.count(Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")))
-	     && parIni.count(Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && parIni.count(Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) 
-	     && parIni.count(Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && parIni.count(Form("f_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")))  )) { 
+
+      // check that all input parameters are defined
+      if (!( 
+            parIni.count(Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
+            parIni.count(Form("f_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")))  
+             )) { 
 	cout << Form("[ERROR] Initial parameters where not found for %s Gaussian and Crystal Ball Model in %s", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; return false;
-      }  
+      } 
+
+      // create the variables for this model             
+      ws.factory( parIni[Form("f_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      
+      // create the two PDFs 
+      ws.factory(Form("Gaussian::%s(%s, %s, %s)", Form("pdfMASSG1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
+                      Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+                      Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
+                      ));   
+
+      ws.factory(Form("CBShape::%s(%s, %s, %s, %s, %s)", Form("pdfMASSCB1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
+                      Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+                      Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
+                      ));   
+ 
+      // Sum the PDFs to get the signal PDF 
       ws.factory(Form("SUM::%s(%s*%s, %s)", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
-		      parIni[Form("f_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(),
-		      Form("Gaussian::%s(%s, %s, %s)", Form("pdfMASSG1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
-			   parIni[Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(), 
-			   parIni[Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
-			   ),
-		      Form("CBShape::%s(%s, %s, %s, %s, %s)", Form("pdfMASSCB1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
-			   Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
-			   parIni[Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(),
-			   parIni[Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str(),
-			   parIni[Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
-			   )
+		      Form("f_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+		      Form("pdfMASSG1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+		      Form("pdfMASSCB1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
 		      ));   
+
       cout << Form("[INFO] %s Gaussian and Crystal Ball PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break;
 	
     default :
-      cout<< "[ERROR] Selected Signal Mass Model has not been implemented"<< endl; return false;
+
+      cout << "[ERROR] Selected Signal Mass Model: " << parIni[Form("Model_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))] << " has not been implemented" << endl; return false;
+
     }
   
   return true;
@@ -318,29 +537,113 @@ void fixPsi2StoJpsi(map<string, string>& parIni, bool isPbPb)
   parIni[Form("f_Psi2S_%s", (isPbPb?"PbPb":"PP"))]      = Form("RooFormulaVar::%s('@0',{%s})", Form("f_Psi2S_%s", (isPbPb?"PbPb":"PP")), Form("f_Jpsi_%s", (isPbPb?"PbPb":"PP")));
 };
 
-void setDefaultParameters(map<string, string> &parIni, bool isPbPb)
+void setDefaultParameters(map<string, string> &parIni, bool isPbPb, int numEntries)
 {
-  
-  // MASS FIT PARAMETERS, TO BE REMOVED SOON
-  parIni[Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP"))]  = Form("%s[%d,%d]", Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP")), 0, 350000);
-  parIni[Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%d,%d]", Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP")), 0, 350000);
-  parIni[Form("N_Bkg_%s", (isPbPb?"PbPb":"PP"))]   = Form("%s[%d,%d]", Form("N_Bkg_%s", (isPbPb?"PbPb":"PP")), 0, 350000);
 
-  parIni[Form("m_Jpsi_%s", (isPbPb?"PbPb":"PP"))]      = Form("%s[%.4f,%.4f,%.4f]", Form("m_Jpsi_%s", (isPbPb?"PbPb":"PP")), Mass.JPsi, Mass.JPsi-0.1, Mass.JPsi+0.1);
-  parIni[Form("sigma1_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("sigma1_Jpsi_%s", (isPbPb?"PbPb":"PP")), 0.04, 0.01, 0.09);
-  parIni[Form("sigma2_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("sigma2_Jpsi_%s", (isPbPb?"PbPb":"PP")), 0.02, 0.01, 0.07);
-  parIni[Form("alpha_Jpsi_%s", (isPbPb?"PbPb":"PP"))]  = Form("%s[%.4f,%.4f,%.4f]", Form("alpha_Jpsi_%s", (isPbPb?"PbPb":"PP")), 2.21, 0.5, 30.0*100.0);
-  parIni[Form("n_Jpsi_%s", (isPbPb?"PbPb":"PP"))]      = Form("%s[%.4f,%.4f,%.4f]", Form("n_Jpsi_%s", (isPbPb?"PbPb":"PP")), 2., 0.5, 30.0*100.0);
-  parIni[Form("f_Jpsi_%s", (isPbPb?"PbPb":"PP"))]      = Form("%s[%.4f,%.4f,%.4f]", Form("f_Jpsi_%s", (isPbPb?"PbPb":"PP")), 0.3, 0.0, 1.0);
+  cout << "[INFO] Setting empty initial parameters to their defaul values" << endl;
 
-  fixPsi2StoJpsi(parIni, isPbPb);
+  // DEFAULT SINGLE AND DOUBLE RATIO PARAMETERS
+  if (parIni.count("RFrac2Svs1S_PbPbvsPP")==0) { 
+    parIni["RFrac2Svs1S_PbPbvsPP"] = Form("%s[%.4f,%.4f,%.4f]", "RFrac2Svs1S_PbPbvsPP", 0.26, 0.0, 3.0);
+  }
+  if (parIni.count(Form("RFrac2Svs1S_%s", (isPbPb?"PbPb":"PP")))==0) {
+    parIni[Form("RFrac2Svs1S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("RFrac2Svs1S_%s", (isPbPb?"PbPb":"PP")), 0.26, 0.0, 1.0);
+  }
 
-  parIni["RFrac2Svs1S_PbPbvsPP"] = Form("%s[%.4f,%.4f,%.4f]", "RFrac2Svs1S_PbPbvsPP", 0.26, 0.0, 3.0);
-  parIni[Form("RFrac2Svs1S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("RFrac2Svs1S_%s", (isPbPb?"PbPb":"PP")), 0.26, 0.0, 1.0);
+  // DEFAULT RANGE OF NUMBER OF EVENTS
+  if (parIni.count(Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP")))==0) { 
+    parIni[Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP"))]  = Form("%s[%d,%d]", Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP")), 0, numEntries);
+  }
+  if (parIni.count(Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP")))==0) { 
+    parIni[Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP"))]  = Form("%s[%d,%d]", Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP")), 0, numEntries);
+  }
+  if (parIni.count(Form("N_Bkg_%s", (isPbPb?"PbPb":"PP")))==0) { 
+    parIni[Form("N_Bkg_%s", (isPbPb?"PbPb":"PP"))]  = Form("%s[%d,%d]", Form("N_Bkg_%s", (isPbPb?"PbPb":"PP")), 0, numEntries);
+  }
 
-  parIni[Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.05, -1.0, 1.0);
-  parIni[Form("lambda2_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda2_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.05, -1.0, 1.0);
-  parIni[Form("lambda3_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda3_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.05, -1.0, 1.0);
-  parIni[Form("lambda4_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda4_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.05, -1.0, 1.0);
+  // DEFAULT SIGNAL MASS MODEL PARAMETERS 
+  if (parIni.count(Form("m_Jpsi_%s", (isPbPb?"PbPb":"PP")))==0) {
+    parIni[Form("m_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("m_Jpsi_%s", (isPbPb?"PbPb":"PP")), Mass.JPsi, Mass.JPsi-0.1, Mass.JPsi+0.1);
+  }
+  if (parIni.count(Form("m_Psi2S_%s", (isPbPb?"PbPb":"PP")))==0) {
+    parIni[Form("m_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("m_Psi2S_%s", (isPbPb?"PbPb":"PP")), Mass.Psi2S, Mass.Psi2S-0.1, Mass.Psi2S+0.1);
+  }
+  if (parIni.count(Form("sigma1_Jpsi_%s", (isPbPb?"PbPb":"PP")))==0) {
+    parIni[Form("sigma1_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("sigma1_Jpsi_%s", (isPbPb?"PbPb":"PP")), 0.04, 0.01, 0.09);
+  }
+  if (parIni.count(Form("sigma2_Jpsi_%s", (isPbPb?"PbPb":"PP")))==0) {
+    parIni[Form("sigma2_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("sigma2_Jpsi_%s", (isPbPb?"PbPb":"PP")), 0.02, 0.01, 0.07);
+  }
+  if (parIni.count(Form("sigma1_Psi2S_%s", (isPbPb?"PbPb":"PP")))==0) {
+    parIni[Form("sigma1_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("sigma1_Psi2S_%s", (isPbPb?"PbPb":"PP")), 0.04, 0.01, 0.1);
+  }
+  if (parIni.count(Form("sigma2_Psi2S_%s", (isPbPb?"PbPb":"PP")))==0) {
+    parIni[Form("sigma2_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("sigma2_Psi2S_%s", (isPbPb?"PbPb":"PP")), 0.02, 0.01, 0.09);
+  }
+  if (parIni.count(Form("alpha_Jpsi_%s", (isPbPb?"PbPb":"PP")))==0) {
+    parIni[Form("alpha_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("alpha_Jpsi_%s", (isPbPb?"PbPb":"PP")), 2.21, 1.01, 30.0*100.0);
+  }
+  if (parIni.count(Form("alpha_Psi2S_%s", (isPbPb?"PbPb":"PP")))==0) {
+    parIni[Form("alpha_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("alpha_Psi2S_%s", (isPbPb?"PbPb":"PP")), 2.21, 1.01, 30.0*100.0);
+  }
+  if (parIni.count(Form("n_Jpsi_%s", (isPbPb?"PbPb":"PP")))==0) {
+    parIni[Form("n_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("n_Jpsi_%s", (isPbPb?"PbPb":"PP")), 2., 0.5, 30.0*100.0);
+  }
+  if (parIni.count(Form("n_Psi2S_%s", (isPbPb?"PbPb":"PP")))==0) {
+    parIni[Form("n_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("n_Psi2S_%s", (isPbPb?"PbPb":"PP")), 2., 0.5, 30.0*100.0);
+  }
+  if (parIni.count(Form("f_Jpsi_%s", (isPbPb?"PbPb":"PP")))==0) {
+    parIni[Form("f_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("f_Jpsi_%s", (isPbPb?"PbPb":"PP")), 0.3, 0.0, 1.0);
+  }
+  if (parIni.count(Form("f_Psi2S_%s", (isPbPb?"PbPb":"PP")))==0) {
+    parIni[Form("f_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("f_Psi2S_%s", (isPbPb?"PbPb":"PP")), 0.3, 0.0, 1.0);
+  }
+
+  // DEFAULT BACKGROUND MASS MODEL PARAMETERS
+  if (parIni[Form("Model_Bkg_%s",(isPbPb?"PbPb":"PP"))].find("Chebychev")!=std::string::npos) {
+    if (parIni.count(Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP")))==0) { 
+      parIni[Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.05, -1.0, 1.0);
+    }
+    if (parIni.count(Form("lambda2_Bkg_%s", (isPbPb?"PbPb":"PP")))==0) { 
+      parIni[Form("lambda2_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda2_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.05, -1.0, 1.0);
+    }
+    if (parIni.count(Form("lambda3_Bkg_%s", (isPbPb?"PbPb":"PP")))==0) { 
+      parIni[Form("lambda3_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda3_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.05, -1.0, 1.0);
+    }
+    if (parIni.count(Form("lambda4_Bkg_%s", (isPbPb?"PbPb":"PP")))==0) { 
+      parIni[Form("lambda4_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda4_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.05, -1.0, 1.0);
+    }
+    if (parIni.count(Form("lambda5_Bkg_%s", (isPbPb?"PbPb":"PP")))==0) { 
+      parIni[Form("lambda5_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda5_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.05, -1.0, 1.0);
+    }
+    if (parIni.count(Form("lambda6_Bkg_%s", (isPbPb?"PbPb":"PP")))==0) { 
+      parIni[Form("lambda6_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda6_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.05, -1.0, 1.0);
+    }
+  } 
+  else if (parIni[Form("Model_Bkg_%s",(isPbPb?"PbPb":"PP"))].find("Polynomial")!=std::string::npos) {
+    if (parIni.count(Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP")))==0) { 
+      parIni[Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.05, -10000.0, 10000.0);
+    }
+    if (parIni.count(Form("lambda2_Bkg_%s", (isPbPb?"PbPb":"PP")))==0) { 
+      parIni[Form("lambda2_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda2_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.05, -10000.0, 10000.0);
+    }
+    if (parIni.count(Form("lambda3_Bkg_%s", (isPbPb?"PbPb":"PP")))==0) { 
+      parIni[Form("lambda3_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda3_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.05, -10000.0, 10000.0);
+    }
+    if (parIni.count(Form("lambda4_Bkg_%s", (isPbPb?"PbPb":"PP")))==0) { 
+      parIni[Form("lambda4_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda4_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.05, -10000.0, 10000.0);
+    }
+    if (parIni.count(Form("lambda5_Bkg_%s", (isPbPb?"PbPb":"PP")))==0) { 
+      parIni[Form("lambda5_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda5_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.05, -1.0, 1.0);
+    }
+    if (parIni.count(Form("lambda6_Bkg_%s", (isPbPb?"PbPb":"PP")))==0) { 
+      parIni[Form("lambda6_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda6_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.05, -1.0, 1.0);
+    }
+  }
+  else if (parIni[Form("Model_Bkg_%s",(isPbPb?"PbPb":"PP"))].find("Exponential")!=std::string::npos) {
+    if (parIni.count(Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP")))==0) { 
+      parIni[Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.05, -100.0, 100.0);
+    }
+  }
  
 };
