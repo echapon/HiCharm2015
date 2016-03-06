@@ -98,7 +98,7 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
     for (int i=0; i<maxFitAttempts; i++) {
       // Do the simultaneous fit
       if (simPdf->fitTo(*combData, SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(numCores), Range("MassWindow"))) break;
-      else cout << "[INFO] Simultaneous fit failed, let's try again!" << endl 
+      else cout << "[INFO] Simultaneous fit failed, let's try again!" << endl; 
     } 
       
     // Draw the mass plots
@@ -121,7 +121,7 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
        for (int i=0; i<maxFitAttempts; i++) {
          // Fit the Datasets
          if (myws.pdf("pdfMASS_Tot_PbPb")->fitTo(*myws.data("dOS_DATA_PbPb"), SumW2Error(kTRUE), Extended(kTRUE), Range("MassWindow"), NumCPU(numCores))) break;      
-         else cout << "[INFO] Fit failed, let's try again!" << endl 
+         else cout << "[INFO] Fit failed, let's try again!" << endl; 
        } 
 
        // Draw the mass plot
@@ -142,7 +142,7 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
        for (int i=0; i<maxFitAttempts; i++) {
          // Fit the Datasets
          if (myws.pdf("pdfMASS_Tot_PP")->fitTo(*myws.data("dOS_DATA_PP"), SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(numCores), Range("MassWindow"))) break;
-         else cout << "[INFO] Fit failed, let's try again!" << endl 
+         else cout << "[INFO] Fit failed, let's try again!" << endl; 
        } 
 
        // Draw the mass plot

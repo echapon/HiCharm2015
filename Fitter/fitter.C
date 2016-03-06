@@ -118,26 +118,54 @@ void fitter(
 	      -> The local workspace used for each fit.
   */
   for (unsigned int i=0; i<nBins; i++) {
-    // DO SOMETHING 
+    string outputDir = DIR["output"];
+    // DO SOMETHING WITH DATA
     if (Workspace.count("DATA")>0) { 
       // DATA datasets were loaded
-      string outputDir = DIR["output"];
-      if (!fitCharmonia( Workspace["DATA"], cutVector.at(i), parIniVector.at(i), outputDir, "DATA",
-                         isPbPb,           // isPbPb = false for pp, true for PbPb
-                         zoomPsi,          // Zoom Psi(2S) peak on extra pad
-                         setLogScale,      // Draw plot with log scale
-                         incSS,            // Include Same Sign data
-                         false,            // Compute the mean PT (NEED TO FIX)
-                         inExcStat,        // if inExcStat is true, then the excited states are fitted
-                         doSimulFit,       // Do simultaneous fit
-                         nbins,            // number of bins
-                         numCores 
-			 )
-	  ) { return; } 
+      if (doSimulFit) {
+        // If do simultaneous fits, then just fits once
+        if (!fitCharmonia( Workspace["DATA"], cutVector.at(i), parIniVector.at(i), outputDir, "DATA",
+                           isPbPb,           // isPbPb = false for pp, true for PbPb
+                           zoomPsi,          // Zoom Psi(2S) peak on extra pad
+                           setLogScale,      // Draw plot with log scale
+                           incSS,            // Include Same Sign data
+                           false,            // Compute the mean PT (NEED TO FIX)
+                           inExcStat,        // if inExcStat is true, then the excited states are fitted
+                           true,             // Do simultaneous fit
+                           nbins,            // number of bins
+                           numCores 
+                           )
+            ) { return; } 
+      }
+      else {
+        // If don't want simultaneous fits, then fit first PbPb and then PP separately
+        if (!fitCharmonia( Workspace["DATA"], cutVector.at(i), parIniVector.at(i), outputDir, "DATA",
+                           true,             // isPbPb = false for pp, true for PbPb
+                           zoomPsi,          // Zoom Psi(2S) peak on extra pad
+                           setLogScale,      // Draw plot with log scale
+                           incSS,            // Include Same Sign data
+                           false,            // Compute the mean PT (NEED TO FIX)
+                           inExcStat,        // if inExcStat is true, then the excited states are fitted
+                           false,            // Do simultaneous fit
+                           nbins,            // number of bins
+                           numCores 
+                           )
+            ) { return; } 
+        if (!fitCharmonia( Workspace["DATA"], cutVector.at(i), parIniVector.at(i), outputDir, "DATA",
+                           false,            // isPbPb = false for pp, true for PbPb
+                           zoomPsi,          // Zoom Psi(2S) peak on extra pad
+                           setLogScale,      // Draw plot with log scale
+                           incSS,            // Include Same Sign data
+                           false,            // Compute the mean PT (NEED TO FIX)
+                           inExcStat,        // if inExcStat is true, then the excited states are fitted
+                           false,            // Do simultaneous fit
+                           nbins,            // number of bins
+                           numCores 
+                           )
+            ) { return; } 
+      }
     }
   }
-
-
 };
 
 bool addParamters(string InputFile,  vector< struct KinCuts > cutVector, vector< map<string, string> >&  parIniVector)
