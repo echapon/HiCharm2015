@@ -14,7 +14,7 @@ using namespace std;
 bool extractParameter(string fileName, const char* parName, pair<double,double>& value);
 
 
-void printPsi2SvsJpsiRatioSummary(string dirPATH="./Output/BinStudy/result/DATA/") {
+void printPsi2SvsJpsiRatioSummary(string dirPATH="./Output/BinStudy/result/DATA/",string saveLabel="TestBinning") {
   
   vector<string> filenames;
   DIR *dpdf;
@@ -123,12 +123,13 @@ void printPsi2SvsJpsiRatioSummary(string dirPATH="./Output/BinStudy/result/DATA/
     cleanFileName.erase( cleanFileName.find(".root"), string(".root").length());
 
     // Save the output line for this bin
-    lines.push_back( Form("%s ; %.5f±%.5f ; %.5f±%.5f ; %.5f±%.5f ", cleanFileName.c_str(), RFrac2Svs1S_PP.first , RFrac2Svs1S_PP.second , RFrac2Svs1S_PbPb.first , RFrac2Svs1S_PbPb.second ,  RFrac2Svs1S_PbPbvsPP.first , RFrac2Svs1S_PbPbvsPP.second) );
+    lines.push_back( Form("%s ; %.5f±%.5f(%.2f %%) ; %.5f±%.5f(%.2f %%) ; %.5f±%.5f(%.2f %%) ", cleanFileName.c_str(), RFrac2Svs1S_PP.first , RFrac2Svs1S_PP.second , (RFrac2Svs1S_PP.second/RFrac2Svs1S_PP.first)*100. , RFrac2Svs1S_PbPb.first , RFrac2Svs1S_PbPb.second , (RFrac2Svs1S_PbPb.second/RFrac2Svs1S_PbPb.first)*100. , RFrac2Svs1S_PbPbvsPP.first , RFrac2Svs1S_PbPbvsPP.second , (RFrac2Svs1S_PbPbvsPP.second/RFrac2Svs1S_PbPbvsPP.first)*100.) );
 
   }
 
   // Write all the lines over the output file
-  ofstream fout( (dirPATH+"../RatiosSummary.csv") );
+  string saveName= Form("../RatiosSummary_%s.csv",saveLabel.c_str());
+  ofstream fout( (dirPATH+saveName) );
   for (vector<string>::iterator it = lines.begin(); it < lines.end(); it++) {
     fout << it->c_str() << endl;
   } 
