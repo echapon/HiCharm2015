@@ -25,8 +25,9 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
 		   bool getMeanPT   = false,      // Compute the mean PT
 		   bool inExcStat   = false,      // if inExcStat is true, then the excited states are fitted
 		   bool doSimulFit  = true,       // Do simultaneous fit
+       bool wantPureSMC = false,      // Flag to indicate if we want to fit pure signal MC
 		   int nbins        = 74,         // Number of bins for fitting
-                   int numCores     = 2           // Number of cores used for fitting
+       int numCores     = 2           // Number of cores used for fitting
 		   )  
 {
 
@@ -37,11 +38,16 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
     cut.dMuon.M.Min = 2.6;
     cut.dMuon.M.Max = 3.5;
   }
+  
+  bool isMC = false;
+  if (TAG.find("MC")!=std::string::npos) isMC = true;
+  if (isMC && wantPureSMC) wantPureSMC=true;
+  else wantPureSMC=false;
 
   struct InputOpt opt; setOptions(&opt, inExcStat, doSimulFit);
   
-  int    numEntriesPbPb, numEntriesPP;
-  string plotLabelPbPb,  plotLabelPP;
+  int    numEntriesPbPb, numEntriesPP, numEntriesPbPbPureS, numEntriesPPPureS;
+  string plotLabelPbPb,  plotLabelPP, plotLabelPbPbPureS,  plotLabelPPPureS;
 
   struct OniaModel model;
   RooWorkspace     myws("workspace", "local workspace");
@@ -56,6 +62,15 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
 
     numEntriesPbPb = myws.data(Form("dOS_%s_PbPb", TAG.c_str()))->sumEntries();
     plotLabelPbPb = Form("Jpsi_%s_Bkg_%s", parIni["Model_Jpsi_PbPb"].c_str(), parIni["Model_Bkg_PbPb"].c_str());
+
+    if (wantPureSMC)
+    {
+      label = Form("%s_%s_NoBkg", TAG.c_str(), "PbPb");
+      if (!importDataset(myws, inputWorkspace, cut, label)) { return false; }
+      
+      numEntriesPbPbPureS = myws.data(Form("dOS_%s_PbPb_NoBkg", TAG.c_str()))->sumEntries();
+      plotLabelPbPbPureS = Form("Jpsi_%s_Bkg_%s_NoBkg", parIni["Model_Jpsi_PbPb"].c_str(), parIni["Model_Bkg_PbPb"].c_str());
+    }
   }
   if (doSimulFit || !isPbPb) {
     // Set models based on initial parameters
@@ -67,6 +82,15 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
 
     numEntriesPP = myws.data(Form("dOS_%s_PP", TAG.c_str()))->sumEntries();
     plotLabelPP = Form("Jpsi_%s_Bkg_%s", parIni["Model_Jpsi_PP"].c_str(), parIni["Model_Bkg_PP"].c_str());
+    
+    if (wantPureSMC)
+    {
+      label = Form("%s_%s_NoBkg", TAG.c_str(), "PP");
+      if (!importDataset(myws, inputWorkspace, cut, label)) { return false; }
+      
+      numEntriesPPPureS = myws.data(Form("dOS_%s_PP_NoBkg", TAG.c_str()))->sumEntries();
+      plotLabelPPPureS = Form("Jpsi_%s_Bkg_%s_NoBkg", parIni["Model_Jpsi_PP"].c_str(), parIni["Model_Bkg_PP"].c_str());
+    }
   }
 
  
@@ -105,7 +129,8 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
     drawMassPlot(myws, outputDir, plotLabelPbPb, TAG, opt, cut, true, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
     drawMassPlot(myws, outputDir, plotLabelPP, TAG, opt, cut, false, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
     
-  } else {
+  }
+  else {
      if (isPbPb) {
        // Build the Fit Model
        if (!buildCharmoniaMassModel(myws, opt, model.PbPb, parIni, true, numEntriesPbPb)) { return false; }
@@ -120,14 +145,36 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
 
        for (int i=0; i<maxFitAttempts; i++) {
          // Fit the Datasets
-         if (myws.pdf("pdfMASS_Tot_PbPb")->fitTo(*myws.data("dOS_DATA_PbPb"), SumW2Error(kTRUE), Extended(kTRUE), Range("MassWindow"), NumCPU(numCores))) break;      
+         if (myws.pdf("pdfMASS_Tot_PbPb")->fitTo(*myws.data(Form("dOS_%s_PbPb", TAG.c_str())), SumW2Error(kTRUE), Extended(kTRUE), Range("MassWindow"), NumCPU(numCores))) break;
          else cout << "[INFO] Fit failed, let's try again!" << endl; 
-       } 
+       }
 
        // Draw the mass plot
        drawMassPlot(myws, outputDir, plotLabelPbPb, TAG,  opt, cut, true, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
-
-     } else {
+       
+       if (wantPureSMC)
+       {
+         // check if we have already done this fit. If yes, do nothing and return true.
+         RooArgSet *newpars = myws.pdf("pdfMASS_Tot_PbPb")->getParameters(*(myws.var("invMass")));
+         bool found =  isFitAlreadyFound(newpars, outputDir, plotLabelPbPbPureS, TAG, cut, true);
+         if (found) {
+           cout << "[INFO] This fit was already done, so I'll just go to the next one." << endl;
+           return true;
+         }
+      
+         myws.loadSnapshot(Form("pdfMASS_Tot_%s_parIni", (isPbPb?"PbPb":"PP")));
+         
+         for (int i=0; i<maxFitAttempts; i++) {
+           // Fit the Datasets
+           if (myws.pdf("pdfMASS_Jpsi_PbPb")->fitTo(*myws.data(Form("dOS_%s_PbPb_NoBkg", TAG.c_str())), SumW2Error(kTRUE), Extended(kFALSE), Range("MassWindow"), NumCPU(numCores))) break;
+           else cout << "[INFO] Fit failed, let's try again!" << endl;
+         }
+         
+         // Draw the mass plot
+         drawMassPlot(myws, outputDir, plotLabelPbPbPureS, TAG,  opt, cut, true, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
+       }
+     }
+     else {
        // Build the Fit Model
        if (!buildCharmoniaMassModel(myws, opt, model.PP, parIni, false, numEntriesPP)) { return false; }
 
@@ -141,12 +188,34 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
 
        for (int i=0; i<maxFitAttempts; i++) {
          // Fit the Datasets
-         if (myws.pdf("pdfMASS_Tot_PP")->fitTo(*myws.data("dOS_DATA_PP"), SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(numCores), Range("MassWindow"))) break;
+         if (myws.pdf("pdfMASS_Tot_PP")->fitTo(*myws.data(Form("dOS_%s_PP", TAG.c_str())), SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(numCores), Range("MassWindow"))) break;
          else cout << "[INFO] Fit failed, let's try again!" << endl; 
        } 
 
        // Draw the mass plot
        drawMassPlot(myws, outputDir, plotLabelPP, TAG, opt, cut, false, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
+       
+       if (wantPureSMC)
+       {
+         // check if we have already done this fit. If yes, do nothing and return true.
+         RooArgSet *newpars = myws.pdf("pdfMASS_Tot_PP")->getParameters(*(myws.var("invMass")));
+         bool found =  isFitAlreadyFound(newpars, outputDir, plotLabelPPPureS, TAG, cut, true);
+         if (found) {
+           cout << "[INFO] This fit was already done, so I'll just go to the next one." << endl;
+           return true;
+         }
+         
+         myws.loadSnapshot(Form("pdfMASS_Tot_%s_parIni", (isPbPb?"PbPb":"PP")));
+         
+         for (int i=0; i<maxFitAttempts; i++) {
+           // Fit the Datasets
+           if (myws.pdf("pdfMASS_Jpsi_PP")->fitTo(*myws.data(Form("dOS_%s_PP_NoBkg", TAG.c_str())), SumW2Error(kTRUE), Extended(kFALSE), Range("MassWindow"), NumCPU(numCores))) break;
+           else cout << "[INFO] Fit failed, let's try again!" << endl;
+         }
+         
+         // Draw the mass plot
+         drawMassPlot(myws, outputDir, plotLabelPPPureS, TAG,  opt, cut, false, zoomPsi, setLogScale, incSS, getMeanPT, nbins);
+       }
      }
   }
 
@@ -173,7 +242,8 @@ bool setModel( struct OniaModel& model, map<string, string>  parIni, bool isPbPb
 	cout << "[ERROR] psi(2S) mass model for PbPb was not found in the initial parameters!" << endl; return false;
       }
     }
-  } else {
+  }
+  else {
     if (parIni.count("Model_Bkg_PP")>0) {
       model.PP.Bkg.Mass = MassModelDictionary[parIni["Model_Bkg_PP"]];
     } else { 
@@ -220,16 +290,19 @@ bool importDataset(RooWorkspace& myws, RooWorkspace& inputWS, struct KinCuts cut
   }  
   myws.import(*dataOS);
 
-  if (!(inputWS.data(Form("dSS_%s", label.c_str())))){ 
-    cout << "[ERROR] The dataset " <<  Form("dSS_%s", label.c_str()) << " was not found!" << endl;
-    return false;
-  } 
-  RooDataSet* dataSS = (RooDataSet*)inputWS.data(Form("dSS_%s", label.c_str()))->reduce(strCut.c_str());
-  if (dataSS->sumEntries()==0){ 
-    cout << "[WARNING] No events from dataset " <<  Form("dSS_%s", label.c_str()) << " passed the kinematic cuts!" << endl;
+  if (label.find("NoBkg")==std::string::npos) // Don't try to find SS dataset if label contais NoBkg
+  {
+    if (!(inputWS.data(Form("dSS_%s", label.c_str())))){
+      cout << "[ERROR] The dataset " <<  Form("dSS_%s", label.c_str()) << " was not found!" << endl;
+      return false;
+    }
+    RooDataSet* dataSS = (RooDataSet*)inputWS.data(Form("dSS_%s", label.c_str()))->reduce(strCut.c_str());
+    if (dataSS->sumEntries()==0){
+      cout << "[WARNING] No events from dataset " <<  Form("dSS_%s", label.c_str()) << " passed the kinematic cuts!" << endl;
+    }
+    myws.import(*dataSS);
   }
-  myws.import(*dataSS);
-
+  
   // Set the range of each global parameter in the local workspace
   myws.var("invMass")->setMin(cut.dMuon.M.Min);        
   myws.var("invMass")->setMax(cut.dMuon.M.Max);

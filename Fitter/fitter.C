@@ -22,6 +22,7 @@ void fitter(
             bool zoomPsi     = false,        // Zoom Psi(2S) peak on extra pad
             bool setLogScale = true,         // Draw plot with log scale
             bool incSS       = false,        // Include Same Sign data
+            bool wantPureSMC = false,      // Flag to indicate if we want to fit pure signal MC
             int  nbins       = 74,           // Number of bins used for fitting
             int  numCores    = 2             // Number of cores used for fitting
             ) 
@@ -37,7 +38,7 @@ void fitter(
   */
 
   map<string,string> DIR;
-  if(!iniWorkEnv(DIR, workDirName)){ return; } 
+  if(!iniWorkEnv(DIR, workDirName)){ return; }
  
   // -------------------------------------------------------------------------------
   // STEP 1: CREATE/LOAD THE ROODATASETS
@@ -46,12 +47,16 @@ void fitter(
     Output: Collection of RooDataSets splitted by tag name, including OS and SS dimuons.
   */
 
+  TObjArray* aTAG = new TObjArray(); // Array to store the different tags in the list of trees
+  aTAG->SetOwner(true);
+  string TAG;
+  
   const string InputTrees = DIR["input"] + "InputTrees.txt";
   map<string, vector<string> > InputFileCollection;
   if(!getInputFileNames(InputTrees, InputFileCollection)){ return; }
   map<string, RooWorkspace> Workspace;
   for(map<string, vector<string> >::iterator FileCollection=InputFileCollection.begin(); FileCollection!=InputFileCollection.end(); ++FileCollection) {
-    string         TAG            = FileCollection->first; 
+    TAG            = FileCollection->first;
     vector<string> InputFileNames = FileCollection->second; 
     string         OutputFileName;
     OutputFileName= DIR["dataset"] + "DATASET_" + TAG + ".root"; 
@@ -59,7 +64,13 @@ void fitter(
       if(!tree2DataSet(Workspace["DATA"], InputFileNames, TAG, OutputFileName)){ return; }
     }
     if(TAG.find("MC")!=std::string::npos) { 
-      if(!tree2DataSet(Workspace["MC"],   InputFileNames, TAG, OutputFileName)){ return; } 
+      if(!tree2DataSet(Workspace["MC"],   InputFileNames, TAG, OutputFileName)){ return; }
+    }
+
+    if (TAG.size())
+    {
+      TAG.erase(TAG.find("_"));
+      if (!aTAG->FindObject(TAG.c_str())) aTAG->Add(new TObjString(TAG.c_str()));
     }
   }
 
@@ -117,55 +128,149 @@ void fitter(
               -> Plots (png, pdf and root format) of each fit.
 	      -> The local workspace used for each fit.
   */
+  
+  TIter nextTAG(aTAG);
   for (unsigned int i=0; i<nBins; i++) {
     string outputDir = DIR["output"];
     // DO SOMETHING WITH DATA
-    if (Workspace.count("DATA")>0) { 
-      // DATA datasets were loaded
-      if (doSimulFit) {
-        // If do simultaneous fits, then just fits once
-        if (!fitCharmonia( Workspace["DATA"], cutVector.at(i), parIniVector.at(i), outputDir, "DATA",
-                           isPbPb,           // isPbPb = false for pp, true for PbPb
-                           zoomPsi,          // Zoom Psi(2S) peak on extra pad
-                           setLogScale,      // Draw plot with log scale
-                           incSS,            // Include Same Sign data
-                           false,            // Compute the mean PT (NEED TO FIX)
-                           inExcStat,        // if inExcStat is true, then the excited states are fitted
-                           true,             // Do simultaneous fit
-                           nbins,            // number of bins
-                           numCores 
-                           )
-            ) { return; } 
+    nextTAG.Reset();
+    TObjString* soTAG(0x0);
+    while ( (soTAG = static_cast<TObjString*>(nextTAG.Next())) )
+    {
+      TString fullTAG = static_cast<TString>(soTAG->GetString());
+      string fileType = "DATA"; // Is DATA or MC
+      if (fullTAG.Contains("MC")) fileType = "MC";
+      
+      if (Workspace.count(fileType.c_str())>0) {
+        // DATA/MC datasets were loaded
+        if (doSimulFit) {
+          // If do simultaneous fits, then just fits once
+          if (!fitCharmonia( Workspace[fileType.c_str()], cutVector.at(i), parIniVector.at(i), outputDir, fullTAG.Data(),
+                            isPbPb,           // isPbPb = false for pp, true for PbPb
+                            zoomPsi,          // Zoom Psi(2S) peak on extra pad
+                            setLogScale,      // Draw plot with log scale
+                            incSS,            // Include Same Sign data
+                            false,            // Compute the mean PT (NEED TO FIX)
+                            inExcStat,        // if inExcStat is true, then the excited states are fitted
+                            true,             // Do simultaneous fit
+                            wantPureSMC,            // Flag to indicate if we want to fit pure signal MC
+                            nbins,            // number of bins
+                            numCores
+                            )
+              ) { return; }
+        }
+        else {
+          // If don't want simultaneous fits, then fit first PbPb and then PP separately
+          if (!fitCharmonia( Workspace[fileType.c_str()], cutVector.at(i), parIniVector.at(i), outputDir, fullTAG.Data(),
+                            true,             // isPbPb = false for pp, true for PbPb
+                            zoomPsi,          // Zoom Psi(2S) peak on extra pad
+                            setLogScale,      // Draw plot with log scale
+                            incSS,            // Include Same Sign data
+                            false,            // Compute the mean PT (NEED TO FIX)
+                            inExcStat,        // if inExcStat is true, then the excited states are fitted
+                            false,            // Do simultaneous fit
+                            wantPureSMC,            // Flag to indicate if we want to fit pure signal MC
+                            nbins,            // number of bins
+                            numCores
+                            )
+              ) { return; }
+          if (!fitCharmonia( Workspace[fileType.c_str()], cutVector.at(i), parIniVector.at(i), outputDir, fullTAG.Data(),
+                            false,            // isPbPb = false for pp, true for PbPb
+                            zoomPsi,          // Zoom Psi(2S) peak on extra pad
+                            setLogScale,      // Draw plot with log scale
+                            incSS,            // Include Same Sign data
+                            false,            // Compute the mean PT (NEED TO FIX)
+                            inExcStat,        // if inExcStat is true, then the excited states are fitted
+                            false,            // Do simultaneous fit
+                            wantPureSMC,       // Flag to indicate if we want to fit pure signal MC
+                            nbins,            // number of bins
+                            numCores
+                            )
+              ) { return; }
+        }
       }
-      else {
-        // If don't want simultaneous fits, then fit first PbPb and then PP separately
-        if (!fitCharmonia( Workspace["DATA"], cutVector.at(i), parIniVector.at(i), outputDir, "DATA",
-                           true,             // isPbPb = false for pp, true for PbPb
-                           zoomPsi,          // Zoom Psi(2S) peak on extra pad
-                           setLogScale,      // Draw plot with log scale
-                           incSS,            // Include Same Sign data
-                           false,            // Compute the mean PT (NEED TO FIX)
-                           inExcStat,        // if inExcStat is true, then the excited states are fitted
-                           false,            // Do simultaneous fit
-                           nbins,            // number of bins
-                           numCores 
-                           )
-            ) { return; } 
-        if (!fitCharmonia( Workspace["DATA"], cutVector.at(i), parIniVector.at(i), outputDir, "DATA",
-                           false,            // isPbPb = false for pp, true for PbPb
-                           zoomPsi,          // Zoom Psi(2S) peak on extra pad
-                           setLogScale,      // Draw plot with log scale
-                           incSS,            // Include Same Sign data
-                           false,            // Compute the mean PT (NEED TO FIX)
-                           inExcStat,        // if inExcStat is true, then the excited states are fitted
-                           false,            // Do simultaneous fit
-                           nbins,            // number of bins
-                           numCores 
-                           )
-            ) { return; } 
-      }
+      
     }
+    
+//    if (Workspace.count("DATA")>0) {
+//      // DATA datasets were loaded
+//      if (doSimulFit) {
+//        // If do simultaneous fits, then just fits once
+//        if (!fitCharmonia( Workspace["DATA"], cutVector.at(i), parIniVector.at(i), outputDir, "DATA",
+//                           isPbPb,           // isPbPb = false for pp, true for PbPb
+//                           zoomPsi,          // Zoom Psi(2S) peak on extra pad
+//                           setLogScale,      // Draw plot with log scale
+//                           incSS,            // Include Same Sign data
+//                           false,            // Compute the mean PT (NEED TO FIX)
+//                           inExcStat,        // if inExcStat is true, then the excited states are fitted
+//                           true,             // Do simultaneous fit
+//                           false,            // Flag to indicate if we want to fit pure signal MC
+//                           nbins,            // number of bins
+//                           numCores 
+//                           )
+//            ) { return; } 
+//      }
+//      else {
+//        // If don't want simultaneous fits, then fit first PbPb and then PP separately
+//        if (!fitCharmonia( Workspace["DATA"], cutVector.at(i), parIniVector.at(i), outputDir, "DATA",
+//                           true,             // isPbPb = false for pp, true for PbPb
+//                           zoomPsi,          // Zoom Psi(2S) peak on extra pad
+//                           setLogScale,      // Draw plot with log scale
+//                           incSS,            // Include Same Sign data
+//                           false,            // Compute the mean PT (NEED TO FIX)
+//                           inExcStat,        // if inExcStat is true, then the excited states are fitted
+//                           false,            // Do simultaneous fit
+//                           false,            // Flag to indicate if we want to fit pure signal MC
+//                           nbins,            // number of bins
+//                           numCores 
+//                           )
+//            ) { return; } 
+//        if (!fitCharmonia( Workspace["DATA"], cutVector.at(i), parIniVector.at(i), outputDir, "DATA",
+//                           false,            // isPbPb = false for pp, true for PbPb
+//                           zoomPsi,          // Zoom Psi(2S) peak on extra pad
+//                           setLogScale,      // Draw plot with log scale
+//                           incSS,            // Include Same Sign data
+//                           false,            // Compute the mean PT (NEED TO FIX)
+//                           inExcStat,        // if inExcStat is true, then the excited states are fitted
+//                           false,            // Do simultaneous fit
+//                           false,            // Flag to indicate if we want to fit pure signal MC
+//                           nbins,            // number of bins
+//                           numCores 
+//                           )
+//            ) { return; }
+//      }
+//    }
+//    if (Workspace.count("MC")>0) {
+//      if (!fitCharmonia( Workspace["MC"], cutVector.at(i), parIniVector.at(i), outputDir, TAG,
+//                        true,             // isPbPb = false for pp, true for PbPb
+//                        zoomPsi,          // Zoom Psi(2S) peak on extra pad
+//                        setLogScale,      // Draw plot with log scale
+//                        incSS,            // Include Same Sign data
+//                        false,            // Compute the mean PT (NEED TO FIX)
+//                        inExcStat,        // if inExcStat is true, then the excited states are fitted
+//                        false,            // Do simultaneous fit
+//                        wantPureSMC,      // Flag to indicate if we want to fit pure signal MC
+//                        nbins,            // number of bins
+//                        numCores
+//                        )
+//          ) { return; }
+//      if (!fitCharmonia( Workspace["MC"], cutVector.at(i), parIniVector.at(i), outputDir, TAG,
+//                        false,            // isPbPb = false for pp, true for PbPb
+//                        zoomPsi,          // Zoom Psi(2S) peak on extra pad
+//                        setLogScale,      // Draw plot with log scale
+//                        incSS,            // Include Same Sign data
+//                        false,            // Compute the mean PT (NEED TO FIX)
+//                        inExcStat,        // if inExcStat is true, then the excited states are fitted
+//                        false,            // Do simultaneous fit
+//                        wantPureSMC,      // Flag to indicate if we want to fit pure signal MC
+//                        nbins,            // number of bins
+//                        numCores
+//                        )
+//          ) { return; }
+//    }
   }
+  
+  delete aTAG;
 };
 
 bool addParamters(string InputFile,  vector< struct KinCuts > cutVector, vector< map<string, string> >&  parIniVector)
