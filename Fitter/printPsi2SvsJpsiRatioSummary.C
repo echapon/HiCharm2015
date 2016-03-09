@@ -14,7 +14,9 @@ using namespace std;
 bool extractParameter(string fileName, const char* parName, pair<double,double>& value);
 
 
-void printPsi2SvsJpsiRatioSummary(string dirPATH="./Output/BinStudy/result/DATA/",string saveLabel="TestBinning") {
+void printPsi2SvsJpsiRatioSummary(string dirLabel="BinStudy") {
+  
+  string dirPATH = Form("./Output/%s/result/DATA/",dirLabel.c_str());
   
   vector<string> filenames;
   DIR *dpdf;
@@ -128,7 +130,7 @@ void printPsi2SvsJpsiRatioSummary(string dirPATH="./Output/BinStudy/result/DATA/
   }
 
   // Write all the lines over the output file
-  string saveName= Form("../RatiosSummary_%s.csv",saveLabel.c_str());
+  string saveName= Form("../RatiosSummary_%s.csv",dirLabel.c_str());
   ofstream fout( (dirPATH+saveName) );
   for (vector<string>::iterator it = lines.begin(); it < lines.end(); it++) {
     fout << it->c_str() << endl;
