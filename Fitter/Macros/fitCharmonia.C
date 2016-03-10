@@ -269,11 +269,11 @@ bool setModel( struct OniaModel& model, map<string, string>  parIni, bool isPbPb
 bool importDataset(RooWorkspace& myws, RooWorkspace& inputWS, struct KinCuts cut, string label)
 {
   string indMuonMass    = Form("(%.6f < invMass && invMass < %.6f)",       cut.dMuon.M.Min,       cut.dMuon.M.Max);
-  string indMuonRap     = Form("(%.6f < abs(rap) && abs(rap) < %.6f)",     cut.dMuon.AbsRap.Min,  cut.dMuon.AbsRap.Max);
-  string indMuonPt      = Form("(%.6f < pt && pt < %.6f)",                 cut.dMuon.Pt.Min,      cut.dMuon.Pt.Max);
+  string indMuonRap     = Form("(%.6f %s abs(rap) && abs(rap) <= %.6f)",     cut.dMuon.AbsRap.Min, cut.dMuon.AbsRap.Max<=1.9 ? "<=" : "<" ,cut.dMuon.AbsRap.Max);
+  string indMuonPt      = Form("(%.6f <= pt && pt < %.6f)",                 cut.dMuon.Pt.Min,      cut.dMuon.Pt.Max);
   string indMuonCtau    = Form("(%.6f < ctau && ctau < %.6f)",             cut.dMuon.ctau.Min,    cut.dMuon.ctau.Max);
   string indMuonCtauErr = Form("(%.6f < ctauErr && ctauErr < %.6f)",       cut.dMuon.ctauErr.Min, cut.dMuon.ctauErr.Max);
-  string inCentrality   = Form("(%d <= cent && cent <= %d)",               cut.Centrality.Start,  cut.Centrality.End);
+  string inCentrality   = Form("(%d <= cent && cent < %d)",               cut.Centrality.Start,  cut.Centrality.End);
 
   string strCut         = indMuonMass +"&&"+ indMuonRap +"&&"+ indMuonPt +"&&"+ indMuonCtau +"&&"+ indMuonCtauErr;
   if (label.find("PbPb")!=std::string::npos){ strCut = strCut +"&&"+ inCentrality; } 
@@ -336,16 +336,33 @@ void setOptions(struct InputOpt* opt, bool inExcStat, bool doSimulFit)
 };
 
 bool isFitAlreadyFound(RooArgSet *newpars, string outputDir, string plotLabel, string TAG, struct KinCuts cut, bool isPbPb) {
+  bool isFound = false;
   TFile *file = new TFile(Form("%sresult/%s/FIT_%s_%s_%s_%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.root", outputDir.c_str(), TAG.c_str(), TAG.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End));
-  if (!file) return false;
+  if (!file)
+  {
+    delete file;
+    return isFound;
+  }
 
   RooWorkspace *ws = (RooWorkspace*) file->Get("workspace");
-  if (!ws) return false;
+  if (!ws)
+  {
+    delete file;
+    return isFound;
+  }
 
   const RooArgSet *params = ws->getSnapshot(Form("pdfMASS_Tot_%s_parIni", (isPbPb?"PbPb":"PP")));
-  if (!params) return false;
+  if (!params)
+  {
+    delete file;
+    return isFound;
+  }
   
-  return compareSnapshots(newpars, params);
+  isFound = compareSnapshots(newpars, params);
+  file->Close();
+  delete file;
+  
+  return isFound;
 }
 
 bool compareSnapshots(RooArgSet *pars1, const RooArgSet *pars2) {
