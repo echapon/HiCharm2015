@@ -122,7 +122,8 @@ ParticleMass Mass = {3.096, 3.686, 9.460, 10.023, 10.355, 91.188};
 
 
 enum class MassModel 
-{ 
+{
+    InvalidModel =0,
     SingleGaussian=1, 
     DoubleGaussian=2, 
     SingleCrystalBall=3, 
@@ -137,8 +138,9 @@ enum class MassModel
     Exponential=12
 };
 map< string , MassModel > MassModelDictionary = {
-  {"SingleGuassian",          MassModel::SingleGaussian},
-  {"DoubleGuassian",          MassModel::DoubleGaussian},
+  {"InvalidModel",            MassModel::InvalidModel},
+  {"SingleGaussian",          MassModel::SingleGaussian},
+  {"DoubleGaussian",          MassModel::DoubleGaussian},
   {"SingleCrystalBall",       MassModel::SingleCrystalBall},
   {"DoubleCrystalBall",       MassModel::DoubleCrystalBall},
   {"GaussianAndCrystalBall",  MassModel::GaussianAndCrystalBall},
