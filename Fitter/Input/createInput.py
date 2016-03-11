@@ -26,16 +26,16 @@ parnames_signal_pp="N_Jpsi_PP;sigma1_Jpsi_PP;sigma2_Jpsi_PP;m_Jpsi_PP;alpha_Jpsi
 parnames_signal_pbpb="N_Jpsi_PbPb;sigma1_Jpsi_PbPb;sigma2_Jpsi_PbPb;m_Jpsi_PbPb;alpha_Jpsi_PbPb;n_Jpsi_PbPb;f_Jpsi_PbPb"
 parnames_signal2_pp="N_Psi2S_PP;sigma1_Psi2S_PP;sigma2_Psi2S_PP;m_Psi2S_PP;alpha_Psi2S_PP;n_Psi2S_PP;f_Psi2S_PP"
 parnames_signal2_pbpb="N_Psi2S_PbPb;sigma1_Psi2S_PbPb;sigma2_Psi2S_PbPb;m_Psi2S_PbPb;alpha_Psi2S_PbPb;n_Psi2S_PbPb;f_Psi2S_PbPb"
-parnames_bkg_pp="N_Bkg_PP;lambda1_Bkg_PP;lambda2_Bkg_PP;lambda3_Bkg_PP;lambda4_Bkg_PP"
-parnames_bkg_pbpb="N_Bkg_PbPb;lambda1_Bkg_PbPb;lambda2_Bkg_PbPb;lambda3_Bkg_PbPb;lambda4_Bkg_PbPb"
+parnames_bkg_pp="N_Bkg_PP;lambda1_Bkg_PP;lambda2_Bkg_PP;lambda3_Bkg_PP;lambda4_Bkg_PP;lambda5_Bkg_PP;lambda6_Bkg_PP"
+parnames_bkg_pbpb="N_Bkg_PbPb;lambda1_Bkg_PbPb;lambda2_Bkg_PbPb;lambda3_Bkg_PbPb;lambda4_Bkg_PbPb;lambda5_Bkg_PbPb;lambda6_Bkg_PbPb"
 
-# provide the initial parameters
-parini_signal_pp="[ 0 , 250000 ];[ 0.04 , 0.01 , 0.09 ];[ 0.02 , 0.01 , 0.07 ];[ 3.096 , 2.996 , 3.196 ];[ 2.21 , 0.5 , 10.0 ];[ 2.0 , 0.5 , 20. ];[ 0.3 , 0.0 , 1.0 ]"
-parini_signal_pbpb="[ 0 , 250000 ];[ 0.04 , 0.01 , 0.09 ];[ 0.02 , 0.01 , 0.07 ];[ 3.096 , 2.996 , 3.196 ];[ 2.21 , 0.5 , 10.0 ];[ 2.0 , 0.5 , 20. ];[ 0.3 , 0.0 , 1.0 ]"
+# provide the initial parameters (default parameters set in fitCharmonia)
+parini_signal_pp=";;;;;"
+parini_signal_pbpb=";;;;;"
 parini_signal2_pp=";;;;;;"
 parini_signal2_pbpb=";;;;;;"
-parini_bkg_pp="[0,300000];[0.05,-1.0,1.0];[0.05,-1.0,1.0];;"
-parini_bkg_pbpb="[ 0 , 250000 ];[ 0.05 , -1.0 , 1.0 ];[ 0.05 , -1.0 , 1.0 ];;"
+parini_bkg_pp=";;;"
+parini_bkg_pbpb=";;;"
 
 ########################
 # END INPUT PARAMETERS #

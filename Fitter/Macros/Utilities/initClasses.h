@@ -81,7 +81,6 @@ typedef struct SiMuonPar {
 
 typedef struct InputOpt {
   int        oniaMode;
-  bool       isData, do2DFit, inExcStat, doSimulFit;
   EvtPar     PbPb, pp;
 } InputOpt;
 
@@ -124,10 +123,18 @@ ParticleMass Mass = {3.096, 3.686, 9.460, 10.023, 10.355, 91.188};
 
 enum class MassModel 
 { 
-  SingleGaussian, DoubleGaussian, SingleCrystalBall, DoubleCrystalBall, GaussianAndCrystalBall, 
-  FirstOrderPolynomial, SecondOrderPolynomial, ThirdOrderPolynomial, FourthOrderPolynomial, 
-  FirstOrderChebychev, SecondOrderChebychev, ThirdOrderChebychev, FourthOrderChebychev,
-  Exponential
+    SingleGaussian=1, 
+    DoubleGaussian=2, 
+    SingleCrystalBall=3, 
+    DoubleCrystalBall=4, 
+    GaussianAndCrystalBall=5, 
+    FirstOrderChebychev=6, 
+    SecondOrderChebychev=7, 
+    ThirdOrderChebychev=8, 
+    FourthOrderChebychev=9,
+    FifthOrderChebychev=10,
+    SixthOrderChebychev=11,
+    Exponential=12
 };
 map< string , MassModel > MassModelDictionary = {
   {"SingleGuassian",          MassModel::SingleGaussian},
@@ -135,14 +142,12 @@ map< string , MassModel > MassModelDictionary = {
   {"SingleCrystalBall",       MassModel::SingleCrystalBall},
   {"DoubleCrystalBall",       MassModel::DoubleCrystalBall},
   {"GaussianAndCrystalBall",  MassModel::GaussianAndCrystalBall},
-  {"FirstOrderPolynomial",    MassModel::FirstOrderPolynomial},
-  {"SecondOrderPolynomial",   MassModel::SecondOrderPolynomial},
-  {"ThirdOrderPolynomial",    MassModel::ThirdOrderPolynomial},
-  {"FourthOrderPolynomial",   MassModel::FourthOrderPolynomial},
   {"FirstOrderChebychev",     MassModel::FirstOrderChebychev},
   {"SecondOrderChebychev",    MassModel::SecondOrderChebychev},
   {"ThirdOrderChebychev",     MassModel::ThirdOrderChebychev},
   {"FourthOrderChebychev",    MassModel::FourthOrderChebychev},
+  {"FifthOrderChebychev",     MassModel::FifthOrderChebychev},
+  {"SixthOrderChebychev",     MassModel::SixthOrderChebychev},
   {"Exponential",             MassModel::Exponential}
 };
 
