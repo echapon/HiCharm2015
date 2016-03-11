@@ -25,7 +25,7 @@ string  findMyTree(string FileName);
 bool    getTChain(TChain* fChain, vector<string> FileNames);
 void    iniBranch(TChain* fChain,bool isMC=false);
 double  deltaR(TLorentzVector* GenMuon, TLorentzVector* RecoMuon);
-bool    isMatchedRecoDiMuon(int iRecoDiMuon, double maxDeltaR=0.3);
+bool    isMatchedRecoDiMuon(int iRecoDiMuon, double maxDeltaR=0.03);
 double  getNColl(int centr, bool isPP);
 void    setCentralityMap(const char* file);
 
