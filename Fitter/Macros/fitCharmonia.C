@@ -187,7 +187,7 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
        {      
          myws.loadSnapshot("pdfMASS_Tot_PbPb_parIni");
          // Fit the Datasets
-         myws.pdf("pdfMASS_Sig_PbPb")->fitTo(*myws.data(Form("dOS_%s_PbPb_NoBkg", DSTAG.c_str())), SumW2Error(kTRUE), Range("MassWindow"), NumCPU(numCores));
+         myws.pdf("pdfMASS_Tot_PbPb")->fitTo(*myws.data(Form("dOS_%s_PbPb_NoBkg", DSTAG.c_str())), SumW2Error(kTRUE), Range("MassWindow"), NumCPU(numCores));
          // Draw the mass plot
          drawMassPlot(myws, outputDir, opt, cut, (plotLabelPbPb+"_NoBkg"), DSTAG, true, incJpsi, incPsi2S, incBkg, cutCtau, doSimulFit, true, setLogScale, incSS, zoomPsi, nBins, getMeanPT);
        }
@@ -215,7 +215,7 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
        {
          myws.loadSnapshot("pdfMASS_Tot_PP_parIni");
          // Fit the Datasets
-         myws.pdf("pdfMASS_Sig_PP")->fitTo(*myws.data(Form("dOS_%s_PP_NoBkg", DSTAG.c_str())), SumW2Error(kTRUE), Range("MassWindow"), NumCPU(numCores));
+         myws.pdf("pdfMASS_Tot_PP")->fitTo(*myws.data(Form("dOS_%s_PP_NoBkg", DSTAG.c_str())), SumW2Error(kTRUE), Range("MassWindow"), NumCPU(numCores));
          // Draw the mass plot
          drawMassPlot(myws, outputDir, opt, cut, (plotLabelPP+"_NoBkg"), DSTAG, false, incJpsi, incPsi2S, incBkg, cutCtau, doSimulFit, true, setLogScale, incSS, zoomPsi, nBins, getMeanPT);
        }

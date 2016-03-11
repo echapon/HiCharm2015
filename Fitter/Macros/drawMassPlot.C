@@ -39,8 +39,8 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
   if(plotPureSMC) {
     dsOSName = Form("dOS_%s_%s_NoBkg", DSTAG.c_str(), (isPbPb?"PbPb":"PP"));
     dsSSName = Form("dSS_%s_%s_NoBkg", DSTAG.c_str(), (isPbPb?"PbPb":"PP"));
-    pdfName  = Form("pdfMASS_Sig_%s", (isPbPb?"PbPb":"PP"));
-    incBkg   = false;
+//    pdfName  = Form("pdfMASS_Sig_%s", (isPbPb?"PbPb":"PP"));
+//    incBkg   = false;
   }
 
   // Create the main plot of the fit
