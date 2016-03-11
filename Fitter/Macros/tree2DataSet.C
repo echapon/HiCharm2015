@@ -46,7 +46,7 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     TChain* theTree = new TChain(TreeName.c_str(),"");
     if(!getTChain(theTree, InputFileNames)){ return false; }     // Import files to TChain
     initOniaTree(theTree);                                       // Initialize the Onia Tree
-    iniBranch(theTree,isMC);                                          // Initialize the Branches
+    iniBranch(theTree,isMC);                                     // Initialize the Branches
 
     RooRealVar* mass    = new RooRealVar("invMass","#mu#mu mass", 2.0, 5.0, "GeV/c^{2}");
     RooRealVar* ctau    = new RooRealVar("ctau","c_{#tau}", -10.0, 10.0, "cm");
@@ -55,23 +55,19 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     RooRealVar* rapQQ   = new RooRealVar("rap","#mu#mu y", -2.4, 2.4, "");
     RooRealVar* cent    = new RooRealVar("cent","centrality", 0.0, 200.0, "");
     RooRealVar* weight  = new RooRealVar("weight","MC weight", 0.0, 1.0, "");
-    RooArgSet* cols = NULL;
-//    RooArgSet cols(*mass, *ctau, *ctauErr, *ptQQ, *rapQQ, *cent);
+    RooArgSet*  cols    = NULL;
     
     if (isMC)
     {
       setCentralityMap(Form("%s/Input/CentralityMap_PbPb2015.txt",gSystem->ExpandPathName(gSystem->pwd())));
-      
-      cols = new RooArgSet(*mass, *ctau, *ctauErr, *ptQQ, *rapQQ, *cent, *weight);
-      //      cols.add(WeightVar(*weight));
+      cols   = new RooArgSet(*mass, *ctau, *ctauErr, *ptQQ, *rapQQ, *cent, *weight);
       dataOS = new RooDataSet(Form("dOS_%s", DSName.c_str()), "dOS", *cols, WeightVar(*weight));
       dataSS = new RooDataSet(Form("dSS_%s", DSName.c_str()), "dSS", *cols, WeightVar(*weight));
       dataOSNoBkg = new RooDataSet(Form("dOS_%s_NoBkg", DSName.c_str()), "dOSNoBkg", *cols, WeightVar(*weight));
     }
     else
     {
-      cols = new RooArgSet(*mass, *ctau, *ctauErr, *ptQQ, *rapQQ, *cent);
-                            
+      cols = new RooArgSet(*mass, *ctau, *ctauErr, *ptQQ, *rapQQ, *cent);                   
       dataOS = new RooDataSet(Form("dOS_%s", DSName.c_str()), "dOS", *cols);
       dataSS = new RooDataSet(Form("dSS_%s", DSName.c_str()), "dSS", *cols);
     }
@@ -80,7 +76,7 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     cout << "[INFO] Starting to process " << nentries << " nentries" << endl;
     for (Long64_t jentry=0; jentry<nentries;jentry++) {
 
-      if (jentry%1000000==0) cout << jentry << "/" << nentries << endl;
+      if (jentry%1000000==0) cout << "[INFO] " << jentry << "/" << nentries << endl;
        
       if (theTree->LoadTree(jentry)<0) break;
       if (theTree->GetTreeNumber()!=fCurrent) {
@@ -90,6 +86,10 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
       Reco_QQ_4mom->Clear();
       Reco_QQ_mumi_4mom->Clear();
       Reco_QQ_mupl_4mom->Clear();
+      if (isMC) {
+        Gen_QQ_mumi_4mom->Clear();
+        Gen_QQ_mupl_4mom->Clear();
+      }
       theTree->GetEntry(jentry);  
   
       for (int iQQ=0; iQQ<Reco_QQ_size; iQQ++) {
@@ -114,21 +114,25 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
 	  {
 	    if (Reco_QQ_sign[iQQ]==0) { // Opposite-Sign dimuons
 	      dataOS->add(*cols); // Signal and background dimuons
-        if (isMC && isMatchedRecoDiMuon(iQQ)) dataOSNoBkg->add(*cols); // Signal-only dimuons
+              if (isMC && isMatchedRecoDiMuon(iQQ)) dataOSNoBkg->add(*cols); // Signal-only dimuons
 	    }
-      else {                    // Like-Sign dimuons
+            else {                    // Like-Sign dimuons
 	      dataSS->add(*cols);
 	    }
 	  }
       }
     }
+    // Close the TChain and all its pointers
+    delete Reco_QQ_4mom; delete Reco_QQ_mumi_4mom; delete Reco_QQ_mupl_4mom; delete Gen_QQ_mumi_4mom; delete Gen_QQ_mupl_4mom;
+    theTree->Reset(); delete theTree;
+    
+    // Save all the datasets
     TFile *DBFile = TFile::Open(OutputFileName.c_str(),"RECREATE");
     DBFile->cd();
     dataOS->Write(Form("dOS_%s", DSName.c_str()));
     if (isMC) dataOSNoBkg->Write(Form("dOS_%s_NoBkg", DSName.c_str()));
     dataSS->Write(Form("dSS_%s", DSName.c_str())); 
     DBFile->Write(); DBFile->Close(); delete DBFile;
-
   }
   else {
 
@@ -138,11 +142,15 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     dataOS = (RooDataSet*)DBFile->Get(Form("dOS_%s", DSName.c_str()));
     if (isMC) dataOSNoBkg = (RooDataSet*)DBFile->Get(Form("dOS_%s_NoBkg", DSName.c_str()));
     dataSS = (RooDataSet*)DBFile->Get(Form("dSS_%s", DSName.c_str()));
+    DBFile->Close(); delete DBFile; 
   }
 
   if(!dataOS || !dataSS || (isMC && !dataOSNoBkg) ){ cout << "[ERROR] " << DSName << " was not found" << endl; return false; }
   Workspace.import(*dataOS); Workspace.import(*dataSS);
   if(isMC) Workspace.import(*dataOSNoBkg);
+
+  // delete the local datasets
+  delete dataSS; delete dataOS; delete dataOSNoBkg;
 						   
   return true;
 };
@@ -150,10 +158,12 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
 string findMyTree(string FileName)
 {
   TFile *f = TFile::Open(FileName.c_str(), "READ");
-  if(f->GetListOfKeys()->Contains("hionia")){ return "hionia/myTree"; }
-  else if(f->GetListOfKeys()->Contains("myTree")){ return "myTree"; }
+  string name = "";
+  if(f->GetListOfKeys()->Contains("hionia")){ name = "hionia/myTree"; }
+  else if(f->GetListOfKeys()->Contains("myTree")){ name = "myTree"; }
   else { cout << "[ERROR] myTree was not found in: " << FileName << endl; }
-  return ""; 
+  f->Close(); delete f;
+  return name; 
 };
   
 bool getTChain(TChain *fChain, vector<string> FileNames) 
@@ -172,7 +182,11 @@ void iniBranch(TChain* fChain, bool isMC)
   cout << "[INFO] Initializing Branches of " << TreeName.c_str() << endl;
   fChain->GetBranch("Reco_QQ_4mom")->SetAutoDelete(false);   
   fChain->GetBranch("Reco_QQ_mupl_4mom")->SetAutoDelete(false); 
-  fChain->GetBranch("Reco_QQ_mumi_4mom")->SetAutoDelete(false); 
+  fChain->GetBranch("Reco_QQ_mumi_4mom")->SetAutoDelete(false);  
+  if (isMC) {
+    fChain->GetBranch("Gen_QQ_mupl_4mom")->SetAutoDelete(false); 
+    fChain->GetBranch("Gen_QQ_mumi_4mom")->SetAutoDelete(false);  
+  }
   fChain->SetBranchStatus("*",0);
   RecoQQ::iniBranches(fChain); 
   fChain->SetBranchStatus("Centrality",1); 
@@ -181,23 +195,14 @@ void iniBranch(TChain* fChain, bool isMC)
   fChain->SetBranchStatus("Reco_QQ_4mom",1); 
   fChain->SetBranchStatus("Reco_QQ_mupl_4mom",1); 
   fChain->SetBranchStatus("Reco_QQ_mumi_4mom",1);
-  fChain->SetBranchStatus("Reco_QQ_ctau",1); 
   fChain->SetBranchStatus("Reco_QQ_ctau3D",1); 
-  fChain->SetBranchStatus("Reco_QQ_ctauErr",1); 
-  fChain->SetBranchStatus("Reco_QQ_ctauErr3D",1);
-  
+  fChain->SetBranchStatus("Reco_QQ_ctauErr3D",1);  
   if (isMC)
   {
     fChain->SetBranchStatus("Gen_QQ_size",1);
-    fChain->SetBranchStatus("Gen_mu_4mom",1);
-    fChain->SetBranchStatus("Reco_mu_4mom",1);
-    fChain->SetBranchStatus("Reco_mu_size",1);
-    fChain->SetBranchStatus("Reco_mu_charge",1);
-    fChain->SetBranchStatus("Gen_mu_charge",1);
     fChain->SetBranchStatus("Gen_QQ_mupl_4mom",1);
     fChain->SetBranchStatus("Gen_QQ_mumi_4mom",1);
   }
-  
 };
 
 

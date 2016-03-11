@@ -17,7 +17,6 @@
 
 // Fixed size dimensions of array or collections stored in the TTree if any.
 
-TChain          *fChain;   //!pointer to the analyzed TTree or TChain
 Int_t           fCurrent; //!current Tree number in a TChain
 
 // Declaration of leaf types
@@ -288,6 +287,8 @@ void initOniaTree(TChain *tree)
    // code, but the routine can be extended by the user if needed.
    // Init() will be called many times when running on PROOF
    // (once per file to be processed).
+
+   TChain   *fChain;   //!pointer to the analyzed TTree or TChain
 
    // Set object pointer
    Reco_QQ_4mom = 0;
