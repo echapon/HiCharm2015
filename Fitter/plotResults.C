@@ -23,6 +23,10 @@ using namespace std;
 const char* ylabel = "(#Psi(2S)/J/#Psi)_{PbPb} / (#Psi(2S)/J/#Psi)_{pp}";
 const char* poiname = "RFrac2Svs1S_PbPbvsPP";
 
+//////////////////
+// DECLARATIONS //
+//////////////////
+
 // function to get the param of interest from a workspace
 RooRealVar* poiFromFile(const char* filename);
 // function to get the analysis bin from a file
@@ -33,6 +37,12 @@ bool binok(vector<anabin> thecats, string xaxis, anabin &tocheck);
 void plotGraph(map<anabin, TGraphAsymmErrors*> theGraphs, string xaxis, string outputDir);
 void plot(vector<anabin> thecats, string xaxis, string workDirName);
 vector<TString> fileList(const char* input);
+
+
+
+/////////////////////////////////////////////
+// MAIN FUNCTIONS TO BE CALLED BY THE USER //
+/////////////////////////////////////////////
 
 void plotPt(string workDirName) {
    string xaxis = "pt";
@@ -52,6 +62,9 @@ void plotCent(string workDirName) {
    plot(theCats,xaxis,workDirName);
 };
 
+/////////////////////
+// OTHER FUNCTIONS //
+/////////////////////
 
 void plot(vector<anabin> thecats, string xaxis, string outputDir) {
    // thecats contains the categories. eg 0<y<1.6 and 1.6<y<2.4
@@ -97,24 +110,27 @@ void plot(vector<anabin> thecats, string xaxis, string outputDir) {
       theGraphs[*it]->SetName(Form("bin_%i",cnt));
       for (int i=0; i<n; i++) {
          double x, exl, exh, y, eyl, eyh;
-         double low = theBins[*it][i].ptbin().low();
-         double high = theBins[*it][i].ptbin().high();
+         double low, high; 
          if (xaxis=="pt") {
+            low= theBins[*it][i].ptbin().low();
+            high = theBins[*it][i].ptbin().high();
             x = (low+high)/2.;
             exh = (high-low)/2.;
             exl = (high-low)/2.;
          }
          if (xaxis=="cent") {
-            x = HI::findNcollAverage(low,high);
+            low= theBins[*it][i].centbin().low();
+            high = theBins[*it][i].centbin().high();
+            x = HI::findNpartAverage(low,high);
             exl = 0.;
             exh = 0.;
          }
          y = theVarsBinned[*it][i]->getVal();
-         eyl = theVarsBinned[*it][i]->getErrorLo();
+         eyl = fabs(theVarsBinned[*it][i]->getErrorLo());
          eyh = theVarsBinned[*it][i]->getErrorHi();
          theGraphs[*it]->SetPoint(i,x,y);
          theGraphs[*it]->SetPointError(i,exl,exh,eyl,eyh);
-         cout << x << " " << y << " " << endl;
+         cout << x << " " << y << " " << eyl << " " << eyh << endl;
       }
       cnt++;
    }
@@ -184,6 +200,8 @@ bool binok(vector<anabin> thecats, string xaxis, anabin &tocheck) {
 }
 
 void plotGraph(map<anabin, TGraphAsymmErrors*> theGraphs, string xaxis, string outputDir) {
+   setTDRStyle();
+
    TCanvas *c1 = new TCanvas("c1","c1",600,600);
 
    // the axes
@@ -203,7 +221,8 @@ void plotGraph(map<anabin, TGraphAsymmErrors*> theGraphs, string xaxis, string o
    haxes->Draw();
    line.Draw();
 
-   TLegend *tleg = new TLegend(0.4,0.4,0.6,0.6);
+   TLegend *tleg = new TLegend(0.51,0.14,0.85,0.34);
+   tleg->SetBorderSize(0);
 
    int cnt=0;
    for (map<anabin, TGraphAsymmErrors*>::const_iterator it=theGraphs.begin(); it!=theGraphs.end(); it++) {
@@ -228,7 +247,8 @@ void plotGraph(map<anabin, TGraphAsymmErrors*> theGraphs, string xaxis, string o
       TString raplabel = Form("%.1f < |y| < %.1f ; ",it->first.rapbin().low(),it->first.rapbin().high());
       TString otherlabel = "BWAA";
       if (xaxis == "pt") otherlabel = Form("%i\%-%i\%",(int) (it->first.centbin().low()/2.), (int) (it->first.centbin().high()/2.));
-      tleg->AddEntry(tg, raplabel + otherlabel, "p");
+      if (xaxis == "cent") otherlabel = Form("%.1f\%-%.1f\%",it->first.ptbin().low(), it->first.ptbin().high());
+      tleg->AddEntry(tg, (raplabel + otherlabel), "p");
 
       cnt++;
    }
@@ -236,7 +256,7 @@ void plotGraph(map<anabin, TGraphAsymmErrors*> theGraphs, string xaxis, string o
    tleg->Draw();
 
    int iPos = 33;
-   CMS_lumi( (TPad*) gPad, 99, iPos, "Preliminary pp " );
+   CMS_lumi( (TPad*) gPad, 105, iPos, "PbPb-PP" );
 
    c1->cd();
    c1->Update();
