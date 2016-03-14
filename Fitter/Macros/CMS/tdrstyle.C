@@ -1,5 +1,12 @@
+#ifndef tdrstyle_C
+#define tdrstyle_C
+
 #include "TStyle.h"
 #include "TVirtualPad.h"
+
+#include <iostream>
+
+using namespace std;
 
 // tdrGrid: Turns the grid lines on (true) or off (false)
 
@@ -160,3 +167,4 @@ void setTDRStyle() {
 
   cout << "This is TDR style" << endl;
 }
+#endif // #ifndef tdrstyle_C

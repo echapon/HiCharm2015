@@ -1,4 +1,11 @@
+#ifndef CMS_lumi_C
+#define CMS_lumi_C
+
 #include "CMS_lumi.h"
+
+#include <iostream>
+
+using namespace std;
 
 void 
 CMS_lumi( TPad* pad, int iPeriod, int iPosX, TString label )
@@ -203,3 +210,4 @@ CMS_lumi( TPad* pad, int iPeriod, int iPosX, TString label )
     }
   return;
 }
+#endif // #ifndef CMS_lumi_C
