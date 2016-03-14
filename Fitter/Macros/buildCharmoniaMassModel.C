@@ -382,7 +382,7 @@ bool addSignalMassModel(RooWorkspace& ws, string object, MassModel model, map<st
       }
 
       // create the variables for this model              
-      ws.factory( parIni[Form("f_Jpsi_%s", (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("f_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
       ws.factory( parIni[Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() ); 
       ws.factory( parIni[Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
       ws.factory( parIni[Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
@@ -398,8 +398,8 @@ bool addSignalMassModel(RooWorkspace& ws, string object, MassModel model, map<st
                       ));               
 
       // Sum the PDFs to get the signal PDF
-      ws.factory(Form("SUM::%s(%s*%s, %s)", Form("pdfMASS_Jpsi_%s", (isPbPb?"PbPb":"PP")),
-		      Form("f_Jpsi_%s", (isPbPb?"PbPb":"PP")),
+      ws.factory(Form("SUM::%s(%s*%s, %s)", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+		      Form("f_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
 		      Form("pdfMASSG1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
 		      Form("pdfMASSG2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
 		      ));
@@ -437,17 +437,17 @@ bool addSignalMassModel(RooWorkspace& ws, string object, MassModel model, map<st
     case (MassModel::DoubleCrystalBall): 
       
       // check that all input parameters are defined
-      if (!( 
-            parIni.count(Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
-            parIni.count(Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
-            parIni.count(Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
-            parIni.count(Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
-            parIni.count(Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
-            parIni.count(Form("f_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) 
-             )) { 
-	cout << Form("[ERROR] Initial parameters where not found for %s Double Crystal Ball Model in %s", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; return false; 
-      }
-  
+        if (!(
+              parIni.count(Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) &&
+              parIni.count(Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) &&
+              parIni.count(Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) &&
+              parIni.count(Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) &&
+              parIni.count(Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) &&
+              parIni.count(Form("f_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")))
+              )) {
+          cout << Form("[ERROR] Initial parameters where not found for %s Double Crystal Ball Model in %s", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; return false;
+        }
+        
       // create the variables for this model             
       ws.factory( parIni[Form("f_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
       ws.factory( parIni[Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
