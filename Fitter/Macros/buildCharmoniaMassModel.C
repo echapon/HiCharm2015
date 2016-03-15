@@ -13,6 +13,7 @@ bool buildCharmoniaMassModel(RooWorkspace& ws, struct CharmModel model, map<stri
                              bool incBkg,                // Include background model
                              bool incJpsi,               // Include Jpsi model
                              bool incPsi2S,              // Include Psi(2S) model
+                             string label,                // pdf label
                              int  numEntries = 300000    // Number of entries in the dataset
                              )
 {
@@ -76,8 +77,10 @@ bool buildCharmoniaMassModel(RooWorkspace& ws, struct CharmModel model, map<stri
     if(!addBackgroundMassModel(ws, "Bkg", model.Bkg.Mass, parIni, isPbPb)) { cout << "[ERROR] Adding Background Mass Model failed" << endl; return false; }
   }
   // Total PDF
+  string pdfName = Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP"));
+  if (!label.empty())pdfName+=Form("_%s",label.c_str());
   if (incJpsi && incPsi2S && incBkg) {
-    ws.factory(Form("SUM::%s(%s*%s, %s*%s, %s*%s)", Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP")),
+    ws.factory(Form("SUM::%s(%s*%s, %s*%s, %s*%s)", pdfName.c_str(),
 		    parIni[Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP"))].c_str(),
 		    Form("pdfMASS_Jpsi_%s", (isPbPb?"PbPb":"PP")),
 		    parIni[Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP"))].c_str(),
@@ -87,7 +90,7 @@ bool buildCharmoniaMassModel(RooWorkspace& ws, struct CharmModel model, map<stri
 		    ));
   }
   if (incJpsi && incPsi2S && !incBkg) {
-    ws.factory(Form("SUM::%s(%s*%s, %s*%s)", Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP")),
+    ws.factory(Form("SUM::%s(%s*%s, %s*%s)", pdfName.c_str(),
 		    parIni[Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP"))].c_str(),
 		    Form("pdfMASS_Jpsi_%s", (isPbPb?"PbPb":"PP")),
 		    parIni[Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP"))].c_str(),
@@ -95,7 +98,7 @@ bool buildCharmoniaMassModel(RooWorkspace& ws, struct CharmModel model, map<stri
 		    ));
   }
   if (incJpsi && !incPsi2S && incBkg) {
-    ws.factory(Form("SUM::%s(%s*%s, %s*%s)", Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP")),
+    ws.factory(Form("SUM::%s(%s*%s, %s*%s)", pdfName.c_str(),
 		    parIni[Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP"))].c_str(),
 		    Form("pdfMASS_Jpsi_%s", (isPbPb?"PbPb":"PP")),
 		    parIni[Form("N_Bkg_%s", (isPbPb?"PbPb":"PP"))].c_str(),
@@ -103,7 +106,7 @@ bool buildCharmoniaMassModel(RooWorkspace& ws, struct CharmModel model, map<stri
 		    ));
   }
   if (!incJpsi && incPsi2S && incBkg) {
-    ws.factory(Form("SUM::%s(%s*%s, %s*%s)", Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP")),
+    ws.factory(Form("SUM::%s(%s*%s, %s*%s)", pdfName.c_str(),
 		    parIni[Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP"))].c_str(),
 		    Form("pdfMASS_Psi2S_%s", (isPbPb?"PbPb":"PP")),
 		    parIni[Form("N_Bkg_%s", (isPbPb?"PbPb":"PP"))].c_str(),
@@ -111,19 +114,19 @@ bool buildCharmoniaMassModel(RooWorkspace& ws, struct CharmModel model, map<stri
 		    ));
   }
   if (incJpsi && !incPsi2S && !incBkg) {
-    ws.factory(Form("SUM::%s(%s*%s)", Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP")),
+    ws.factory(Form("SUM::%s(%s*%s)", pdfName.c_str(),
 		    parIni[Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP"))].c_str(),
 		    Form("pdfMASS_Jpsi_%s", (isPbPb?"PbPb":"PP"))
                     ));
   }
   if (!incJpsi && incPsi2S && !incBkg) {
-    ws.factory(Form("SUM::%s(%s*%s)", Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP")),
+    ws.factory(Form("SUM::%s(%s*%s)", pdfName.c_str(),
 		    parIni[Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP"))].c_str(),
 		    Form("pdfMASS_Psi2S_%s", (isPbPb?"PbPb":"PP"))
 		    ));
   }
   if (!incJpsi && !incPsi2S && incBkg) {
-    ws.factory(Form("SUM::%s(%s*%s)", Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP")),
+    ws.factory(Form("SUM::%s(%s*%s)", pdfName.c_str(),
 		    parIni[Form("N_Bkg_%s", (isPbPb?"PbPb":"PP"))].c_str(),
 		    Form("pdfMASS_Bkg_%s", (isPbPb?"PbPb":"PP"))
 		    ));
@@ -131,13 +134,14 @@ bool buildCharmoniaMassModel(RooWorkspace& ws, struct CharmModel model, map<stri
   if (!incJpsi && !incPsi2S && !incBkg) {
     cout << "[ERROR] User did not include any model, please fix your input settings!" << endl; return false;
   }
-  ws.pdf(Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP")))->setNormRange("MassWindow");
+  ws.pdf(pdfName.c_str())->setNormRange("MassWindow");
 
   // save the initial values of the model we've just created
-  RooAbsPdf *themodel = ws.pdf(Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP")));
+  RooAbsPdf *themodel = ws.pdf(pdfName.c_str());
   RooRealVar *x = ws.var("invMass");
   RooArgSet* params = (RooArgSet*) themodel->getParameters(*x) ;
-  ws.saveSnapshot(Form("pdfMASS_Tot_%s_parIni", (isPbPb?"PbPb":"PP")),*params,kTRUE) ;
+  pdfName+="_parIni";
+  ws.saveSnapshot(pdfName.c_str(),*params,kTRUE) ;
   
   //ws.Print();
   return true;
@@ -378,7 +382,7 @@ bool addSignalMassModel(RooWorkspace& ws, string object, MassModel model, map<st
       }
 
       // create the variables for this model              
-      ws.factory( parIni[Form("f_Jpsi_%s", (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("f_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
       ws.factory( parIni[Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() ); 
       ws.factory( parIni[Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
       ws.factory( parIni[Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
@@ -394,8 +398,8 @@ bool addSignalMassModel(RooWorkspace& ws, string object, MassModel model, map<st
                       ));               
 
       // Sum the PDFs to get the signal PDF
-      ws.factory(Form("SUM::%s(%s*%s, %s)", Form("pdfMASS_Jpsi_%s", (isPbPb?"PbPb":"PP")),
-		      Form("f_Jpsi_%s", (isPbPb?"PbPb":"PP")),
+      ws.factory(Form("SUM::%s(%s*%s, %s)", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+		      Form("f_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
 		      Form("pdfMASSG1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
 		      Form("pdfMASSG2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
 		      ));
@@ -433,17 +437,17 @@ bool addSignalMassModel(RooWorkspace& ws, string object, MassModel model, map<st
     case (MassModel::DoubleCrystalBall): 
       
       // check that all input parameters are defined
-      if (!( 
-            parIni.count(Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
-            parIni.count(Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
-            parIni.count(Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
-            parIni.count(Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
-            parIni.count(Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) && 
-            parIni.count(Form("f_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) 
-             )) { 
-	cout << Form("[ERROR] Initial parameters where not found for %s Double Crystal Ball Model in %s", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; return false; 
-      }
-  
+        if (!(
+              parIni.count(Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) &&
+              parIni.count(Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) &&
+              parIni.count(Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) &&
+              parIni.count(Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) &&
+              parIni.count(Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) &&
+              parIni.count(Form("f_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")))
+              )) {
+          cout << Form("[ERROR] Initial parameters where not found for %s Double Crystal Ball Model in %s", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; return false;
+        }
+        
       // create the variables for this model             
       ws.factory( parIni[Form("f_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
       ws.factory( parIni[Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );

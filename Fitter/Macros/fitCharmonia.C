@@ -6,7 +6,7 @@
 #include <algorithm>
 
 void setCtauCuts(struct KinCuts& cut, bool isPbPb);
-bool importDataset(RooWorkspace& myws, RooWorkspace& inputWS, struct KinCuts cut, string label);
+int importDataset(RooWorkspace& myws, RooWorkspace& inputWS, struct KinCuts cut, string label);
 bool setModel( struct OniaModel& model, map<string, string>  parIni, bool isPbPb, bool incJpsi, bool incPsi2S, bool incBkg);
 
 void setOptions(struct InputOpt* opt);
@@ -77,15 +77,19 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
   struct OniaModel model;
   RooWorkspace     myws("workspace", "local workspace");
 
+  bool doFit = true;
   if (doSimulFit || !isPbPb) {
     // Set models based on initial parameters
     if (!setModel(model, parIni, false, incJpsi, incPsi2S, incBkg)) { return false; }
     // Import the local datasets
     string label = Form("%s_%s", DSTAG.c_str(), "PP");
-    if (!importDataset(myws, inputWorkspace, cut, label)) { return false; }
+    int importID = importDataset(myws, inputWorkspace, cut, label);
+    if (importID<0) { return false; }
+    else if (importID==0) { doFit = false; }
+    
     // Build the Fit Model    
     int    numEntries = myws.data(Form("dOS_%s_PP", DSTAG.c_str()))->sumEntries();
-    if (!buildCharmoniaMassModel(myws, model.PP, parIni, false, doSimulFit, incBkg, incJpsi, incPsi2S, numEntries))  { return false; }
+    if (!buildCharmoniaMassModel(myws, model.PP, parIni, false, doSimulFit, incBkg, incJpsi, incPsi2S, "", numEntries))  { return false; }
 
     if (incJpsi)  { plotLabelPP = plotLabelPP + Form("_Jpsi_%s", parIni["Model_Jpsi_PP"].c_str());   } 
     if (incPsi2S) { plotLabelPP = plotLabelPP + Form("_Psi2S_%s", parIni["Model_Psi2S_PP"].c_str()); }
@@ -94,7 +98,13 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
     if (wantPureSMC)
     {
       label = Form("%s_%s_NoBkg", DSTAG.c_str(), "PP");
-      if (!importDataset(myws, inputWorkspace, cut, label)) { return false; }
+      
+      int importID = importDataset(myws, inputWorkspace, cut, label);
+      if (importID<0) { return false; }
+      else if (importID==0) { doFit = false; }
+      
+      if (!buildCharmoniaMassModel(myws, model.PP, parIni, false, doSimulFit, incBkg, incJpsi, incPsi2S, "NoBkg", numEntries))  { return false; }
+      
       if (incJpsi) {
         myws.factory(Form("SUM::%s(%s*%s)", "pdfMASS_Sig_PP", "N_Jpsi_PP", "pdfMASS_Jpsi_PP"));
       } 
@@ -109,10 +119,13 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
     if (!setModel(model, parIni, true, incJpsi, incPsi2S, incBkg)) { return false; }
     // Import the local datasets
     string label = Form("%s_%s", DSTAG.c_str(), "PbPb");
-    if (!importDataset(myws, inputWorkspace, cut, label)) { return false; }
-    // Build the Fit Model    
+    
+    int importID = importDataset(myws, inputWorkspace, cut, label);
+    if (importID<0) { return false; }
+    else if (importID==0) { doFit = false; }
+    // Build the Fit Model
     int    numEntries = myws.data(Form("dOS_%s_PbPb", DSTAG.c_str()))->sumEntries();
-    if (!buildCharmoniaMassModel(myws, model.PbPb, parIni, true, doSimulFit, incBkg, incJpsi, incPsi2S, numEntries)) { return false; }
+    if (!buildCharmoniaMassModel(myws, model.PbPb, parIni, true, doSimulFit, incBkg, incJpsi, incPsi2S, "", numEntries)) { return false; }
 
     if (incJpsi)  { plotLabelPbPb = plotLabelPbPb + Form("_Jpsi_%s", parIni["Model_Jpsi_PbPb"].c_str());   } 
     if (incPsi2S) { plotLabelPbPb = plotLabelPbPb + Form("_Psi2S_%s", parIni["Model_Psi2S_PbPb"].c_str()); }
@@ -121,7 +134,13 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
     if (wantPureSMC)
     {
       label = Form("%s_%s_NoBkg", DSTAG.c_str(), "PbPb");
-      if (!importDataset(myws, inputWorkspace, cut, label)) { return false; }
+      
+      int importID = importDataset(myws, inputWorkspace, cut, label);
+      if (importID<0) { return false; }
+      else if (importID==0) { doFit = false; }
+      
+      if (!buildCharmoniaMassModel(myws, model.PbPb, parIni, true, doSimulFit, incBkg, incJpsi, incPsi2S, "NoBkg", numEntries))  { return false; }
+      
       if (incJpsi) {
         myws.factory(Form("SUM::%s(%s*%s)", "pdfMASS_Sig_PbPb", "N_Jpsi_PbPb", "pdfMASS_Jpsi_PbPb"));
       } 
@@ -130,96 +149,98 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
       }
     }
   }
-
-  if (doSimulFit) { 
-    // check if we have already done this fit. If yes, do nothing and return true.
-    bool found = true;
-    RooArgSet *newpars = myws.pdf("pdfMASS_Tot_PbPb")->getParameters(*(myws.var("invMass")));
-    found = found && isFitAlreadyFound(newpars, outputDir, plotLabelPbPb, DSTAG, cut, true);
-    newpars = myws.pdf("pdfMASS_Tot_PP")->getParameters(*(myws.var("invMass")));
-    found = found && isFitAlreadyFound(newpars, outputDir, plotLabelPP, DSTAG, cut, false);
-    if (found) {
-       cout << "[INFO] This fit was already done, so I'll just go to the next one." << endl;
-       return true;
+  if (doFit)
+  {
+    if (doSimulFit) {
+      // check if we have already done this fit. If yes, do nothing and return true.
+      bool found = true;
+      RooArgSet *newpars = myws.pdf("pdfMASS_Tot_PbPb")->getParameters(*(myws.var("invMass")));
+      found = found && isFitAlreadyFound(newpars, outputDir, plotLabelPbPb, DSTAG, cut, true);
+      newpars = myws.pdf("pdfMASS_Tot_PP")->getParameters(*(myws.var("invMass")));
+      found = found && isFitAlreadyFound(newpars, outputDir, plotLabelPP, DSTAG, cut, false);
+      if (found) {
+        cout << "[INFO] This fit was already done, so I'll just go to the next one." << endl;
+        return true;
+      }
+      
+      // Create the combided datasets and models
+      RooCategory* sample = new RooCategory("sample","sample"); sample->defineType("PbPb"); sample->defineType("PP");
+      RooDataSet*  combData = new RooDataSet("combData","combined data", *myws.var("invMass"), Index(*sample),
+                                             Import("PbPb", *((RooDataSet*)myws.data("dOS_DATA_PbPb"))),
+                                             Import("PP",   *((RooDataSet*)myws.data("dOS_DATA_PP")))
+                                             );
+      RooSimultaneous* simPdf = new RooSimultaneous("simPdf", "simultaneous pdf", *sample);
+      simPdf->addPdf(*myws.pdf("pdfMASS_Tot_PbPb"), "PbPb"); simPdf->addPdf(*myws.pdf("pdfMASS_Tot_PP"), "PP");
+      
+      // Do the simultaneous fit
+      simPdf->fitTo(*combData, SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(numCores), Range("MassWindow"));
+      
+      // Create the output files
+      drawMassPlot(myws, outputDir, opt, cut, plotLabelPbPb, DSTAG, true, incJpsi, incPsi2S, incBkg, cutCtau, doSimulFit, false, setLogScale, incSS, zoomPsi, nBins, getMeanPT);
+      drawMassPlot(myws, outputDir, opt, cut, plotLabelPP, DSTAG, false, incJpsi, incPsi2S, incBkg, cutCtau, doSimulFit, false, setLogScale, incSS, zoomPsi, nBins, getMeanPT);
+      
+      // Delete the objects used during the simultaneous fit
+      delete sample; delete combData; delete simPdf;
+      
     }
-    
-    // Create the combided datasets and models
-    RooCategory* sample = new RooCategory("sample","sample"); sample->defineType("PbPb"); sample->defineType("PP");
-    RooDataSet*  combData = new RooDataSet("combData","combined data", *myws.var("invMass"), Index(*sample), 
-					   Import("PbPb", *((RooDataSet*)myws.data("dOS_DATA_PbPb"))), 
-					   Import("PP",   *((RooDataSet*)myws.data("dOS_DATA_PP")))
-					   );
-    RooSimultaneous* simPdf = new RooSimultaneous("simPdf", "simultaneous pdf", *sample);
-    simPdf->addPdf(*myws.pdf("pdfMASS_Tot_PbPb"), "PbPb"); simPdf->addPdf(*myws.pdf("pdfMASS_Tot_PP"), "PP"); 
-    
-    // Do the simultaneous fit
-    simPdf->fitTo(*combData, SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(numCores), Range("MassWindow"));
-
-    // Create the output files
-    drawMassPlot(myws, outputDir, opt, cut, plotLabelPbPb, DSTAG, true, incJpsi, incPsi2S, incBkg, cutCtau, doSimulFit, false, setLogScale, incSS, zoomPsi, nBins, getMeanPT);
-    drawMassPlot(myws, outputDir, opt, cut, plotLabelPP, DSTAG, false, incJpsi, incPsi2S, incBkg, cutCtau, doSimulFit, false, setLogScale, incSS, zoomPsi, nBins, getMeanPT);
-
-    // Delete the objects used during the simultaneous fit
-    delete sample; delete combData; delete simPdf;
-
-  }
-  else {
-     if (isPbPb) {
-       // check if we have already done this fit. If yes, do nothing and return true.
-       RooArgSet *newpars = myws.pdf("pdfMASS_Tot_PbPb")->getParameters(*(myws.var("invMass")));
-       bool found =  isFitAlreadyFound(newpars, outputDir, plotLabelPbPb, DSTAG, cut, true);
-       if (found) {
-         cout << "[INFO] This fit was already done, so I'll just go to the next one." << endl;
-         return true;
-       }
-
-       // Fit the Datasets
-       if (incJpsi || incPsi2S) {
-         myws.pdf("pdfMASS_Tot_PbPb")->fitTo(*myws.data(Form("dOS_%s_PbPb", DSTAG.c_str())), SumW2Error(kTRUE), Extended(kTRUE), Range("MassWindow"), NumCPU(numCores));
-       } else {
-         myws.pdf("pdfMASS_Tot_PbPb")->fitTo(*myws.data(Form("dOS_%s_PbPb", DSTAG.c_str())), SumW2Error(kTRUE), Extended(kTRUE), Range("SideBand1,SideBand2"), NumCPU(numCores));
-       }  
-
-       // Create the output files
-       drawMassPlot(myws, outputDir, opt, cut, plotLabelPbPb, DSTAG, true, incJpsi, incPsi2S, incBkg, cutCtau, doSimulFit, false, setLogScale, incSS, zoomPsi, nBins, getMeanPT);
-       
-       if (wantPureSMC)
-       {      
-         myws.loadSnapshot("pdfMASS_Tot_PbPb_parIni");
-         // Fit the Datasets
-         myws.pdf("pdfMASS_Sig_PbPb")->fitTo(*myws.data(Form("dOS_%s_PbPb_NoBkg", DSTAG.c_str())), SumW2Error(kTRUE), Range("MassWindow"), NumCPU(numCores));
-         // Draw the mass plot
-         drawMassPlot(myws, outputDir, opt, cut, (plotLabelPbPb+"_NoBkg"), DSTAG, true, incJpsi, incPsi2S, incBkg, cutCtau, doSimulFit, true, setLogScale, incSS, zoomPsi, nBins, getMeanPT);
-       }
-     }
-     else {
-       // check if we have already done this fit. If yes, do nothing and return true.
-       RooArgSet *newpars = myws.pdf("pdfMASS_Tot_PP")->getParameters(*(myws.var("invMass")));
-       bool found =  isFitAlreadyFound(newpars, outputDir, plotLabelPP, DSTAG, cut, false);
-       if (found) {
-         cout << "[INFO] This fit was already done, so I'll just go to the next one." << endl;
-         return true;
-       }
-
-       // Fit the Datasets
-       if (incJpsi || incPsi2S) {
-         myws.pdf("pdfMASS_Tot_PP")->fitTo(*myws.data(Form("dOS_%s_PP", DSTAG.c_str())), SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(numCores), Range("MassWindow"));
-       } else {
-         myws.pdf("pdfMASS_Tot_PP")->fitTo(*myws.data(Form("dOS_%s_PP", DSTAG.c_str())), SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(numCores), Range("SideBand1,SideBand2"));
-       }  
-
-       // Draw the mass plot
-       drawMassPlot(myws, outputDir, opt, cut, plotLabelPP, DSTAG, false, incJpsi, incPsi2S, incBkg, cutCtau, doSimulFit, false, setLogScale, incSS, zoomPsi, nBins, getMeanPT);
-       
-       if (wantPureSMC)
-       {
-         myws.loadSnapshot("pdfMASS_Tot_PP_parIni");
-         // Fit the Datasets
-         myws.pdf("pdfMASS_Sig_PP")->fitTo(*myws.data(Form("dOS_%s_PP_NoBkg", DSTAG.c_str())), SumW2Error(kTRUE), Range("MassWindow"), NumCPU(numCores));
-         // Draw the mass plot
-         drawMassPlot(myws, outputDir, opt, cut, (plotLabelPP+"_NoBkg"), DSTAG, false, incJpsi, incPsi2S, incBkg, cutCtau, doSimulFit, true, setLogScale, incSS, zoomPsi, nBins, getMeanPT);
-       }
-     }
+    else {
+      if (isPbPb) {
+        // check if we have already done this fit. If yes, do nothing and return true.
+        RooArgSet *newpars = myws.pdf("pdfMASS_Tot_PbPb")->getParameters(*(myws.var("invMass")));
+        bool found =  isFitAlreadyFound(newpars, outputDir, plotLabelPbPb, DSTAG, cut, true);
+        if (found) {
+          cout << "[INFO] This fit was already done, so I'll just go to the next one." << endl;
+          return true;
+        }
+        
+        // Fit the Datasets
+        if (incJpsi || incPsi2S) {
+          myws.pdf("pdfMASS_Tot_PbPb")->fitTo(*myws.data(Form("dOS_%s_PbPb", DSTAG.c_str())), SumW2Error(kTRUE), Extended(kTRUE), Range("MassWindow"), NumCPU(numCores));
+        } else {
+          myws.pdf("pdfMASS_Tot_PbPb")->fitTo(*myws.data(Form("dOS_%s_PbPb", DSTAG.c_str())), SumW2Error(kTRUE), Extended(kTRUE), Range("SideBand1,SideBand2"), NumCPU(numCores));
+        }
+        
+        // Create the output files
+        drawMassPlot(myws, outputDir, opt, cut, plotLabelPbPb, DSTAG, true, incJpsi, incPsi2S, incBkg, cutCtau, doSimulFit, false, setLogScale, incSS, zoomPsi, nBins, getMeanPT);
+        
+        if (wantPureSMC)
+        {
+//          myws.loadSnapshot("pdfMASS_Tot_PbPb_parIni");
+          // Fit the Datasets
+          myws.pdf("pdfMASS_Tot_PbPb_NoBkg")->fitTo(*myws.data(Form("dOS_%s_PbPb_NoBkg", DSTAG.c_str())), SumW2Error(kTRUE), Range("MassWindow"), NumCPU(numCores));
+          // Draw the mass plot
+          drawMassPlot(myws, outputDir, opt, cut, (plotLabelPbPb+"_NoBkg"), DSTAG, true, incJpsi, incPsi2S, incBkg, cutCtau, doSimulFit, true, setLogScale, incSS, zoomPsi, nBins, getMeanPT);
+        }
+      }
+      else {
+        // check if we have already done this fit. If yes, do nothing and return true.
+        RooArgSet *newpars = myws.pdf("pdfMASS_Tot_PP")->getParameters(*(myws.var("invMass")));
+        bool found =  isFitAlreadyFound(newpars, outputDir, plotLabelPP, DSTAG, cut, false);
+        if (found) {
+          cout << "[INFO] This fit was already done, so I'll just go to the next one." << endl;
+          return true;
+        }
+        
+        // Fit the Datasets
+        if (incJpsi || incPsi2S) {
+          myws.pdf("pdfMASS_Tot_PP")->fitTo(*myws.data(Form("dOS_%s_PP", DSTAG.c_str())), SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(numCores), Range("MassWindow"));
+        } else {
+          myws.pdf("pdfMASS_Tot_PP")->fitTo(*myws.data(Form("dOS_%s_PP", DSTAG.c_str())), SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(numCores), Range("SideBand1,SideBand2"));
+        }
+        
+        // Draw the mass plot
+        drawMassPlot(myws, outputDir, opt, cut, plotLabelPP, DSTAG, false, incJpsi, incPsi2S, incBkg, cutCtau, doSimulFit, false, setLogScale, incSS, zoomPsi, nBins, getMeanPT);
+        
+        if (wantPureSMC)
+        {
+//          myws.loadSnapshot("pdfMASS_Tot_PP_parIni");
+          // Fit the Datasets
+          myws.pdf("pdfMASS_Tot_PP_NoBkg")->fitTo(*myws.data(Form("dOS_%s_PP_NoBkg", DSTAG.c_str())), SumW2Error(kTRUE), Range("MassWindow"), NumCPU(numCores));
+          // Draw the mass plot
+          drawMassPlot(myws, outputDir, opt, cut, (plotLabelPP+"_NoBkg"), DSTAG, false, incJpsi, incPsi2S, incBkg, cutCtau, doSimulFit, true, setLogScale, incSS, zoomPsi, nBins, getMeanPT);
+        }
+      }
+    }
   }
 
   return true;
@@ -310,14 +331,14 @@ bool setModel( struct OniaModel& model, map<string, string>  parIni, bool isPbPb
 };
    
 
-bool importDataset(RooWorkspace& myws, RooWorkspace& inputWS, struct KinCuts cut, string label)
+int importDataset(RooWorkspace& myws, RooWorkspace& inputWS, struct KinCuts cut, string label)
 {
   string indMuonMass    = Form("(%.6f < invMass && invMass < %.6f)",       cut.dMuon.M.Min,       cut.dMuon.M.Max);
-  string indMuonRap     = Form("(%.6f < abs(rap) && abs(rap) < %.6f)",     cut.dMuon.AbsRap.Min,  cut.dMuon.AbsRap.Max);
-  string indMuonPt      = Form("(%.6f < pt && pt < %.6f)",                 cut.dMuon.Pt.Min,      cut.dMuon.Pt.Max);
+  string indMuonRap     = Form("(%.6f %s abs(rap) && abs(rap) <= %.6f)",     cut.dMuon.AbsRap.Min, cut.dMuon.AbsRap.Max<=1.9 ? "<=" : "<" ,cut.dMuon.AbsRap.Max);
+  string indMuonPt      = Form("(%.6f <= pt && pt < %.6f)",                 cut.dMuon.Pt.Min,      cut.dMuon.Pt.Max);
   string indMuonCtau    = Form("(%.6f < ctau && ctau < %.6f)",             cut.dMuon.ctau.Min,    cut.dMuon.ctau.Max);
   string indMuonCtauErr = Form("(%.6f < ctauErr && ctauErr < %.6f)",       cut.dMuon.ctauErr.Min, cut.dMuon.ctauErr.Max);
-  string inCentrality   = Form("(%d <= cent && cent <= %d)",               cut.Centrality.Start,  cut.Centrality.End);
+  string inCentrality   = Form("(%d <= cent && cent < %d)",               cut.Centrality.Start,  cut.Centrality.End);
 
   string strCut         = indMuonMass +"&&"+ indMuonRap +"&&"+ indMuonPt +"&&"+ indMuonCtau +"&&"+ indMuonCtauErr;
   if (label.find("PbPb")!=std::string::npos){ strCut = strCut +"&&"+ inCentrality; } 
@@ -325,12 +346,12 @@ bool importDataset(RooWorkspace& myws, RooWorkspace& inputWS, struct KinCuts cut
   // Reduce and import the datasets
   if (!(inputWS.data(Form("dOS_%s", label.c_str())))){ 
     cout << "[ERROR] The dataset " <<  Form("dOS_%s", label.c_str()) << " was not found!" << endl;
-    return false;
+    return -1;
   }
   RooDataSet* dataOS = (RooDataSet*)inputWS.data(Form("dOS_%s", label.c_str()))->reduce(strCut.c_str());
   if (dataOS->sumEntries()==0){ 
-    cout << "[ERROR] No events from dataset " <<  Form("dOS_%s", label.c_str()) << " passed the kinematic cuts!" << endl;
-    return false;
+    cout << "[WARNING] No events from dataset " <<  Form("dOS_%s", label.c_str()) << " passed the kinematic cuts!" << endl;
+    return 0;
   }  
   myws.import(*dataOS);
   delete dataOS;
@@ -339,7 +360,7 @@ bool importDataset(RooWorkspace& myws, RooWorkspace& inputWS, struct KinCuts cut
   {
     if (!(inputWS.data(Form("dSS_%s", label.c_str())))){
       cout << "[ERROR] The dataset " <<  Form("dSS_%s", label.c_str()) << " was not found!" << endl;
-      return false;
+      return -1;
     }
     RooDataSet* dataSS = (RooDataSet*)inputWS.data(Form("dSS_%s", label.c_str()))->reduce(strCut.c_str());
     if (dataSS->sumEntries()==0){
@@ -369,7 +390,7 @@ bool importDataset(RooWorkspace& myws, RooWorkspace& inputWS, struct KinCuts cut
   if (cut.dMuon.M.Min<2.8) { myws.var("invMass")->setRange("SideBand1",  cut.dMuon.M.Min, 2.8); }
   if (cut.dMuon.M.Max>4.0) { myws.var("invMass")->setRange("SideBand2",  4.0, cut.dMuon.M.Max); }
 
-  return true;
+  return 1;
 };
 
 void setOptions(struct InputOpt* opt) 
@@ -382,7 +403,6 @@ void setOptions(struct InputOpt* opt)
 };
 
 bool isFitAlreadyFound(RooArgSet *newpars, string outputDir, string plotLabel, string TAG, struct KinCuts cut, bool isPbPb) {
-
   string FileName = Form("%sresult/%s/FIT_%s_%s_%s%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.root", outputDir.c_str(), TAG.c_str(), TAG.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End);
 
   if (gSystem->AccessPathName(FileName.c_str())) return false; // File was not found
