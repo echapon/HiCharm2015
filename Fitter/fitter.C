@@ -12,7 +12,7 @@ bool parseString(string input, string delimiter, vector<double>& output);
 
 bool iniWorkEnv(map<string,string>& DIR, const string workDirName);
 bool existDir(string dir);
-bool readFile(string FileName, vector< vector<string> >& content, const int nCol=-1);
+bool readFile(string FileName, vector< vector<string> >& content, const int nCol=-1, int nRow=-1);
 bool getInputFileNames(const string InputTrees, map<string, vector<string> >& InputFileCollection);
 bool setParameters(map<string, string> row, struct KinCuts& cut, map<string, string>& parIni);
 bool addParameters(string InputFile,  vector< struct KinCuts >& cutVector, vector< map<string, string> >&  parIniVector);
@@ -407,10 +407,11 @@ bool parseString(string input, string delimiter, vector<double>& output)
 
 bool parseFile(string FileName, vector< map<string, string> >& data)
 {
-  vector< vector<string> > content; 
-  if(!readFile(FileName, content)){ return false; }
-  vector<string> header = content.at(0);
+  vector< vector<string> > content, tmp; 
+  if(!readFile(FileName, tmp, -1, 1)){ return false; }
+  vector<string> header = tmp.at(0);
   if (header.size()==0) { cout << "[ERROR] The header is null!" << endl; return false; }
+  if(!readFile(FileName, content, header.size())){ return false; }
   for(vector<string>::iterator rHeader=header.begin(); rHeader!=header.end(); ++rHeader) {
     if (*rHeader=="") { cout << "[ERROR] A column has no label!" << endl; return false; }
   }
@@ -453,13 +454,17 @@ bool getInputFileNames(const string InputTrees, map<string, vector<string> >& In
 };
 
 
-bool readFile(string FileName, vector< vector<string> >& content, const int nCol)
+bool readFile(string FileName, vector< vector<string> >& content, const int nCol, int nRow)
 {
-  cout << "[INFO] Reading file: " << FileName << endl; 
+  if (nCol==0 || nRow==0) { 
+    cout << "[WARNING] Ignoring content of File: " << FileName << endl; return true; 
+  }
+  if (nRow!=1) { cout << "[INFO] Reading file: " << FileName << endl; }
   ifstream myfile(FileName.c_str());
   if (myfile.is_open()){ 
     string line;
     while ( getline(myfile, line) ){
+      if (nRow==0) break; else {nRow=nRow-1;}
       stringstream row(line);
       vector<string> cols; int i=0;
       while (true){
