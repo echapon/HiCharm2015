@@ -91,21 +91,22 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
         Gen_QQ_mupl_4mom->Clear();
       }
       theTree->GetEntry(jentry);  
-  
+      
       for (int iQQ=0; iQQ<Reco_QQ_size; iQQ++) {
-	TLorentzVector *RecoQQ4mom = (TLorentzVector*) Reco_QQ_4mom->At(iQQ);
-	mass->setVal(RecoQQ4mom->M());
+        TLorentzVector *RecoQQ4mom = (TLorentzVector*) Reco_QQ_4mom->At(iQQ);
+        mass->setVal(RecoQQ4mom->M());
         ctau->setVal(Reco_QQ_ctau3D[iQQ]);
         ctauErr->setVal(Reco_QQ_ctauErr3D[iQQ]);
-	ptQQ->setVal(RecoQQ4mom->Pt());
-	rapQQ->setVal(RecoQQ4mom->Rapidity());
-	cent->setVal(Centrality);
+        ptQQ->setVal(RecoQQ4mom->Pt());
+        rapQQ->setVal(RecoQQ4mom->Rapidity());
+        cent->setVal(Centrality);
         
+        double w = 1.;
         if (isMC){
-          double w = theTree->GetWeight()*getNColl(Centrality,isPP);
+          w = theTree->GetWeight()*getNColl(Centrality,isPP);
           weight->setVal(w);
         }
-	
+        
 	if ( 
 	    ( RecoQQ::areMuonsInAcceptance2015(iQQ) ) &&  // 2015 Global Muon Acceptance Cuts
 	    ( RecoQQ::passQualityCuts2015(iQQ)      ) &&  // 2015 Soft Global Muon Quality Cuts
@@ -113,11 +114,11 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
 	    )
 	  {
 	    if (Reco_QQ_sign[iQQ]==0) { // Opposite-Sign dimuons
-	      dataOS->add(*cols); // Signal and background dimuons
-              if (isMC && isMatchedRecoDiMuon(iQQ)) dataOSNoBkg->add(*cols); // Signal-only dimuons
+	      dataOS->add(*cols,w); // Signal and background dimuons
+              if (isMC && isMatchedRecoDiMuon(iQQ)) dataOSNoBkg->add(*cols,w); // Signal-only dimuons
 	    }
             else {                    // Like-Sign dimuons
-	      dataSS->add(*cols);
+	      dataSS->add(*cols,w);
 	    }
 	  }
       }
