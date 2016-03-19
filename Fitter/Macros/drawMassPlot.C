@@ -172,7 +172,7 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
   } 
   if (isPbPb) {t->DrawLatex(0.21, 0.86-dy, Form("Cent. %d-%d%%", (int)(cut.Centrality.Start/2), (int)(cut.Centrality.End/2))); dy+=0.045;}
   t->DrawLatex(0.21, 0.86-dy, Form("%.1f #leq p_{T}^{#mu#mu} < %.1f GeV/c",cut.dMuon.Pt.Min,cut.dMuon.Pt.Max)); dy+=0.045;
-  t->DrawLatex(0.21, 0.86-dy, Form("%.1f %s |y^{#mu#mu}| #leq %.1f",cut.dMuon.AbsRap.Min,cut.dMuon.AbsRap.Max<=1.9 ? "#leq" : "<",cut.dMuon.AbsRap.Max)); dy+=1.5*0.045;
+  t->DrawLatex(0.21, 0.86-dy, Form("%.1f #leq |y^{#mu#mu}| < %.1f",cut.dMuon.AbsRap.Min,cut.dMuon.AbsRap.Max)); dy+=1.5*0.045;
   if (getMeanPT){
     if (incJpsi) {
       t->DrawLatex(0.19, 0.86-dy, Form("<pt_{J/#psi}> = %.2f#pm%.2f GeV/c", myws.var(Form("ptJpsi%s", (isPbPb?"PbPb":"PP")))->getValV(), myws.var(Form("ptJpsi%s", (isPbPb?"PbPb":"PP")))->getError())); dy+=0.045;
@@ -318,6 +318,7 @@ void printParameters(RooWorkspace myws, TPad* Pad, bool isPbPb, string pdfName)
     // Parse the parameter's labels
     if(s1=="invMass"){continue;} else if(s1=="MassRatio"){continue;}
     if(s1=="RFrac2Svs1S"){ s1="R_{#psi(2S)/J/#psi}"; } 
+    else if(s1=="rSigma21"){ s1="(#sigma_{2}/#sigma_{1})"; } 
     else if(s1.find("sigma")!=std::string::npos || s1.find("lambda")!=std::string::npos || s1.find("alpha")!=std::string::npos){
       s1=Form("#%s",s1.c_str());
     }
@@ -335,9 +336,12 @@ void printParameters(RooWorkspace myws, TPad* Pad, bool isPbPb, string pdfName)
     if(s1=="N"){ 
       t->DrawLatex(0.69, 0.75-dy, Form("%s = %.0f#pm%.0f ", label.c_str(), it->getValV(), it->getError())); dy+=0.045; 
     }
+    else if(s1.find("#sigma_{2}/#sigma_{1}")!=std::string::npos){ 
+      t->DrawLatex(0.69, 0.75-dy, Form("%s = %.3f#pm%.3f ", label.c_str(), it->getValV(), it->getError())); dy+=0.045; 
+    }
     else if(s1.find("sigma")!=std::string::npos){ 
       t->DrawLatex(0.69, 0.75-dy, Form("%s = %.2f#pm%.2f MeV/c^{2}", label.c_str(), it->getValV()*1000., it->getError()*1000.)); dy+=0.045; 
-    } 
+    }
     else if(s1.find("lambda")!=std::string::npos){ 
       t->DrawLatex(0.69, 0.75-dy, Form("%s = %.4f#pm%.4f", label.c_str(), it->getValV(), it->getError())); dy+=0.045; 
     }

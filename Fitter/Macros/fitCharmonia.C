@@ -88,7 +88,7 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
     else if (importID==0) { doFit = false; }
     
     // Build the Fit Model    
-    int    numEntries = myws.data(Form("dOS_%s_PP", DSTAG.c_str()))->sumEntries();
+    double    numEntries = myws.data(Form("dOS_%s_PP", DSTAG.c_str()))->sumEntries();
     if (!buildCharmoniaMassModel(myws, model.PP, parIni, false, doSimulFit, incBkg, incJpsi, incPsi2S, "", numEntries))  { return false; }
 
     if (incJpsi)  { plotLabelPP = plotLabelPP + Form("_Jpsi_%s", parIni["Model_Jpsi_PP"].c_str());   } 
@@ -124,7 +124,7 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
     if (importID<0) { return false; }
     else if (importID==0) { doFit = false; }
     // Build the Fit Model
-    int    numEntries = myws.data(Form("dOS_%s_PbPb", DSTAG.c_str()))->sumEntries();
+    double    numEntries = myws.data(Form("dOS_%s_PbPb", DSTAG.c_str()))->sumEntries();
     if (!buildCharmoniaMassModel(myws, model.PbPb, parIni, true, doSimulFit, incBkg, incJpsi, incPsi2S, "", numEntries)) { return false; }
 
     if (incJpsi)  { plotLabelPbPb = plotLabelPbPb + Form("_Jpsi_%s", parIni["Model_Jpsi_PbPb"].c_str());   } 
@@ -334,11 +334,11 @@ bool setModel( struct OniaModel& model, map<string, string>  parIni, bool isPbPb
 int importDataset(RooWorkspace& myws, RooWorkspace& inputWS, struct KinCuts cut, string label)
 {
   string indMuonMass    = Form("(%.6f < invMass && invMass < %.6f)",       cut.dMuon.M.Min,       cut.dMuon.M.Max);
-  string indMuonRap     = Form("(%.6f %s abs(rap) && abs(rap) <= %.6f)",     cut.dMuon.AbsRap.Min, cut.dMuon.AbsRap.Max<=1.9 ? "<=" : "<" ,cut.dMuon.AbsRap.Max);
-  string indMuonPt      = Form("(%.6f <= pt && pt < %.6f)",                 cut.dMuon.Pt.Min,      cut.dMuon.Pt.Max);
+  string indMuonRap     = Form("(%.6f <= abs(rap) && abs(rap) < %.6f)",    cut.dMuon.AbsRap.Min,  cut.dMuon.AbsRap.Max);
+  string indMuonPt      = Form("(%.6f <= pt && pt < %.6f)",                cut.dMuon.Pt.Min,      cut.dMuon.Pt.Max);
   string indMuonCtau    = Form("(%.6f < ctau && ctau < %.6f)",             cut.dMuon.ctau.Min,    cut.dMuon.ctau.Max);
   string indMuonCtauErr = Form("(%.6f < ctauErr && ctauErr < %.6f)",       cut.dMuon.ctauErr.Min, cut.dMuon.ctauErr.Max);
-  string inCentrality   = Form("(%d <= cent && cent < %d)",               cut.Centrality.Start,  cut.Centrality.End);
+  string inCentrality   = Form("(%d <= cent && cent < %d)",                cut.Centrality.Start,  cut.Centrality.End);
 
   string strCut         = indMuonMass +"&&"+ indMuonRap +"&&"+ indMuonPt +"&&"+ indMuonCtau +"&&"+ indMuonCtauErr;
   if (label.find("PbPb")!=std::string::npos){ strCut = strCut +"&&"+ inCentrality; } 

@@ -26,7 +26,7 @@ void fitter(
             bool fitPP       = true,         // Fits PP datasets
             // Select the type of object to fit
             bool incJpsi     = true,         // Includes Jpsi model
-            bool incPsi2S    = true,         // Includes Psi(2S) model
+            bool incPsi2S    = false,        // Includes Psi(2S) model
             bool incBkg      = true,         // Includes Background model
             // Select the fitting options
             bool cutCtau     = false,        // Apply prompt ctau cuts
@@ -195,6 +195,9 @@ void fitter(
               ) { return; }
         } else {
           // If don't want simultaneous fits, then fit PbPb or PP separately
+          if (DSTAG.First("MCJPSI")>=0 ) { incJpsi = true;  incPsi2S = false; }
+          if (DSTAG.First("MCPSI2S")>=0) { incJpsi = false; incPsi2S = true;  }
+            
           if (fitPbPb) {
             if (!fitCharmonia( Workspace[DSTAG.Data()], cutVector.at(i), parIniVector.at(i), outputDir,
                                // Select the type of datasets to fit
@@ -307,6 +310,9 @@ bool setParameters(map<string, string> row, struct KinCuts& cut, map<string, str
       }  
       std::vector<double> v; 
       if(!parseString(col->second, "-", v)) { return false; }
+      if (v.size()!=2) {
+        cout << "[ERROR] Input column 'rap' has incorrect number of values, it should have 2 values but has: " << v.size() << endl; return false;
+      }  
       cut.dMuon.AbsRap.Min = v.at(0); 
       cut.dMuon.AbsRap.Max = v.at(1);
     } 
@@ -316,6 +322,9 @@ bool setParameters(map<string, string> row, struct KinCuts& cut, map<string, str
       }
       std::vector<double> v; 
       if(!parseString(col->second, "-", v)) { return false; }
+      if (v.size()!=2) {
+        cout << "[ERROR] Input column 'pt' has incorrect number of values, it should have 2 values but has: " << v.size() << endl; return false;
+      }  
       cut.dMuon.Pt.Min = v.at(0); 
       cut.dMuon.Pt.Max = v.at(1);
     } 
@@ -325,6 +334,9 @@ bool setParameters(map<string, string> row, struct KinCuts& cut, map<string, str
       }
       std::vector<double> v; 
       if(!parseString(col->second, "-", v)) { return false; }
+      if (v.size()!=2) {
+        cout << "[ERROR] Input column 'cent' has incorrect number of values, it should have 2 values but has: " << v.size() << endl; return false;
+      }  
       cut.Centrality.Start = (int) (2.0*v.at(0)); 
       cut.Centrality.End = (int) (2.0*v.at(1));
     } 
@@ -334,6 +346,9 @@ bool setParameters(map<string, string> row, struct KinCuts& cut, map<string, str
       }
       std::vector<double> v; 
       if(!parseString(col->second, "-", v)) { return false; }
+      if (v.size()!=2) {
+        cout << "[ERROR] Input column 'mass' has incorrect number of values, it should have 2 values but has: " << v.size() << endl; return false;
+      }  
       cut.dMuon.M.Min = v.at(0); 
       cut.dMuon.M.Max = v.at(1);
     } 
@@ -343,6 +358,9 @@ bool setParameters(map<string, string> row, struct KinCuts& cut, map<string, str
       }
       std::vector<double> v; 
       if(!parseString(col->second, "->", v)) { return false; }
+      if (v.size()!=2) {
+        cout << "[ERROR] Input column 'ctau' has incorrect number of values, it should have 2 values but has: " << v.size() << endl; return false;
+      }  
       cut.dMuon.ctau.Min = v.at(0); 
       cut.dMuon.ctau.Max = v.at(1);
     } 
@@ -355,7 +373,7 @@ bool setParameters(map<string, string> row, struct KinCuts& cut, map<string, str
     else {
       if (col->second != "") {
 	string value = col->second;
-	// check that initial parameters format is correct: [ num, num num ]
+	// check that initial parameters format is correct: [ num, num, num ]
 	if ((value.find("[")==std::string::npos)||(value.find("]")==std::string::npos)) {
 	  // Special cases like parameter constrains could be set here but for now, let's keep it simple
 
@@ -366,17 +384,18 @@ bool setParameters(map<string, string> row, struct KinCuts& cut, map<string, str
 	}
 	std::vector<double> v; 
 	if(!parseString(value, ",", v)) { return false; }
+        if (v.size()>3 || v.size()<1) {
+          cout << "[ERROR] Initial parameter " << col->first << " has incorrect number of values, it has: " << v.size() << endl; return false;
+        } 
 	// everything seems alright, then proceed to save the values
 	if (v.size()==1) { 
 	  // if only one value is given i.e. [ num ], consider it a constant value
-	  if (col->first.find("N_")!=std::string::npos){
-	    parIni[col->first] = Form("%s[ %.0f, %.0f, %.0f]", col->first.c_str(), v.at(0), v.at(0), v.at(0));
-	  } else {
-	    parIni[col->first] = Form("%s[ %.6f, %.6f, %.6f]", col->first.c_str(), v.at(0), v.at(0), v.at(0));
-	  }
+	  parIni[col->first] = Form("%s[ %.6f, %.6f, %.6f]", col->first.c_str(), v.at(0), v.at(0), v.at(0));
 	} else {
 	  parIni[col->first] = col->first + col->second;
 	}
+      } else {
+        parIni[col->first] = "";
       }
     }
   }
@@ -535,9 +554,6 @@ bool checkSettings(bool fitData, bool fitPbPb, bool fitPP, bool incJpsi, bool in
   }
   if (!fitData && (!incJpsi && !incPsi2S)) {
     cout << "[ERROR] We can't fit only background on MC, please include also either Jpsi or Psi2S!" << endl; return false;
-  }
-  if (!fitData && (incJpsi && incPsi2S)) {
-    cout << "[ERROR] We can't fit both Jpsi and Psi2S at the same time on MC, please select only one signal!" << endl; return false;
   }
   if (fitData && wantPureSMC) {
     cout << "[WARNING] Pure signal MC will not be fitted since you have selected DATA!" << endl;
