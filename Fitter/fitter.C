@@ -21,12 +21,12 @@ bool addParameters(string InputFile,  vector< struct KinCuts >& cutVector, vecto
 void fitter(
             const string workDirName="Test", // Working directory
             // Select the type of datasets to fit
-            bool fitData     = false,        // Fits Data if true, otherwise fits MC
+            bool fitData     = true,         // Fits Data if true, otherwise fits MC
             bool fitPbPb     = true,         // Fits PbPb datasets
-            bool fitPP       = false,         // Fits PP datasets
+            bool fitPP       = true,         // Fits PP datasets
             // Select the type of object to fit
             bool incJpsi     = true,         // Includes Jpsi model
-            bool incPsi2S    = true,        // Includes Psi(2S) model
+            bool incPsi2S    = true,         // Includes Psi(2S) model
             bool incBkg      = true,         // Includes Background model
             // Select the fitting options
             bool cutCtau     = false,        // Apply prompt ctau cuts
@@ -37,7 +37,7 @@ void fitter(
             bool setLogScale = true,         // Draw plot with log scale
             bool incSS       = false,        // Include Same Sign data
             bool zoomPsi     = false,        // Zoom Psi(2S) peak on extra pad
-            int  nBins       = 74            // Number of bins used for plotting
+            int  nBins       = 54            // Number of bins used for plotting
             ) 
 {
   // -------------------------------------------------------------------------------

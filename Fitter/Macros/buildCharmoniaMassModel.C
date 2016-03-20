@@ -581,7 +581,7 @@ void setDefaultParameters(map<string, string> &parIni, bool isPbPb, double numEn
     parIni[Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP"))]  = Form("%s[%.10f,%.10f]", Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP")), 0.0, numEntries*10.0);
   }
   if (parIni.count(Form("N_Bkg_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("N_Bkg_%s", (isPbPb?"PbPb":"PP"))]=="") { 
-    parIni[Form("N_Bkg_%s", (isPbPb?"PbPb":"PP"))]  = Form("%s[%.10f,%.10f]", Form("N_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.0, numEntries*10.0);
+    parIni[Form("N_Bkg_%s", (isPbPb?"PbPb":"PP"))]  = Form("%s[%.10f,%.10f]", Form("N_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.0, numEntries);
   }
 
   // DEFAULT SIGNAL MASS MODEL PARAMETERS 
@@ -592,7 +592,7 @@ void setDefaultParameters(map<string, string> &parIni, bool isPbPb, double numEn
     parIni[Form("m_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.6f,%.6f,%.6f]", Form("m_Psi2S_%s", (isPbPb?"PbPb":"PP")), Mass.Psi2S, Mass.Psi2S-0.1, Mass.Psi2S+0.1);
   }
   if (parIni.count(Form("sigma1_Jpsi_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("sigma1_Jpsi_%s", (isPbPb?"PbPb":"PP"))]=="") {
-    parIni[Form("sigma1_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("sigma1_Jpsi_%s", (isPbPb?"PbPb":"PP")), 0.02, 0.005, 0.10);
+    parIni[Form("sigma1_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("sigma1_Jpsi_%s", (isPbPb?"PbPb":"PP")), 0.02, 0.005, 0.07);
   }
   if (parIni.count(Form("rSigma21_Jpsi_%s", (isPbPb?"PbPb":"PP")))==0) {
     if (parIni.count(Form("sigma2_Jpsi_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("sigma2_Jpsi_%s", (isPbPb?"PbPb":"PP"))]=="") {
@@ -600,13 +600,13 @@ void setDefaultParameters(map<string, string> &parIni, bool isPbPb, double numEn
     }
   } else {
     if (parIni[Form("rSigma21_Jpsi_%s", (isPbPb?"PbPb":"PP"))]=="") {
-      parIni[Form("rSigma21_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("rSigma21_Jpsi_%s", (isPbPb?"PbPb":"PP")), 1.5, 0.25, 4.0);
+      parIni[Form("rSigma21_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("rSigma21_Jpsi_%s", (isPbPb?"PbPb":"PP")), 2.0, 0.9, 3.0);
     }
     parIni[Form("sigma2_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("RooFormulaVar::%s('@0*@1',{%s,%s})", Form("sigma2_Jpsi_%s", (isPbPb?"PbPb":"PP")),
                                                                 parIni[Form("rSigma21_Jpsi_%s", (isPbPb?"PbPb":"PP"))].c_str(), Form("sigma1_Jpsi_%s", (isPbPb?"PbPb":"PP") ));
   }      
   if (parIni.count(Form("sigma1_Psi2S_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("sigma1_Psi2S_%s", (isPbPb?"PbPb":"PP"))]=="") {
-    parIni[Form("sigma1_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("sigma1_Psi2S_%s", (isPbPb?"PbPb":"PP")), 0.02, 0.005, 0.10);
+    parIni[Form("sigma1_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("sigma1_Psi2S_%s", (isPbPb?"PbPb":"PP")), 0.02, 0.005, 0.07);
   }
   if (parIni.count(Form("rSigma21_Psi2S_%s", (isPbPb?"PbPb":"PP")))==0) {
     if (parIni.count(Form("sigma2_Psi2S_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("sigma2_Psi2S_%s", (isPbPb?"PbPb":"PP"))]=="") {
@@ -614,7 +614,7 @@ void setDefaultParameters(map<string, string> &parIni, bool isPbPb, double numEn
     }
   } else {
     if (parIni[Form("rSigma21_Psi2S_%s", (isPbPb?"PbPb":"PP"))]=="") {
-      parIni[Form("rSigma21_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("rSigma21_Psi2S_%s", (isPbPb?"PbPb":"PP")), 1.5, 0.25, 4.0);
+      parIni[Form("rSigma21_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("rSigma21_Psi2S_%s", (isPbPb?"PbPb":"PP")), 2.0, 0.9, 3.0);
     }
     parIni[Form("sigma2_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("RooFormulaVar::%s('@0*@1',{%s,%s})", Form("sigma2_Psi2S_%s", (isPbPb?"PbPb":"PP")), 
                                                                  parIni[Form("rSigma21_Psi2S_%s", (isPbPb?"PbPb":"PP"))].c_str(), Form("sigma1_Psi2S_%s", (isPbPb?"PbPb":"PP") ));

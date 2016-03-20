@@ -3,9 +3,9 @@
 
 #include "Utilities/initClasses.h"
 
-void setRange(RooWorkspace& myws, RooPlot* frame, string dsName, int nBins, bool setLogScale, bool isWeighted);
+void setRange(RooWorkspace& myws, RooPlot* frame, string dsName, int nBins, bool setLogScale);
 void printParameters(RooWorkspace myws, TPad* Pad, bool isPbPb, string pdfName, bool isWeighted);
-void printChi2(RooWorkspace& myws, TPad* Pad, RooPlot* frame, string varLabel, string dataLabel, string pdfLabel, int nBins); 
+void printChi2(RooWorkspace& myws, TPad* Pad, RooPlot* frame, string varLabel, string dataLabel, string pdfLabel, int nBins, bool isWeighted); 
 
 void drawMassPlot(RooWorkspace& myws,   // Local workspace
                   string outputDir,     // Output directory
@@ -143,7 +143,7 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
   frame->GetYaxis()->SetTitleSize(0.04);
   frame->GetYaxis()->SetTitleOffset(1.7);
   frame->GetYaxis()->SetTitleFont(42);
-  setRange(myws, frame, dsOSName, nBins, setLogScale, isWeighted);
+  setRange(myws, frame, dsOSName, nBins, setLogScale);
  
   cFig->cd();
   pad2->SetTopMargin(0.02);
@@ -233,7 +233,7 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
     framezoom->GetXaxis()->SetLabelSize(0.06);
     framezoom->GetYaxis()->SetTitleSize(0.072);
     framezoom->GetXaxis()->SetTitleSize(0.072);
-    setRange(myws, framezoom, dsOSName, nBins, setLogScale, isWeighted);
+    setRange(myws, framezoom, dsOSName, nBins, setLogScale);
 
     pad4->Draw();
     pad4->cd();
@@ -263,7 +263,7 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
   frame2->Draw(); 
   
   // *** Print chi2/ndof 
-  printChi2(myws, pad2, frame, "invMass", dsOSName.c_str(), pdfName.c_str(), nBins);
+  printChi2(myws, pad2, frame, "invMass", dsOSName.c_str(), pdfName.c_str(), nBins, isWeighted);
   
   pline->Draw("same");
   pad2->Update();
@@ -295,17 +295,17 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
 #endif // #ifndef drawMassPlot_C
 
 
-void setRange(RooWorkspace& myws, RooPlot* frame, string dsName, int nBins, bool setLogScale, bool isWeighted) 
+void setRange(RooWorkspace& myws, RooPlot* frame, string dsName, int nBins, bool setLogScale) 
 { 
   // Find maximum and minimum points of Plot to rescale Y axis
   TH1* h = myws.data(dsName.c_str())->createHistogram("hist", *myws.var("invMass"), Binning(nBins));
   Double_t YMax = h->GetBinContent(h->GetMaximumBin());
   Double_t YMin = h->GetBinContent(h->GetMinimumBin());
   double YMIN = 0.0;
-  if (isWeighted) { YMIN = 0.000001; }
+  if (YMax<2.0) { YMIN = 0.000001; }
   else { YMIN = 0.1; }
-  if(setLogScale){ YMin=max(YMin,YMIN); frame->GetYaxis()->SetRangeUser(max(YMin/TMath::Power((YMax/YMin), 0.05),YMIN), YMax*TMath::Power((YMax/YMin), 0.4)); } 
-  else{ frame->GetYaxis()->SetRangeUser(max(YMin-(YMax-YMin)*0.05,0.0), YMax+(YMax-YMin)*0.4); }
+  if(setLogScale){ YMin=max(YMin,YMIN); frame->GetYaxis()->SetRangeUser(max(YMin/TMath::Power((YMax/YMin), 0.05),YMIN), YMax*TMath::Power((YMax/YMin), 0.5)); } 
+  else{ frame->GetYaxis()->SetRangeUser(max(YMin-(YMax-YMin)*0.05,0.0), YMax+(YMax-YMin)*0.5); }
   delete h;
 }
 
@@ -359,23 +359,32 @@ void printParameters(RooWorkspace myws, TPad* Pad, bool isPbPb, string pdfName, 
 }
 
 
-void printChi2(RooWorkspace& myws, TPad* Pad, RooPlot* frame, string varLabel, string dataLabel, string pdfLabel, int nBins) 
+void printChi2(RooWorkspace& myws, TPad* Pad, RooPlot* frame, string varLabel, string dataLabel, string pdfLabel, int nBins, bool isWeighted) 
 {
   double chi2=0; unsigned int ndof=0;
   Pad->cd();
   TLatex *t = new TLatex(); t->SetNDC(); t->SetTextSize(0.1); 
   unsigned int nFitPar = myws.pdf(pdfLabel.c_str())->getParameters(*myws.data(dataLabel.c_str()))->selectByAttrib("Constant",kFALSE)->getSize(); 
   TH1 *hdatact = myws.data(dataLabel.c_str())->createHistogram("hdatact", *myws.var(varLabel.c_str()), Binning(nBins));
-  RooHist *hpull = frame->pullHist(0, 0, true);
-  double* ypulls = hpull->GetY();
+  //RooHist *hpull = frame->pullHist(0, 0, true);
+  //double* ypulls = hpull->GetY();
   unsigned int nFullBins = 0;
-  for (unsigned int i = 0; i < nBins; i++) {
+  for (int i = 0; i < nBins; i++) {
     if (hdatact->GetBinContent(i+1) > 0.0) {
-      chi2 += ypulls[i]*ypulls[i];
+      //chi2 += ypulls[i]*ypulls[i];
       nFullBins++;
     }
   }
   ndof = nFullBins - nFitPar;
+  //chi2 = myws.pdf(pdfLabel.c_str())->createChi2(*((RooDataSet*)myws.data(dataLabel.c_str())))->getVal(); 
+  //chi2 = frame->chiSquare(nFitPar)*ndof;
+  RooDataHist dummy("dummy", "dummy", *myws.var("invMass"), hdatact);
+  if (isWeighted) {
+    chi2 = RooChi2Var("chi2", "chi2", *myws.pdf(pdfLabel.c_str()), dummy, kFALSE, 0, 0, 8, RooFit::Interleave, kFALSE, kFALSE, RooDataHist::SumW2).getVal();
+  } else {
+    chi2 = RooChi2Var("chi2", "chi2", *myws.pdf(pdfLabel.c_str()), dummy, kTRUE, 0, 0, 8, RooFit::Interleave, kFALSE, kFALSE, RooDataHist::Expected).getVal();
+  }  
   t->DrawLatex(0.7, 0.85, Form("#chi^{2}/ndof = %.0f / %d", chi2, ndof));
-  delete hdatact; delete hpull;
+  delete hdatact; 
+  //delete hpull;
 };
