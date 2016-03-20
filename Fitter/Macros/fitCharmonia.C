@@ -173,7 +173,7 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
       simPdf->addPdf(*myws.pdf("pdfMASS_Tot_PbPb"), "PbPb"); simPdf->addPdf(*myws.pdf("pdfMASS_Tot_PP"), "PP");
       
       // Do the simultaneous fit
-      simPdf->fitTo(*combData, SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(numCores), Range("MassWindow"));
+      simPdf->fitTo(*combData, Offset(kTRUE), Extended(kTRUE), NumCPU(numCores), Range("MassWindow"));
       
       // Create the output files
       drawMassPlot(myws, outputDir, opt, cut, plotLabelPbPb, DSTAG, true, incJpsi, incPsi2S, incBkg, cutCtau, doSimulFit, false, setLogScale, incSS, zoomPsi, nBins, getMeanPT);
@@ -192,12 +192,18 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
           cout << "[INFO] This fit was already done, so I'll just go to the next one." << endl;
           return true;
         }
+
+        bool isWeighted = myws.data(Form("dOS_%s_PbPb", DSTAG.c_str()))->isWeighted();
         
         // Fit the Datasets
         if (incJpsi || incPsi2S) {
-          myws.pdf("pdfMASS_Tot_PbPb")->fitTo(*myws.data(Form("dOS_%s_PbPb", DSTAG.c_str())), SumW2Error(kTRUE), Extended(kTRUE), Range("MassWindow"), NumCPU(numCores));
+          if (isWeighted) {
+            myws.pdf("pdfMASS_Tot_PbPb")->fitTo(*myws.data(Form("dOS_%s_PbPb", DSTAG.c_str())), Strategy(2), SumW2Error(kTRUE), Range("MassWindow"), NumCPU(numCores));
+          } else {
+            myws.pdf("pdfMASS_Tot_PbPb")->fitTo(*myws.data(Form("dOS_%s_PbPb", DSTAG.c_str())), Minos(kTRUE), Extended(kTRUE), Range("MassWindow"), NumCPU(numCores));
+          }  
         } else {
-          myws.pdf("pdfMASS_Tot_PbPb")->fitTo(*myws.data(Form("dOS_%s_PbPb", DSTAG.c_str())), SumW2Error(kTRUE), Extended(kTRUE), Range("SideBand1,SideBand2"), NumCPU(numCores));
+          myws.pdf("pdfMASS_Tot_PbPb")->fitTo(*myws.data(Form("dOS_%s_PbPb", DSTAG.c_str())), Minos(kTRUE), Extended(kTRUE), Range("SideBand1,SideBand2"), NumCPU(numCores)); 
         }
         
         // Create the output files
@@ -220,12 +226,18 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
           cout << "[INFO] This fit was already done, so I'll just go to the next one." << endl;
           return true;
         }
+
+        bool isWeighted = myws.data(Form("dOS_%s_PP", DSTAG.c_str()))->isWeighted();
         
         // Fit the Datasets
         if (incJpsi || incPsi2S) {
-          myws.pdf("pdfMASS_Tot_PP")->fitTo(*myws.data(Form("dOS_%s_PP", DSTAG.c_str())), SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(numCores), Range("MassWindow"));
+          if (isWeighted) {
+            myws.pdf("pdfMASS_Tot_PP")->fitTo(*myws.data(Form("dOS_%s_PP", DSTAG.c_str())), Strategy(2), SumW2Error(kTRUE), Range("MassWindow"), NumCPU(numCores));
+          } else {
+            myws.pdf("pdfMASS_Tot_PP")->fitTo(*myws.data(Form("dOS_%s_PP", DSTAG.c_str())), Minos(kTRUE), Extended(kTRUE), Range("MassWindow"), NumCPU(numCores));
+          }  
         } else {
-          myws.pdf("pdfMASS_Tot_PP")->fitTo(*myws.data(Form("dOS_%s_PP", DSTAG.c_str())), SumW2Error(kTRUE), Extended(kTRUE), Save(), NumCPU(numCores), Range("SideBand1,SideBand2"));
+          myws.pdf("pdfMASS_Tot_PP")->fitTo(*myws.data(Form("dOS_%s_PP", DSTAG.c_str())), Minos(kTRUE), Extended(kTRUE), Range("SideBand1,SideBand2"), NumCPU(numCores));
         }
         
         // Draw the mass plot

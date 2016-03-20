@@ -39,6 +39,9 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
   bool isPP = false;
   if (DSName.find("PP")!=std::string::npos) isPP =true;
 
+  bool applyWeight = false;
+  if (isMC && !isPP) applyWeight = true;
+
   if (gSystem->AccessPathName(OutputFileName.c_str()) || UpdateDS) {
     cout << "[INFO] Creating RooDataSet for " << DSName << endl;
     TreeName = findMyTree(InputFileNames[0]); if(TreeName==""){return false;}
@@ -57,7 +60,7 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     RooRealVar* weight  = new RooRealVar("weight","MC weight", 0.0, 1.0, "");
     RooArgSet*  cols    = NULL;
     
-    if (isMC)
+    if (applyWeight)
     {
       setCentralityMap(Form("%s/Input/CentralityMap_PbPb2015.txt",gSystem->ExpandPathName(gSystem->pwd())));
       cols   = new RooArgSet(*mass, *ctau, *ctauErr, *ptQQ, *rapQQ, *cent, *weight);
@@ -70,6 +73,7 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
       cols = new RooArgSet(*mass, *ctau, *ctauErr, *ptQQ, *rapQQ, *cent);                   
       dataOS = new RooDataSet(Form("dOS_%s", DSName.c_str()), "dOS", *cols);
       dataSS = new RooDataSet(Form("dSS_%s", DSName.c_str()), "dSS", *cols);
+      if (isMC) dataOSNoBkg = new RooDataSet(Form("dOS_%s_NoBkg", DSName.c_str()), "dOSNoBkg", *cols);
     }
     
     Long64_t nentries = theTree->GetEntries();
@@ -101,7 +105,7 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
 	rapQQ->setVal(RecoQQ4mom->Rapidity());
 	cent->setVal(Centrality);
         
-        if (isMC){
+        if (applyWeight){
           double w = theTree->GetWeight()*getNColl(Centrality,isPP);
           weight->setVal(w);
         }
@@ -113,11 +117,11 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
 	    )
 	  {
 	    if (Reco_QQ_sign[iQQ]==0) { // Opposite-Sign dimuons
-	      dataOS->add(*cols); // Signal and background dimuons
-              if (isMC && isMatchedRecoDiMuon(iQQ)) dataOSNoBkg->add(*cols); // Signal-only dimuons
+	      dataOS->add(*cols, (applyWeight ? weight->getVal() : 1.0)); // Signal and background dimuons
+              if (isMC && isMatchedRecoDiMuon(iQQ)) dataOSNoBkg->add(*cols, (applyWeight ? weight->getVal() : 1.0)); // Signal-only dimuons
 	    }
             else {                    // Like-Sign dimuons
-	      dataSS->add(*cols);
+	      dataSS->add(*cols, (applyWeight ? weight->getVal() : 1.0));
 	    }
 	  }
       }

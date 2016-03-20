@@ -3,9 +3,9 @@
 
 #include "Utilities/initClasses.h"
 
-void setRange(RooWorkspace& myws, RooPlot* frame, string dsName, int nBins, bool setLogScale);
-void printParameters(RooWorkspace myws, TPad* Pad, bool isPbPb, string pdfName);
-void printChi2(RooWorkspace& myws, TPad* Pad, RooHist* hpull, string varLabel, string dataLabel, string pdfLabel); 
+void setRange(RooWorkspace& myws, RooPlot* frame, string dsName, int nBins, bool setLogScale, bool isWeighted);
+void printParameters(RooWorkspace myws, TPad* Pad, bool isPbPb, string pdfName, bool isWeighted);
+void printChi2(RooWorkspace& myws, TPad* Pad, RooPlot* frame, string varLabel, string dataLabel, string pdfLabel, int nBins); 
 
 void drawMassPlot(RooWorkspace& myws,   // Local workspace
                   string outputDir,     // Output directory
@@ -41,6 +41,7 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
     dsSSName = Form("dSS_%s_%s_NoBkg", DSTAG.c_str(), (isPbPb?"PbPb":"PP"));
     pdfName  = Form("pdfMASS_Tot_%s_NoBkg", (isPbPb?"PbPb":"PP"));
   }
+  bool isWeighted = myws.data(dsOSName.c_str())->isWeighted();
 
   // Create the main plot of the fit
   RooPlot*   frame     = myws.var("invMass")->frame(Bins(nBins), Range(cut.dMuon.M.Min, cut.dMuon.M.Max));
@@ -142,7 +143,7 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
   frame->GetYaxis()->SetTitleSize(0.04);
   frame->GetYaxis()->SetTitleOffset(1.7);
   frame->GetYaxis()->SetTitleFont(42);
-  setRange(myws, frame, dsOSName, nBins, setLogScale);
+  setRange(myws, frame, dsOSName, nBins, setLogScale, isWeighted);
  
   cFig->cd();
   pad2->SetTopMargin(0.02);
@@ -155,7 +156,7 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
   pad1->cd(); 
   frame->Draw();
 
-  if (!zoomPsi) { printParameters(myws, pad1, isPbPb, pdfName); }
+  if (!zoomPsi) { printParameters(myws, pad1, isPbPb, pdfName, isWeighted); }
   pad1->SetLogy(setLogScale);
 
   // Drawing the text in the plot
@@ -232,7 +233,7 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
     framezoom->GetXaxis()->SetLabelSize(0.06);
     framezoom->GetYaxis()->SetTitleSize(0.072);
     framezoom->GetXaxis()->SetTitleSize(0.072);
-    setRange(myws, framezoom, dsOSName, nBins, setLogScale);
+    setRange(myws, framezoom, dsOSName, nBins, setLogScale, isWeighted);
 
     pad4->Draw();
     pad4->cd();
@@ -262,7 +263,7 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
   frame2->Draw(); 
   
   // *** Print chi2/ndof 
-  printChi2(myws, pad2, hpull, "invMass", dsOSName.c_str(), pdfName.c_str());
+  printChi2(myws, pad2, frame, "invMass", dsOSName.c_str(), pdfName.c_str(), nBins);
   
   pline->Draw("same");
   pad2->Update();
@@ -294,19 +295,22 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
 #endif // #ifndef drawMassPlot_C
 
 
-void setRange(RooWorkspace& myws, RooPlot* frame, string dsName, int nBins, bool setLogScale) 
+void setRange(RooWorkspace& myws, RooPlot* frame, string dsName, int nBins, bool setLogScale, bool isWeighted) 
 { 
   // Find maximum and minimum points of Plot to rescale Y axis
   TH1* h = myws.data(dsName.c_str())->createHistogram("hist", *myws.var("invMass"), Binning(nBins));
   Double_t YMax = h->GetBinContent(h->GetMaximumBin());
   Double_t YMin = h->GetBinContent(h->GetMinimumBin());
-  if(setLogScale){ YMin=max(YMin,0.01); frame->GetYaxis()->SetRangeUser(max(YMin/TMath::Power((YMax/YMin), 0.05),0.01), YMax*TMath::Power((YMax/YMin), 0.4)); } 
+  double YMIN = 0.0;
+  if (isWeighted) { YMIN = 0.000001; }
+  else { YMIN = 0.1; }
+  if(setLogScale){ YMin=max(YMin,YMIN); frame->GetYaxis()->SetRangeUser(max(YMin/TMath::Power((YMax/YMin), 0.05),YMIN), YMax*TMath::Power((YMax/YMin), 0.4)); } 
   else{ frame->GetYaxis()->SetRangeUser(max(YMin-(YMax-YMin)*0.05,0.0), YMax+(YMax-YMin)*0.4); }
   delete h;
 }
 
 
-void printParameters(RooWorkspace myws, TPad* Pad, bool isPbPb, string pdfName)
+void printParameters(RooWorkspace myws, TPad* Pad, bool isPbPb, string pdfName, bool isWeighted)
 {
   Pad->cd();
   TLatex *t = new TLatex(); t->SetNDC(); t->SetTextSize(0.026); float dy = 0.025; 
@@ -334,7 +338,7 @@ void printParameters(RooWorkspace myws, TPad* Pad, bool isPbPb, string pdfName)
     }
     // Print the parameter's results
     if(s1=="N"){ 
-      t->DrawLatex(0.69, 0.75-dy, Form("%s = %.0f#pm%.0f ", label.c_str(), it->getValV(), it->getError())); dy+=0.045; 
+      t->DrawLatex(0.69, 0.75-dy, Form((isWeighted?"%s = %.6f#pm%.6f ":"%s = %.0f#pm%.0f "), label.c_str(), it->getValV(), it->getError())); dy+=0.045; 
     }
     else if(s1.find("#sigma_{2}/#sigma_{1}")!=std::string::npos){ 
       t->DrawLatex(0.69, 0.75-dy, Form("%s = %.3f#pm%.3f ", label.c_str(), it->getValV(), it->getError())); dy+=0.045; 
@@ -355,23 +359,23 @@ void printParameters(RooWorkspace myws, TPad* Pad, bool isPbPb, string pdfName)
 }
 
 
-void printChi2(RooWorkspace& myws, TPad* Pad, RooHist* hpull, string varLabel, string dataLabel, string pdfLabel) 
+void printChi2(RooWorkspace& myws, TPad* Pad, RooPlot* frame, string varLabel, string dataLabel, string pdfLabel, int nBins) 
 {
   double chi2=0; unsigned int ndof=0;
   Pad->cd();
   TLatex *t = new TLatex(); t->SetNDC(); t->SetTextSize(0.1); 
-  unsigned int nbins = hpull->GetN();
-  TH1 *hdatact = myws.data(dataLabel.c_str())->createHistogram("hdatact", *myws.var(varLabel.c_str()), Binning(nbins));
   unsigned int nFitPar = myws.pdf(pdfLabel.c_str())->getParameters(*myws.data(dataLabel.c_str()))->selectByAttrib("Constant",kFALSE)->getSize(); 
+  TH1 *hdatact = myws.data(dataLabel.c_str())->createHistogram("hdatact", *myws.var(varLabel.c_str()), Binning(nBins));
+  RooHist *hpull = frame->pullHist(0, 0, true);
   double* ypulls = hpull->GetY();
   unsigned int nFullBins = 0;
-  for (unsigned int i = 0; i < nbins; i++) {
-    if (hdatact->GetBinContent(i+1) != 0) {
+  for (unsigned int i = 0; i < nBins; i++) {
+    if (hdatact->GetBinContent(i+1) > 0.0) {
       chi2 += ypulls[i]*ypulls[i];
       nFullBins++;
     }
   }
   ndof = nFullBins - nFitPar;
   t->DrawLatex(0.7, 0.85, Form("#chi^{2}/ndof = %.0f / %d", chi2, ndof));
-  delete hdatact;
+  delete hdatact; delete hpull;
 };
