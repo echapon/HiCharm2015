@@ -21,12 +21,12 @@ bool addParameters(string InputFile,  vector< struct KinCuts >& cutVector, vecto
 void fitter(
             const string workDirName="Test", // Working directory
             // Select the type of datasets to fit
-            bool fitData     = true,         // Fits Data if true, otherwise fits MC
+            bool fitData     = false,        // Fits Data if true, otherwise fits MC
             bool fitPbPb     = true,         // Fits PbPb datasets
-            bool fitPP       = true,         // Fits PP datasets
+            bool fitPP       = false,         // Fits PP datasets
             // Select the type of object to fit
             bool incJpsi     = true,         // Includes Jpsi model
-            bool incPsi2S    = false,        // Includes Psi(2S) model
+            bool incPsi2S    = true,        // Includes Psi(2S) model
             bool incBkg      = true,         // Includes Background model
             // Select the fitting options
             bool cutCtau     = false,        // Apply prompt ctau cuts
@@ -195,8 +195,8 @@ void fitter(
               ) { return; }
         } else {
           // If don't want simultaneous fits, then fit PbPb or PP separately
-          if (DSTAG.First("MCJPSI")>=0 ) { incJpsi = true;  incPsi2S = false; }
-          if (DSTAG.First("MCPSI2S")>=0) { incJpsi = false; incPsi2S = true;  }
+          if ( DSTAG.Contains("MCJPSI")  ) { incJpsi = true;  incPsi2S = false; }
+          if ( DSTAG.Contains("MCPSI2S") ) { incJpsi = false; incPsi2S = true;  }
             
           if (fitPbPb) {
             if (!fitCharmonia( Workspace[DSTAG.Data()], cutVector.at(i), parIniVector.at(i), outputDir,
