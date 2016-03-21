@@ -39,6 +39,9 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
   bool isPP = false;
   if (DSName.find("PP")!=std::string::npos) isPP =true;
 
+  bool applyWeight = false;
+  if (isMC && !isPP) applyWeight = true;
+
   if (gSystem->AccessPathName(OutputFileName.c_str()) || UpdateDS) {
     cout << "[INFO] Creating RooDataSet for " << DSName << endl;
     TreeName = findMyTree(InputFileNames[0]); if(TreeName==""){return false;}
@@ -57,19 +60,20 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     RooRealVar* weight  = new RooRealVar("weight","MC weight", 0.0, 1.0, "");
     RooArgSet*  cols    = NULL;
     
-    if (isMC)
+    if (applyWeight)
     {
       setCentralityMap(Form("%s/Input/CentralityMap_PbPb2015.txt",gSystem->ExpandPathName(gSystem->pwd())));
       cols   = new RooArgSet(*mass, *ctau, *ctauErr, *ptQQ, *rapQQ, *cent, *weight);
-      dataOS = new RooDataSet(Form("dOS_%s", DSName.c_str()), "dOS", *cols, WeightVar(*weight));
-      dataSS = new RooDataSet(Form("dSS_%s", DSName.c_str()), "dSS", *cols, WeightVar(*weight));
-      dataOSNoBkg = new RooDataSet(Form("dOS_%s_NoBkg", DSName.c_str()), "dOSNoBkg", *cols, WeightVar(*weight));
+      dataOS = new RooDataSet(Form("dOS_%s", DSName.c_str()), "dOS", *cols, WeightVar(*weight), StoreAsymError(*mass));
+      dataSS = new RooDataSet(Form("dSS_%s", DSName.c_str()), "dSS", *cols, WeightVar(*weight), StoreAsymError(*mass));
+      dataOSNoBkg = new RooDataSet(Form("dOS_%s_NoBkg", DSName.c_str()), "dOSNoBkg", *cols, WeightVar(*weight), StoreAsymError(*mass));
     }
     else
     {
       cols = new RooArgSet(*mass, *ctau, *ctauErr, *ptQQ, *rapQQ, *cent);                   
-      dataOS = new RooDataSet(Form("dOS_%s", DSName.c_str()), "dOS", *cols);
-      dataSS = new RooDataSet(Form("dSS_%s", DSName.c_str()), "dSS", *cols);
+      dataOS = new RooDataSet(Form("dOS_%s", DSName.c_str()), "dOS", *cols, StoreAsymError(*mass));
+      dataSS = new RooDataSet(Form("dSS_%s", DSName.c_str()), "dSS", *cols, StoreAsymError(*mass));
+      if (isMC) dataOSNoBkg = new RooDataSet(Form("dOS_%s_NoBkg", DSName.c_str()), "dOSNoBkg", *cols, StoreAsymError(*mass));
     }
     
     Long64_t nentries = theTree->GetEntries();
@@ -101,9 +105,8 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
         rapQQ->setVal(RecoQQ4mom->Rapidity());
         cent->setVal(Centrality);
         
-        double w = 1.;
-        if (isMC){
-          w = theTree->GetWeight()*getNColl(Centrality,isPP);
+        if (applyWeight){
+          double w = theTree->GetWeight()*getNColl(Centrality,isPP);
           weight->setVal(w);
         }
         
@@ -114,11 +117,11 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
 	    )
 	  {
 	    if (Reco_QQ_sign[iQQ]==0) { // Opposite-Sign dimuons
-	      dataOS->add(*cols,w); // Signal and background dimuons
-              if (isMC && isMatchedRecoDiMuon(iQQ)) dataOSNoBkg->add(*cols,w); // Signal-only dimuons
+	      dataOS->add(*cols, (applyWeight ? weight->getVal() : 1.0)); // Signal and background dimuons
+              if (isMC && isMatchedRecoDiMuon(iQQ)) dataOSNoBkg->add(*cols, (applyWeight ? weight->getVal() : 1.0)); // Signal-only dimuons
 	    }
             else {                    // Like-Sign dimuons
-	      dataSS->add(*cols,w);
+	      dataSS->add(*cols, (applyWeight ? weight->getVal() : 1.0));
 	    }
 	  }
       }

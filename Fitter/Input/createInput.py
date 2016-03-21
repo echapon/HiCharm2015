@@ -22,10 +22,10 @@ fcn_bkg_pp=["SecondOrderChebychev","SecondOrderPolynomial"]
 fcn_bkg_pbpb=["SecondOrderChebychev","SecondOrderPolynomial"]
 
 # provide the name of the parameters of your models
-parnames_signal_pp="N_Jpsi_PP;sigma1_Jpsi_PP;sigma2_Jpsi_PP;m_Jpsi_PP;alpha_Jpsi_PP;n_Jpsi_PP;f_Jpsi_PP"
-parnames_signal_pbpb="N_Jpsi_PbPb;sigma1_Jpsi_PbPb;sigma2_Jpsi_PbPb;m_Jpsi_PbPb;alpha_Jpsi_PbPb;n_Jpsi_PbPb;f_Jpsi_PbPb"
-parnames_signal2_pp="N_Psi2S_PP;sigma1_Psi2S_PP;sigma2_Psi2S_PP;m_Psi2S_PP;alpha_Psi2S_PP;n_Psi2S_PP;f_Psi2S_PP"
-parnames_signal2_pbpb="N_Psi2S_PbPb;sigma1_Psi2S_PbPb;sigma2_Psi2S_PbPb;m_Psi2S_PbPb;alpha_Psi2S_PbPb;n_Psi2S_PbPb;f_Psi2S_PbPb"
+parnames_signal_pp="N_Jpsi_PP;sigma1_Jpsi_PP;rSigma21_Jpsi_PP;m_Jpsi_PP;alpha_Jpsi_PP;n_Jpsi_PP;f_Jpsi_PP"
+parnames_signal_pbpb="N_Jpsi_PbPb;sigma1_Jpsi_PbPb;rSigma21_Jpsi_PbPb;m_Jpsi_PbPb;alpha_Jpsi_PbPb;n_Jpsi_PbPb;f_Jpsi_PbPb"
+parnames_signal2_pp="N_Psi2S_PP;sigma1_Psi2S_PP;rSigma21_Psi2S_PP;m_Psi2S_PP;alpha_Psi2S_PP;n_Psi2S_PP;f_Psi2S_PP"
+parnames_signal2_pbpb="N_Psi2S_PbPb;sigma1_Psi2S_PbPb;rSigma21_Psi2S_PbPb;m_Psi2S_PbPb;alpha_Psi2S_PbPb;n_Psi2S_PbPb;f_Psi2S_PbPb"
 parnames_bkg_pp="N_Bkg_PP;lambda1_Bkg_PP;lambda2_Bkg_PP;lambda3_Bkg_PP;lambda4_Bkg_PP;lambda5_Bkg_PP;lambda6_Bkg_PP"
 parnames_bkg_pbpb="N_Bkg_PbPb;lambda1_Bkg_PbPb;lambda2_Bkg_PbPb;lambda3_Bkg_PbPb;lambda4_Bkg_PbPb;lambda5_Bkg_PbPb;lambda6_Bkg_PbPb"
 

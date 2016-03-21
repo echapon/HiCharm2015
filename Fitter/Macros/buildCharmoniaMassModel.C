@@ -2,19 +2,19 @@
 
 void fixPsi2StoJpsi(map<string, string>& parIni, bool isPbPb);
 void fixPbPbtoPP(map<string, string>& parIni);
-void setDefaultParameters(map<string, string> &parIni, bool isPbPb, int numEntries);
+void setDefaultParameters(map<string, string> &parIni, bool isPbPb, double numEntries);
 bool addSignalMassModel(RooWorkspace& ws, string object, MassModel model, map<string,string> parIni, bool isPbPb); 
 bool addBackgroundMassModel(RooWorkspace& ws, string object, MassModel model, map<string,string> parIni, bool isPbPb);
 
 
 bool buildCharmoniaMassModel(RooWorkspace& ws, struct CharmModel model, map<string, string>  parIni, 
-                             bool isPbPb,                // Determine if we are working with PbPb (True) or PP (False)
-                             bool doSimulFit,            // Do simultaneous fit
-                             bool incBkg,                // Include background model
-                             bool incJpsi,               // Include Jpsi model
-                             bool incPsi2S,              // Include Psi(2S) model
+                             bool isPbPb,                 // Determine if we are working with PbPb (True) or PP (False)
+                             bool doSimulFit,             // Do simultaneous fit
+                             bool incBkg,                 // Include background model
+                             bool incJpsi,                // Include Jpsi model
+                             bool incPsi2S,               // Include Psi(2S) model
                              string label,                // pdf label
-                             int  numEntries = 300000    // Number of entries in the dataset
+                             double  numEntries = 300000. // Number of entries in the dataset
                              )
 {
 
@@ -552,7 +552,7 @@ void fixPsi2StoJpsi(map<string, string>& parIni, bool isPbPb)
 {
   cout << "[INFO] Constraining Psi(2S) parameters to Jpsi using PDF Mass Ratio" << endl;
   Double_t MassRatio = (Mass.Psi2S/Mass.JPsi);
-  parIni[Form("m_Psi2S_%s", (isPbPb?"PbPb":"PP"))]      = Form("RooFormulaVar::%s('@0*@1',{MassRatio[%.4f],%s})", Form("m_Psi2S_%s", (isPbPb?"PbPb":"PP")), MassRatio, Form("m_Jpsi_%s", (isPbPb?"PbPb":"PP") ));
+  parIni[Form("m_Psi2S_%s", (isPbPb?"PbPb":"PP"))]      = Form("RooFormulaVar::%s('@0*@1',{MassRatio[%.6f],%s})", Form("m_Psi2S_%s", (isPbPb?"PbPb":"PP")), MassRatio, Form("m_Jpsi_%s", (isPbPb?"PbPb":"PP") ));
   parIni[Form("sigma1_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("RooFormulaVar::%s('@0*@1',{MassRatio,%s})", Form("sigma1_Psi2S_%s", (isPbPb?"PbPb":"PP")), Form("sigma1_Jpsi_%s", (isPbPb?"PbPb":"PP") ));
   parIni[Form("sigma2_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("RooFormulaVar::%s('@0*@1',{MassRatio,%s})", Form("sigma2_Psi2S_%s", (isPbPb?"PbPb":"PP")), Form("sigma2_Jpsi_%s", (isPbPb?"PbPb":"PP") ));
   parIni[Form("alpha_Psi2S_%s", (isPbPb?"PbPb":"PP"))]  = Form("RooFormulaVar::%s('@0',{%s})", Form("alpha_Psi2S_%s", (isPbPb?"PbPb":"PP")), Form("alpha_Jpsi_%s", (isPbPb?"PbPb":"PP")));
@@ -560,91 +560,107 @@ void fixPsi2StoJpsi(map<string, string>& parIni, bool isPbPb)
   parIni[Form("f_Psi2S_%s", (isPbPb?"PbPb":"PP"))]      = Form("RooFormulaVar::%s('@0',{%s})", Form("f_Psi2S_%s", (isPbPb?"PbPb":"PP")), Form("f_Jpsi_%s", (isPbPb?"PbPb":"PP")));
 };
 
-void setDefaultParameters(map<string, string> &parIni, bool isPbPb, int numEntries)
+void setDefaultParameters(map<string, string> &parIni, bool isPbPb, double numEntries)
 {
 
-  cout << "[INFO] Setting undefined initial parameters to their default values" << endl;
+  cout << "[INFO] Setting user undefined initial parameters to their default values" << endl;
 
   // DEFAULT SINGLE AND DOUBLE RATIO PARAMETERS
-  if (parIni.count("RFrac2Svs1S_PbPbvsPP")==0) { 
+  if (parIni.count("RFrac2Svs1S_PbPbvsPP")==0 || parIni["RFrac2Svs1S_PbPbvsPP"]=="") { 
     parIni["RFrac2Svs1S_PbPbvsPP"] = Form("%s[%.4f,%.4f,%.4f]", "RFrac2Svs1S_PbPbvsPP", 0.26, 0.0, 3.0);
   }
-  if (parIni.count(Form("RFrac2Svs1S_%s", (isPbPb?"PbPb":"PP")))==0) {
+  if (parIni.count(Form("RFrac2Svs1S_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("RFrac2Svs1S_%s", (isPbPb?"PbPb":"PP"))]=="") {
     parIni[Form("RFrac2Svs1S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("RFrac2Svs1S_%s", (isPbPb?"PbPb":"PP")), 0.26, 0.0, 1.0);
   }
 
   // DEFAULT RANGE OF NUMBER OF EVENTS
-  if (parIni.count(Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP")))==0) { 
-    parIni[Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP"))]  = Form("%s[%d,%d]", Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP")), 0, numEntries);
+  if (parIni.count(Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP"))]=="") { 
+    parIni[Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP"))]  = Form("%s[%.10f,%.10f]", Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP")), 0.0, numEntries*10.0);
   }
-  if (parIni.count(Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP")))==0) { 
-    parIni[Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP"))]  = Form("%s[%d,%d]", Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP")), 0, numEntries);
+  if (parIni.count(Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP"))]=="") { 
+    parIni[Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP"))]  = Form("%s[%.10f,%.10f]", Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP")), 0.0, numEntries*10.0);
   }
-  if (parIni.count(Form("N_Bkg_%s", (isPbPb?"PbPb":"PP")))==0) { 
-    parIni[Form("N_Bkg_%s", (isPbPb?"PbPb":"PP"))]  = Form("%s[%d,%d]", Form("N_Bkg_%s", (isPbPb?"PbPb":"PP")), 0, numEntries);
+  if (parIni.count(Form("N_Bkg_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("N_Bkg_%s", (isPbPb?"PbPb":"PP"))]=="") { 
+    parIni[Form("N_Bkg_%s", (isPbPb?"PbPb":"PP"))]  = Form("%s[%.10f,%.10f]", Form("N_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.0, numEntries);
   }
 
   // DEFAULT SIGNAL MASS MODEL PARAMETERS 
-  if (parIni.count(Form("m_Jpsi_%s", (isPbPb?"PbPb":"PP")))==0) {
-    parIni[Form("m_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("m_Jpsi_%s", (isPbPb?"PbPb":"PP")), Mass.JPsi, Mass.JPsi-0.1, Mass.JPsi+0.1);
+  if (parIni.count(Form("m_Jpsi_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("m_Jpsi_%s", (isPbPb?"PbPb":"PP"))]=="") {
+    parIni[Form("m_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.6f,%.6f,%.6f]", Form("m_Jpsi_%s", (isPbPb?"PbPb":"PP")), Mass.JPsi, Mass.JPsi-0.1, Mass.JPsi+0.1);
   }
-  if (parIni.count(Form("m_Psi2S_%s", (isPbPb?"PbPb":"PP")))==0) {
-    parIni[Form("m_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("m_Psi2S_%s", (isPbPb?"PbPb":"PP")), Mass.Psi2S, Mass.Psi2S-0.1, Mass.Psi2S+0.1);
+  if (parIni.count(Form("m_Psi2S_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("m_Psi2S_%s", (isPbPb?"PbPb":"PP"))]=="") {
+    parIni[Form("m_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.6f,%.6f,%.6f]", Form("m_Psi2S_%s", (isPbPb?"PbPb":"PP")), Mass.Psi2S, Mass.Psi2S-0.1, Mass.Psi2S+0.1);
   }
-  if (parIni.count(Form("sigma1_Jpsi_%s", (isPbPb?"PbPb":"PP")))==0) {
-    parIni[Form("sigma1_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("sigma1_Jpsi_%s", (isPbPb?"PbPb":"PP")), 0.04, 0.01, 0.10);
+  if (parIni.count(Form("sigma1_Jpsi_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("sigma1_Jpsi_%s", (isPbPb?"PbPb":"PP"))]=="") {
+    parIni[Form("sigma1_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("sigma1_Jpsi_%s", (isPbPb?"PbPb":"PP")), 0.02, 0.005, 0.07);
   }
-  if (parIni.count(Form("sigma2_Jpsi_%s", (isPbPb?"PbPb":"PP")))==0) {
-    parIni[Form("sigma2_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("sigma2_Jpsi_%s", (isPbPb?"PbPb":"PP")), 0.02, 0.01, 0.10);
+  if (parIni.count(Form("rSigma21_Jpsi_%s", (isPbPb?"PbPb":"PP")))==0) {
+    if (parIni.count(Form("sigma2_Jpsi_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("sigma2_Jpsi_%s", (isPbPb?"PbPb":"PP"))]=="") {
+      parIni[Form("sigma2_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("sigma2_Jpsi_%s", (isPbPb?"PbPb":"PP")), 0.04, 0.01, 0.10);
+    }
+  } else {
+    if (parIni[Form("rSigma21_Jpsi_%s", (isPbPb?"PbPb":"PP"))]=="") {
+      parIni[Form("rSigma21_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("rSigma21_Jpsi_%s", (isPbPb?"PbPb":"PP")), 2.0, 0.9, 3.0);
+    }
+    parIni[Form("sigma2_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("RooFormulaVar::%s('@0*@1',{%s,%s})", Form("sigma2_Jpsi_%s", (isPbPb?"PbPb":"PP")),
+                                                                parIni[Form("rSigma21_Jpsi_%s", (isPbPb?"PbPb":"PP"))].c_str(), Form("sigma1_Jpsi_%s", (isPbPb?"PbPb":"PP") ));
+  }      
+  if (parIni.count(Form("sigma1_Psi2S_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("sigma1_Psi2S_%s", (isPbPb?"PbPb":"PP"))]=="") {
+    parIni[Form("sigma1_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("sigma1_Psi2S_%s", (isPbPb?"PbPb":"PP")), 0.02, 0.005, 0.07);
   }
-  if (parIni.count(Form("sigma1_Psi2S_%s", (isPbPb?"PbPb":"PP")))==0) {
-    parIni[Form("sigma1_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("sigma1_Psi2S_%s", (isPbPb?"PbPb":"PP")), 0.04, 0.01, 0.10);
+  if (parIni.count(Form("rSigma21_Psi2S_%s", (isPbPb?"PbPb":"PP")))==0) {
+    if (parIni.count(Form("sigma2_Psi2S_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("sigma2_Psi2S_%s", (isPbPb?"PbPb":"PP"))]=="") {
+      parIni[Form("sigma2_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("sigma2_Psi2S_%s", (isPbPb?"PbPb":"PP")), 0.04, 0.01, 0.10);
+    }
+  } else {
+    if (parIni[Form("rSigma21_Psi2S_%s", (isPbPb?"PbPb":"PP"))]=="") {
+      parIni[Form("rSigma21_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("rSigma21_Psi2S_%s", (isPbPb?"PbPb":"PP")), 2.0, 0.9, 3.0);
+    }
+    parIni[Form("sigma2_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("RooFormulaVar::%s('@0*@1',{%s,%s})", Form("sigma2_Psi2S_%s", (isPbPb?"PbPb":"PP")), 
+                                                                 parIni[Form("rSigma21_Psi2S_%s", (isPbPb?"PbPb":"PP"))].c_str(), Form("sigma1_Psi2S_%s", (isPbPb?"PbPb":"PP") ));
   }
-  if (parIni.count(Form("sigma2_Psi2S_%s", (isPbPb?"PbPb":"PP")))==0) {
-    parIni[Form("sigma2_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("sigma2_Psi2S_%s", (isPbPb?"PbPb":"PP")), 0.02, 0.01, 0.10);
+  if (parIni.count(Form("alpha_Jpsi_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("alpha_Jpsi_%s", (isPbPb?"PbPb":"PP"))]=="") {
+    parIni[Form("alpha_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("alpha_Jpsi_%s", (isPbPb?"PbPb":"PP")), 2.21, 0.5, 30.0);
   }
-  if (parIni.count(Form("alpha_Jpsi_%s", (isPbPb?"PbPb":"PP")))==0) {
-    parIni[Form("alpha_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("alpha_Jpsi_%s", (isPbPb?"PbPb":"PP")), 2.21, 1.01, 30.0);
+  if (parIni.count(Form("alpha_Psi2S_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("alpha_Psi2S_%s", (isPbPb?"PbPb":"PP"))]=="") {
+    parIni[Form("alpha_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("alpha_Psi2S_%s", (isPbPb?"PbPb":"PP")), 2.21, 0.5, 30.0);
   }
-  if (parIni.count(Form("alpha_Psi2S_%s", (isPbPb?"PbPb":"PP")))==0) {
-    parIni[Form("alpha_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("alpha_Psi2S_%s", (isPbPb?"PbPb":"PP")), 2.21, 1.01, 30.0);
-  }
-  if (parIni.count(Form("n_Jpsi_%s", (isPbPb?"PbPb":"PP")))==0) {
+  if (parIni.count(Form("n_Jpsi_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("n_Jpsi_%s", (isPbPb?"PbPb":"PP"))]=="") {
     parIni[Form("n_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("n_Jpsi_%s", (isPbPb?"PbPb":"PP")), 2., 0.5, 30.0);
   }
-  if (parIni.count(Form("n_Psi2S_%s", (isPbPb?"PbPb":"PP")))==0) {
+  if (parIni.count(Form("n_Psi2S_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("n_Psi2S_%s", (isPbPb?"PbPb":"PP"))]=="") {
     parIni[Form("n_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("n_Psi2S_%s", (isPbPb?"PbPb":"PP")), 2., 0.5, 30.0);
   }
-  if (parIni.count(Form("f_Jpsi_%s", (isPbPb?"PbPb":"PP")))==0) {
+  if (parIni.count(Form("f_Jpsi_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("f_Jpsi_%s", (isPbPb?"PbPb":"PP"))]=="") {
     parIni[Form("f_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("f_Jpsi_%s", (isPbPb?"PbPb":"PP")), 0.3, 0.0, 1.0);
   }
-  if (parIni.count(Form("f_Psi2S_%s", (isPbPb?"PbPb":"PP")))==0) {
+  if (parIni.count(Form("f_Psi2S_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("f_Psi2S_%s", (isPbPb?"PbPb":"PP"))]=="") {
     parIni[Form("f_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("f_Psi2S_%s", (isPbPb?"PbPb":"PP")), 0.3, 0.0, 1.0);
   }
 
   // DEFAULT BACKGROUND MASS MODEL PARAMETERS
   if (parIni[Form("Model_Bkg_%s",(isPbPb?"PbPb":"PP"))].find("Chebychev")!=std::string::npos) {
-    if (parIni.count(Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP")))==0) { 
-      parIni[Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.05, -1.2, 1.2);
+    if (parIni.count(Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP"))]=="") { 
+      parIni[Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.0, -1.5, 1.5);
     }
-    if (parIni.count(Form("lambda2_Bkg_%s", (isPbPb?"PbPb":"PP")))==0) { 
-      parIni[Form("lambda2_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda2_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.05, -1.0, 1.0);
+    if (parIni.count(Form("lambda2_Bkg_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("lambda2_Bkg_%s", (isPbPb?"PbPb":"PP"))]=="") { 
+      parIni[Form("lambda2_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda2_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.0, -1.5, 1.5);
     }
-    if (parIni.count(Form("lambda3_Bkg_%s", (isPbPb?"PbPb":"PP")))==0) { 
-      parIni[Form("lambda3_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda3_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.05, -1.0, 1.0);
+    if (parIni.count(Form("lambda3_Bkg_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("lambda3_Bkg_%s", (isPbPb?"PbPb":"PP"))]=="") { 
+      parIni[Form("lambda3_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda3_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.0, -1.5, 1.5);
     }
-    if (parIni.count(Form("lambda4_Bkg_%s", (isPbPb?"PbPb":"PP")))==0) { 
-      parIni[Form("lambda4_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda4_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.05, -1.0, 1.0);
+    if (parIni.count(Form("lambda4_Bkg_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("lambda4_Bkg_%s", (isPbPb?"PbPb":"PP"))]=="") { 
+      parIni[Form("lambda4_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda4_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.0, -1.0, 1.0);
     }
-    if (parIni.count(Form("lambda5_Bkg_%s", (isPbPb?"PbPb":"PP")))==0) { 
-      parIni[Form("lambda5_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda5_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.05, -1.0, 1.0);
+    if (parIni.count(Form("lambda5_Bkg_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("lambda5_Bkg_%s", (isPbPb?"PbPb":"PP"))]=="") { 
+      parIni[Form("lambda5_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda5_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.0, -1.0, 1.0);
     }
-    if (parIni.count(Form("lambda6_Bkg_%s", (isPbPb?"PbPb":"PP")))==0) { 
-      parIni[Form("lambda6_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda6_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.05, -1.0, 1.0);
+    if (parIni.count(Form("lambda6_Bkg_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("lambda6_Bkg_%s", (isPbPb?"PbPb":"PP"))]=="") { 
+      parIni[Form("lambda6_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda6_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.0, -1.0, 1.0);
     }
   } 
   else if (parIni[Form("Model_Bkg_%s",(isPbPb?"PbPb":"PP"))].find("Exponential")!=std::string::npos) {
-    if (parIni.count(Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP")))==0) { 
+    if (parIni.count(Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP"))]=="") { 
       parIni[Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.05, -100.0, 100.0);
     }
   }
