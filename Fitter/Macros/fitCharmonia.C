@@ -199,20 +199,14 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
         // Fit the Datasets
         if (incJpsi || incPsi2S) {
           if (isWeighted) {
-            TH1::SetDefaultSumw2(kTRUE);
-            TH1* hist = myws.data(Form("dOS_%s_PbPb", DSTAG.c_str()))->createHistogram("invMass",nBins);
-            double min = hist->GetXaxis()->GetBinCenter( hist->FindFirstBinAbove(0.00001)+1 );
-            double max = hist->GetXaxis()->GetBinCenter( hist->FindLastBinAbove(0.00001)-1 );
-            RooDataHist* binnedData = new RooDataHist("dummy", "dummy", *myws.var("invMass"), hist);
-            myws.var("invMass")->setRange("MassWindow", min, max);
-            RooFitResult* fitResult = myws.pdf("pdfMASS_Tot_PbPb")->chi2FitTo(*binnedData, Strategy(2), Range("MassWindow"), InitialHesse(kTRUE), Minos(kFALSE), NumCPU(numCores), Save());
+            RooFitResult* fitResult = myws.pdf("pdfMASS_Tot_PbPb")->fitTo(*myws.data(Form("dOS_%s_PbPb", DSTAG.c_str())), Extended(kTRUE), SumW2Error(kTRUE), Range("MassWindow"), NumCPU(numCores), Save());
             fitResult->Print();
           } else {
-            RooFitResult* fitResult = myws.pdf("pdfMASS_Tot_PbPb")->fitTo(*myws.data(Form("dOS_%s_PbPb", DSTAG.c_str())), Minos(kTRUE), Extended(kTRUE), Range("MassWindow"), NumCPU(numCores), Save());
+            RooFitResult* fitResult = myws.pdf("pdfMASS_Tot_PbPb")->fitTo(*myws.data(Form("dOS_%s_PbPb", DSTAG.c_str())), Extended(kTRUE), Range("MassWindow"), NumCPU(numCores), Save());
             fitResult->Print();
           }  
         } else {
-          RooFitResult* fitResult = myws.pdf("pdfMASS_Tot_PbPb")->fitTo(*myws.data(Form("dOS_%s_PbPb", DSTAG.c_str())), Minos(kTRUE), Extended(kTRUE), Range("SideBand1,SideBand2"), NumCPU(numCores), Save()); 
+          RooFitResult* fitResult = myws.pdf("pdfMASS_Tot_PbPb")->fitTo(*myws.data(Form("dOS_%s_PbPb", DSTAG.c_str())), Extended(kTRUE), Range("SideBand1,SideBand2"), NumCPU(numCores), Save()); 
           fitResult->Print();
         }
         
@@ -224,15 +218,13 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
 //          myws.loadSnapshot("pdfMASS_Tot_PbPb_parIni");
           // Fit the Datasets
           if (isWeighted) {
-            TH1* hist = myws.data(Form("dOS_%s_PbPb_NoBkg", DSTAG.c_str()))->createHistogram("invMass",nBins);
-            RooDataHist* binnedData = new RooDataHist("dummy", "dummy", *myws.var("invMass"), hist);
-            RooFitResult* fitResult = myws.pdf("pdfMASS_Tot_PbPb_NoBkg")->chi2FitTo(*binnedData, Strategy(2), Range("MassWindow"), NumCPU(numCores), Save());
+            RooFitResult* fitResult = myws.pdf("pdfMASS_Tot_PbPb_NoBkg")->fitTo(*myws.data(Form("dOS_%s_PbPb_NoBkg", DSTAG.c_str())), Extended(kTRUE), SumW2Error(kTRUE), Range("MassWindow"), NumCPU(numCores), Save());
             fitResult->Print();
           } else {
-            RooFitResult* fitResult = myws.pdf("pdfMASS_Tot_PbPb_NoBkg")->fitTo(*myws.data(Form("dOS_%s_PbPb_NoBkg", DSTAG.c_str())), SumW2Error(kTRUE), Range("MassWindow"), NumCPU(numCores), Save());
+            RooFitResult* fitResult = myws.pdf("pdfMASS_Tot_PbPb_NoBkg")->fitTo(*myws.data(Form("dOS_%s_PbPb_NoBkg", DSTAG.c_str())), Extended(kTRUE), Range("MassWindow"), NumCPU(numCores), Save());
             fitResult->Print();
           }  
-          RooFitResult* fitResult = myws.pdf("pdfMASS_Tot_PbPb_NoBkg")->fitTo(*myws.data(Form("dOS_%s_PbPb_NoBkg", DSTAG.c_str())), SumW2Error(kTRUE), Range("MassWindow"), NumCPU(numCores), Save());
+          RooFitResult* fitResult = myws.pdf("pdfMASS_Tot_PbPb_NoBkg")->fitTo(*myws.data(Form("dOS_%s_PbPb_NoBkg", DSTAG.c_str())), Extended(kTRUE), Range("MassWindow"), NumCPU(numCores), Save());
           fitResult->Print();
           // Draw the mass plot
           drawMassPlot(myws, outputDir, opt, cut, (plotLabelPbPb+"_NoBkg"), DSTAG, true, incJpsi, incPsi2S, incBkg, cutCtau, doSimulFit, true, setLogScale, incSS, zoomPsi, nBins, getMeanPT);
@@ -251,10 +243,10 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
         
         // Fit the Datasets
         if (incJpsi || incPsi2S) {
-          RooFitResult* fitResult = myws.pdf("pdfMASS_Tot_PP")->fitTo(*myws.data(Form("dOS_%s_PP", DSTAG.c_str())), Minos(kTRUE), Extended(kTRUE), Range("MassWindow"), NumCPU(numCores), Save()); 
+          RooFitResult* fitResult = myws.pdf("pdfMASS_Tot_PP")->fitTo(*myws.data(Form("dOS_%s_PP", DSTAG.c_str())), Extended(kTRUE), Range("MassWindow"), NumCPU(numCores), Save()); 
           fitResult->Print(); 
         } else {
-          RooFitResult* fitResult = myws.pdf("pdfMASS_Tot_PP")->fitTo(*myws.data(Form("dOS_%s_PP", DSTAG.c_str())), Minos(kTRUE), Extended(kTRUE), Range("SideBand1,SideBand2"), NumCPU(numCores), Save());
+          RooFitResult* fitResult = myws.pdf("pdfMASS_Tot_PP")->fitTo(*myws.data(Form("dOS_%s_PP", DSTAG.c_str())), Extended(kTRUE), Range("SideBand1,SideBand2"), NumCPU(numCores), Save());
           fitResult->Print();
         }
         
@@ -265,7 +257,7 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
         {
 //          myws.loadSnapshot("pdfMASS_Tot_PP_parIni");
           // Fit the Datasets
-          RooFitResult* fitResult = myws.pdf("pdfMASS_Tot_PP_NoBkg")->fitTo(*myws.data(Form("dOS_%s_PP_NoBkg", DSTAG.c_str())), SumW2Error(kTRUE), Range("MassWindow"), NumCPU(numCores), Save());
+          RooFitResult* fitResult = myws.pdf("pdfMASS_Tot_PP_NoBkg")->fitTo(*myws.data(Form("dOS_%s_PP_NoBkg", DSTAG.c_str())), Extended(kTRUE), Range("MassWindow"), NumCPU(numCores), Save());
           fitResult->Print();
           // Draw the mass plot
           drawMassPlot(myws, outputDir, opt, cut, (plotLabelPP+"_NoBkg"), DSTAG, false, incJpsi, incPsi2S, incBkg, cutCtau, doSimulFit, true, setLogScale, incSS, zoomPsi, nBins, getMeanPT);
