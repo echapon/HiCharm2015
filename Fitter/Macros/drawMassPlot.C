@@ -301,12 +301,9 @@ void setRange(RooWorkspace& myws, RooPlot* frame, string dsName, int nBins, bool
   // Find maximum and minimum points of Plot to rescale Y axis
   TH1* h = myws.data(dsName.c_str())->createHistogram("hist", *myws.var("invMass"), Binning(nBins));
   Double_t YMax = h->GetBinContent(h->GetMaximumBin());
-  Double_t YMin = h->GetBinContent(h->GetMinimumBin());
-  double YMIN = 0.0;
-  if (YMax<2.0) { YMIN = YMax*0.000001; }
-  else { YMIN = 0.1; }
-  if(setLogScale){ YMin=max(YMin,YMIN); frame->GetYaxis()->SetRangeUser( (YMin/TMath::Power((YMax/YMin), 0.05)), (YMax*TMath::Power((YMax/YMin), 0.5)) ); } 
-  else{ frame->GetYaxis()->SetRangeUser(max(YMin-(YMax-YMin)*0.05,0.0), YMax+(YMax-YMin)*0.5); }
+  Double_t YMin = min( h->GetBinContent(h->FindFirstBinAbove(0.0, 2)), h->GetBinContent(h->FindLastBinAbove(0.0, 2)) );
+  if(setLogScale){ frame->GetYaxis()->SetRangeUser( YMin*0.1, (YMax*TMath::Power((YMax/YMin), 0.5)) ); } 
+  else{ frame->GetYaxis()->SetRangeUser(max(YMin-(YMax-YMin)*0.2,0.0), YMax+(YMax-YMin)*0.5); }
   delete h;
 }
 
