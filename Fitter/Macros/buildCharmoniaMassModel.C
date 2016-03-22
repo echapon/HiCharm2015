@@ -504,12 +504,12 @@ bool addSignalMassModel(RooWorkspace& ws, string object, MassModel model, map<st
       // create the two PDFs 
       ws.factory(Form("Gaussian::%s(%s, %s, %s)", Form("pdfMASSG1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
                       Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
-                      Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
+                      Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
                       ));   
 
       ws.factory(Form("CBShape::%s(%s, %s, %s, %s, %s)", Form("pdfMASSCB1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
                       Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
-                      Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
                       Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
                       Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
                       ));   
