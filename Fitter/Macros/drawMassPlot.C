@@ -39,7 +39,8 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
   if(plotPureSMC) {
     dsOSName = Form("dOS_%s_%s_NoBkg", DSTAG.c_str(), (isPbPb?"PbPb":"PP"));
     dsSSName = Form("dSS_%s_%s_NoBkg", DSTAG.c_str(), (isPbPb?"PbPb":"PP"));
-    pdfName  = Form("pdfMASS_Tot_%s_NoBkg", (isPbPb?"PbPb":"PP"));
+    if (incBkg) pdfName  = Form("pdfMASS_Tot_%s_NoBkg", (isPbPb?"PbPb":"PP"));
+    else pdfName  = Form("pdfMASS_Sig_%s", (isPbPb?"PbPb":"PP"));
   }
   bool isWeighted = myws.data(dsOSName.c_str())->isWeighted();
 

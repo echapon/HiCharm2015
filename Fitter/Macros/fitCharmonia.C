@@ -103,9 +103,8 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
       if (importID<0) { return false; }
       else if (importID==0) { doFit = false; }
       
-      if (!buildCharmoniaMassModel(myws, model.PP, parIni, false, doSimulFit, incBkg, incJpsi, incPsi2S, "NoBkg", numEntries))  { return false; }
-      
-      if (incJpsi) {
+      if (incBkg && !buildCharmoniaMassModel(myws, model.PP, parIni, false, doSimulFit, incBkg, incJpsi, incPsi2S, "NoBkg", numEntries))  { return false; }
+      else if (incJpsi) {
         myws.factory(Form("SUM::%s(%s*%s)", "pdfMASS_Sig_PP", "N_Jpsi_PP", "pdfMASS_Jpsi_PP"));
       } 
       else if (incPsi2S) {
@@ -139,9 +138,8 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
       if (importID<0) { return false; }
       else if (importID==0) { doFit = false; }
       
-      if (!buildCharmoniaMassModel(myws, model.PbPb, parIni, true, doSimulFit, incBkg, incJpsi, incPsi2S, "NoBkg", numEntries))  { return false; }
-      
-      if (incJpsi) {
+      if (incBkg && !buildCharmoniaMassModel(myws, model.PbPb, parIni, true, doSimulFit, incBkg, incJpsi, incPsi2S, "NoBkg", numEntries))  { return false; }
+      else if (incJpsi) {
         myws.factory(Form("SUM::%s(%s*%s)", "pdfMASS_Sig_PbPb", "N_Jpsi_PbPb", "pdfMASS_Jpsi_PbPb"));
       } 
       else if (incPsi2S) {
@@ -218,14 +216,14 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
 //          myws.loadSnapshot("pdfMASS_Tot_PbPb_parIni");
           // Fit the Datasets
           if (isWeighted) {
-            RooFitResult* fitResult = myws.pdf("pdfMASS_Tot_PbPb_NoBkg")->fitTo(*myws.data(Form("dOS_%s_PbPb_NoBkg", DSTAG.c_str())), Extended(kTRUE), SumW2Error(kTRUE), Range("MassWindow"), NumCPU(numCores), Save());
+            RooFitResult* fitResult = myws.pdf(incBkg ? "pdfMASS_Tot_PbPb_NoBkg" : "pdfMASS_Sig_PbPb")->fitTo(*myws.data(Form("dOS_%s_PbPb_NoBkg", DSTAG.c_str())), Extended(kTRUE), SumW2Error(kTRUE), Range("MassWindow"), NumCPU(numCores), Save());
             fitResult->Print();
           } else {
-            RooFitResult* fitResult = myws.pdf("pdfMASS_Tot_PbPb_NoBkg")->fitTo(*myws.data(Form("dOS_%s_PbPb_NoBkg", DSTAG.c_str())), Extended(kTRUE), Range("MassWindow"), NumCPU(numCores), Save());
+            RooFitResult* fitResult = myws.pdf(incBkg ? "pdfMASS_Tot_PbPb_NoBkg" : "pdfMASS_Sig_PbPb")->fitTo(*myws.data(Form("dOS_%s_PbPb_NoBkg", DSTAG.c_str())), Extended(kTRUE), Range("MassWindow"), NumCPU(numCores), Save());
             fitResult->Print();
           }  
-          RooFitResult* fitResult = myws.pdf("pdfMASS_Tot_PbPb_NoBkg")->fitTo(*myws.data(Form("dOS_%s_PbPb_NoBkg", DSTAG.c_str())), Extended(kTRUE), Range("MassWindow"), NumCPU(numCores), Save());
-          fitResult->Print();
+//          RooFitResult* fitResult = myws.pdf("pdfMASS_Tot_PbPb_NoBkg")->fitTo(*myws.data(Form("dOS_%s_PbPb_NoBkg", DSTAG.c_str())), Extended(kTRUE), Range("MassWindow"), NumCPU(numCores), Save());
+//          fitResult->Print();
           // Draw the mass plot
           drawMassPlot(myws, outputDir, opt, cut, (plotLabelPbPb+"_NoBkg"), DSTAG, true, incJpsi, incPsi2S, incBkg, cutCtau, doSimulFit, true, setLogScale, incSS, zoomPsi, nBins, getMeanPT);
         }
@@ -257,7 +255,7 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
         {
 //          myws.loadSnapshot("pdfMASS_Tot_PP_parIni");
           // Fit the Datasets
-          RooFitResult* fitResult = myws.pdf("pdfMASS_Tot_PP_NoBkg")->fitTo(*myws.data(Form("dOS_%s_PP_NoBkg", DSTAG.c_str())), Extended(kTRUE), Range("MassWindow"), NumCPU(numCores), Save());
+          RooFitResult* fitResult = myws.pdf(incBkg ? "pdfMASS_Tot_PP_NoBkg" : "pdfMASS_Sig_PP")->fitTo(*myws.data(Form("dOS_%s_PP_NoBkg", DSTAG.c_str())), Extended(kTRUE), Range("MassWindow"), NumCPU(numCores), Save());
           fitResult->Print();
           // Draw the mass plot
           drawMassPlot(myws, outputDir, opt, cut, (plotLabelPP+"_NoBkg"), DSTAG, false, incJpsi, incPsi2S, incBkg, cutCtau, doSimulFit, true, setLogScale, incSS, zoomPsi, nBins, getMeanPT);
