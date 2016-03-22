@@ -367,12 +367,12 @@ void printChi2(RooWorkspace& myws, TPad* Pad, RooPlot* frame, string varLabel, s
   TLatex *t = new TLatex(); t->SetNDC(); t->SetTextSize(0.1); 
   unsigned int nFitPar = myws.pdf(pdfLabel.c_str())->getParameters(*myws.data(dataLabel.c_str()))->selectByAttrib("Constant",kFALSE)->getSize(); 
   TH1 *hdatact = myws.data(dataLabel.c_str())->createHistogram("hdatact", *myws.var(varLabel.c_str()), Binning(nBins));
-  //RooHist *hpull = frame->pullHist(0, 0, true);
-  //double* ypulls = hpull->GetY();
+  RooHist *hpull = frame->pullHist(0, 0, true);
+  double* ypulls = hpull->GetY();
   unsigned int nFullBins = 0;
   for (int i = 0; i < nBins; i++) {
     if (hdatact->GetBinContent(i+1) > 0.0) {
-      //chi2 += ypulls[i]*ypulls[i];
+      chi2 += ypulls[i]*ypulls[i];
       nFullBins++;
     }
   }
@@ -382,8 +382,6 @@ void printChi2(RooWorkspace& myws, TPad* Pad, RooPlot* frame, string varLabel, s
   RooDataHist dummy("dummy", "dummy", *myws.var("invMass"), hdatact);
   if (isWeighted) {
     chi2 = RooChi2Var("chi2", "chi2", *myws.pdf(pdfLabel.c_str()), dummy, kFALSE, 0, 0, 8, RooFit::Interleave, kFALSE, kFALSE, RooDataHist::SumW2).getVal();
-  } else {
-    chi2 = RooChi2Var("chi2", "chi2", *myws.pdf(pdfLabel.c_str()), dummy, kTRUE, 0, 0, 8, RooFit::Interleave, kFALSE, kFALSE, RooDataHist::Expected).getVal();
   }  
   t->DrawLatex(0.7, 0.85, Form("#chi^{2}/ndof = %.0f / %d", chi2, ndof));
   delete hdatact; 
