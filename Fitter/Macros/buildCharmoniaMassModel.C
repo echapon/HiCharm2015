@@ -600,7 +600,7 @@ void setDefaultParameters(map<string, string> &parIni, bool isPbPb, double numEn
     }
   } else {
     if (parIni[Form("rSigma21_Jpsi_%s", (isPbPb?"PbPb":"PP"))]=="") {
-      parIni[Form("rSigma21_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("rSigma21_Jpsi_%s", (isPbPb?"PbPb":"PP")), 2.0, 0.9, 3.0);
+      parIni[Form("rSigma21_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("rSigma21_Jpsi_%s", (isPbPb?"PbPb":"PP")), 2.0, 0.25, 4.0);
     }
     parIni[Form("sigma2_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("RooFormulaVar::%s('@0*@1',{%s,%s})", Form("sigma2_Jpsi_%s", (isPbPb?"PbPb":"PP")),
                                                                 parIni[Form("rSigma21_Jpsi_%s", (isPbPb?"PbPb":"PP"))].c_str(), Form("sigma1_Jpsi_%s", (isPbPb?"PbPb":"PP") ));
@@ -614,7 +614,7 @@ void setDefaultParameters(map<string, string> &parIni, bool isPbPb, double numEn
     }
   } else {
     if (parIni[Form("rSigma21_Psi2S_%s", (isPbPb?"PbPb":"PP"))]=="") {
-      parIni[Form("rSigma21_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("rSigma21_Psi2S_%s", (isPbPb?"PbPb":"PP")), 2.0, 0.9, 3.0);
+      parIni[Form("rSigma21_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("rSigma21_Psi2S_%s", (isPbPb?"PbPb":"PP")), 2.0, 0.25, 4.0);
     }
     parIni[Form("sigma2_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("RooFormulaVar::%s('@0*@1',{%s,%s})", Form("sigma2_Psi2S_%s", (isPbPb?"PbPb":"PP")), 
                                                                  parIni[Form("rSigma21_Psi2S_%s", (isPbPb?"PbPb":"PP"))].c_str(), Form("sigma1_Psi2S_%s", (isPbPb?"PbPb":"PP") ));
@@ -641,13 +641,13 @@ void setDefaultParameters(map<string, string> &parIni, bool isPbPb, double numEn
   // DEFAULT BACKGROUND MASS MODEL PARAMETERS
   if (parIni[Form("Model_Bkg_%s",(isPbPb?"PbPb":"PP"))].find("Chebychev")!=std::string::npos) {
     if (parIni.count(Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP"))]=="") { 
-      parIni[Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.0, -1.5, 1.5);
+      parIni[Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.0, -1.0, 1.0);
     }
     if (parIni.count(Form("lambda2_Bkg_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("lambda2_Bkg_%s", (isPbPb?"PbPb":"PP"))]=="") { 
-      parIni[Form("lambda2_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda2_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.0, -1.5, 1.5);
+      parIni[Form("lambda2_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda2_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.0, -1.0, 1.0);
     }
     if (parIni.count(Form("lambda3_Bkg_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("lambda3_Bkg_%s", (isPbPb?"PbPb":"PP"))]=="") { 
-      parIni[Form("lambda3_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda3_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.0, -1.5, 1.5);
+      parIni[Form("lambda3_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda3_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.0, -1.0, 1.0);
     }
     if (parIni.count(Form("lambda4_Bkg_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("lambda4_Bkg_%s", (isPbPb?"PbPb":"PP"))]=="") { 
       parIni[Form("lambda4_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda4_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.0, -1.0, 1.0);
