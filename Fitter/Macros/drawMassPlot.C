@@ -302,7 +302,7 @@ void setRange(RooWorkspace& myws, RooPlot* frame, string dsName, int nBins, bool
   TH1* h = myws.data(dsName.c_str())->createHistogram("hist", *myws.var("invMass"), Binning(nBins));
   Double_t YMax = h->GetBinContent(h->GetMaximumBin());
   Double_t YMin = min( h->GetBinContent(h->FindFirstBinAbove(0.0, 2)), h->GetBinContent(h->FindLastBinAbove(0.0, 2)) );
-  if(setLogScale){ frame->GetYaxis()->SetRangeUser( YMin*0.1, (YMax*TMath::Power((YMax/YMin), 0.5)) ); } 
+  if(setLogScale){ frame->GetYaxis()->SetRangeUser( YMin*0.3, (YMax*TMath::Power((YMax/YMin), 0.5)) ); } 
   else{ frame->GetYaxis()->SetRangeUser(max(YMin-(YMax-YMin)*0.2,0.0), YMax+(YMax-YMin)*0.5); }
   delete h;
 }
