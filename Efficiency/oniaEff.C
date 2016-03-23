@@ -10,7 +10,7 @@
 // define bins
 const int nbins_centmid = 6;
 const float bins_centmid[nbins_centmid+1] = {0, 20, 40, 60, 80, 100, 200};
-const int nbins_centfwd = 6;
+const int nbins_centfwd = 3;
 const float bins_centfwd[nbins_centfwd+1] = {0, 40, 80, 200};
 const int nbins_ptmid = 5;
 const float bins_ptmid[nbins_ptmid+1] = {6.5, 9, 12, 15, 20, 30};
@@ -27,7 +27,6 @@ const double ctaucutfwd_pbpb = 0.06;
 const double maxdr = 0.03;
 
 using namespace HI;
-using namespace RecoQQ;
 using namespace std;
 
 void oniaEff::Loop(const char* fname, bool ispbpb)
@@ -50,9 +49,11 @@ void oniaEff::Loop(const char* fname, bool ispbpb)
 //
 //       To read only selected branches, Insert statements like:
 // METHOD1:
-   fChain->SetBranchStatus("Reco_mu*",0);  // disable all Reco_mu branches
-   fChain->SetBranchStatus("Gen_mu*",0);  // disable all Gen_mu branches
-//    fChain->SetBranchStatus("branchname",1);  // activate branchname
+   fChain->SetBranchStatus("*",0);  // disable all branches
+   fChain->SetBranchStatus("Centrality",1);  
+   fChain->SetBranchStatus("HLTriggers",1);  
+   fChain->SetBranchStatus("Reco_QQ_*",1);  
+   fChain->SetBranchStatus("Gen_QQ_*",1);  
 // METHOD2: replace line
 //    fChain->GetEntry(jentry);       //read all branches
 //by  b_branchname->GetEntry(ientry); //read only this branch
@@ -82,6 +83,7 @@ void oniaEff::Loop(const char* fname, bool ispbpb)
    for (Long64_t jentry=0; jentry<nentries;jentry++) {
       Long64_t ientry = LoadTree(jentry);
       if (ientry < 0) break;
+      // if (ientry>1000) break;
 
       // skip the event if Gen_QQ_size != 1 for now
       b_Gen_QQ_size->GetEntry(ientry); //read only this branch
@@ -100,12 +102,12 @@ void oniaEff::Loop(const char* fname, bool ispbpb)
       double genpt = tlvgenqq->Pt();
       b_Centrality->GetEntry(ientry); //read only this branch
 
-      double weight = fChain->GetWeight()*findNcoll(Centrality);
+      double weight = ispbpb ? fChain->GetWeight()*findNcoll(Centrality) : 1.;
 
       if (fabs(tlvgenqq->Rapidity()) < 1.6) {
          hden_centmid->Fill(Centrality,weight);
          hden_ptmid->Fill(genpt,weight);
-      } else if (fabs(tlvgenqq->Rapidity()) > 2.4) {
+      } else if (fabs(tlvgenqq->Rapidity()) < 2.4) {
          hden_centfwd->Fill(Centrality,weight);
          hden_ptfwd->Fill(genpt,weight);
       } else continue;
@@ -146,7 +148,7 @@ void oniaEff::Loop(const char* fname, bool ispbpb)
       if (fabs(tlvgenqq->Rapidity()) < 1.6) {
          hnum_centmid->Fill(Centrality,weight);
          hnum_ptmid->Fill(genpt,weight);
-      } else if (fabs(tlvgenqq->Rapidity()) > 2.4) {
+      } else {
          hnum_centfwd->Fill(Centrality,weight);
          hnum_ptfwd->Fill(genpt,weight);
       }
@@ -172,7 +174,7 @@ void oniaEff::Loop(const char* fname, bool ispbpb)
       if (fabs(tlvgenqq->Rapidity()) < 1.6) {
          hnumcut_centmid->Fill(Centrality,weight);
          hnumcut_ptmid->Fill(genpt,weight);
-      } else if (fabs(tlvgenqq->Rapidity()) > 2.4) {
+      } else {
          hnumcut_centfwd->Fill(Centrality,weight);
          hnumcut_ptfwd->Fill(genpt,weight);
       }

@@ -290,6 +290,10 @@ public :
    virtual void     Loop(const char* fname, bool ispbpb=false);
    virtual Bool_t   Notify();
    virtual void     Show(Long64_t entry = -1);
+   Bool_t isTriggerMatch (Int_t iRecoQQ, Int_t TriggerBit);
+   Bool_t isGlobalMuonInAccept2015 (TLorentzVector* Muon);
+   Bool_t areMuonsInAcceptance2015 (Int_t iRecoQQ);
+   Bool_t passQualityCuts2015 (Int_t iRecoQQ);
 };
 
 #endif
@@ -516,4 +520,48 @@ Int_t oniaEff::Cut(Long64_t entry)
 // returns -1 otherwise.
    return 1;
 }
+Bool_t oniaEff::isTriggerMatch (Int_t iRecoQQ, Int_t TriggerBit) 
+{
+   Bool_t cond = true;
+   cond = cond && ( (HLTriggers&((ULong64_t)pow(2, TriggerBit))) == ((ULong64_t)pow(2, TriggerBit)) ); 
+   cond = cond && ( (Reco_QQ_trig[iRecoQQ]&((ULong64_t)pow(2, TriggerBit))) == ((ULong64_t)pow(2, TriggerBit)) );
+   return cond;
+};
+Bool_t oniaEff::isGlobalMuonInAccept2015 (TLorentzVector* Muon) 
+{
+   return (fabs(Muon->Eta()) < 2.4 &&
+         ((fabs(Muon->Eta()) < 1.2 && Muon->Pt() >= 3.5) ||
+          (1.2 <= fabs(Muon->Eta()) && fabs(Muon->Eta()) < 2.1 && Muon->Pt() >= 5.77-1.89*fabs(Muon->Eta())) ||
+          (2.1 <= fabs(Muon->Eta()) && Muon->Pt() >= 1.8)));
+};
+
+Bool_t oniaEff::areMuonsInAcceptance2015 (Int_t iRecoQQ)
+{
+   TLorentzVector *RecoQQmupl = (TLorentzVector*) Reco_QQ_mupl_4mom->At(iRecoQQ);
+   TLorentzVector *RecoQQmumi = (TLorentzVector*) Reco_QQ_mumi_4mom->At(iRecoQQ);
+   return ( isGlobalMuonInAccept2015(RecoQQmupl) && isGlobalMuonInAccept2015(RecoQQmumi) );
+};  
+
+Bool_t oniaEff::passQualityCuts2015 (Int_t iRecoQQ) 
+{
+   Bool_t cond = true;
+
+   // cond = cond && (Reco_QQ_mumi_highPurity[iRecoQQ]);
+   cond = cond && (Reco_QQ_mumi_isGoodMuon[iRecoQQ]==1);
+   cond = cond && (Reco_QQ_mumi_nTrkWMea[iRecoQQ] > 5);
+   cond = cond && (Reco_QQ_mumi_nPixWMea[iRecoQQ] > 0);
+   cond = cond && (fabs(Reco_QQ_mumi_dxy[iRecoQQ]) < 0.3);
+   cond = cond && (fabs(Reco_QQ_mumi_dz[iRecoQQ]) < 20.);
+
+   // cond = cond && (Reco_QQ_mupl_highPurity[iRecoQQ]);
+   cond = cond && (Reco_QQ_mupl_isGoodMuon[iRecoQQ]==1);
+   cond = cond && (Reco_QQ_mupl_nTrkWMea[iRecoQQ] > 5);
+   cond = cond && (Reco_QQ_mupl_nPixWMea[iRecoQQ] > 0);
+   cond = cond && (fabs(Reco_QQ_mupl_dxy[iRecoQQ]) < 0.3);
+   cond = cond && (fabs(Reco_QQ_mupl_dz[iRecoQQ]) < 20.);
+
+   cond = cond && (Reco_QQ_VtxProb[iRecoQQ] > 0.01);
+
+   return cond;
+}; 
 #endif // #ifdef oniaEff_cxx
