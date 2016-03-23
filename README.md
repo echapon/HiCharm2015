@@ -11,3 +11,7 @@ Repository for code regarding charmoniun in 5.02TeV data.
 * plotResults.C: plotting macro containing two main functions. It is largely automated.
  * plotPt("name of work dir"): make plot vs pt
  * plotCent("name of work dir"): make plot cs centrality
+
+## Efficiency
+* makeEffs.C: make the histograms (numerators and denominators) from the onia trees
+* plotEffs.C: make the efficiency plots from the histograms we just created
