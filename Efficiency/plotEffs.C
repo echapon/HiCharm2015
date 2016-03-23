@@ -10,6 +10,9 @@
 
 using namespace std;
 
+void setErr(TH1F *hist);
+void fixCentPp(TH1F *hist);
+
 void plotEffs() {
    TFile *fjpsi_pp = new TFile("histos_jpsi_pp.root");
    TFile *fpsi2s_pp = new TFile("histos_psi2s_pp.root");
@@ -32,7 +35,7 @@ void plotEffs() {
       name = "histos_npjpsi_" + colltag + ".root";
       TFile *fnpjpsi = new TFile(name);
 
-      for (int idep=0; idep<=icoll; idep++) { // do not do centrality for pp
+      for (int idep=0; idep<2; idep++) {
          deptag = (idep==0) ? "pt" : "cent";
 
          for (int irap=0; irap<2; irap++) {
@@ -42,6 +45,7 @@ void plotEffs() {
                cuttag = (icut==0) ? "_" : "cut_";
 
                setTDRStyle();
+               gStyle->SetEndErrorSize(3);
                TCanvas *c1 = new TCanvas();
 
                TString hname;
@@ -53,6 +57,15 @@ void plotEffs() {
                TH1F *hjpsiden = (TH1F*) fjpsi->Get(hname);
                TH1F *hpsi2sden = (TH1F*) fpsi2s->Get(hname);
                TH1F *hnpjpsiden = (TH1F*) fnpjpsi->Get(hname);
+
+               if (icoll==0 && idep==1) { // centrality for pp... fill all the bins
+                  fixCentPp(hjpsinum);
+                  fixCentPp(hpsi2snum);
+                  fixCentPp(hnpjpsinum);
+                  fixCentPp(hjpsiden);
+                  fixCentPp(hpsi2sden);
+                  fixCentPp(hnpjpsiden);
+               }
 
                TGraphAsymmErrors *tg_jpsi = new TGraphAsymmErrors(hjpsinum,hjpsiden,(icoll==0) ? "" : "norm");
                tg_jpsi->SetMarkerColor(kBlack);
@@ -106,18 +119,24 @@ void plotEffs() {
                TH1F *hpsi2sdenpp = (TH1F*) fpsi2s_pp->Get(hname); hpsi2sdenpp->SetName(TString(hpsi2sdenpp->GetName()) + "_psi2sdenpp");
                TH1F *hjpsidenpbpb = (TH1F*) fjpsi_pbpb->Get(hname); hjpsipbpb->SetName(TString(hjpsidenpbpb->GetName()) + "_jpsidenpbpb");
                TH1F *hpsi2sdenpbpb = (TH1F*) fpsi2s_pbpb->Get(hname); hpsi2sdenpbpb->SetName(TString(hpsi2sdenpbpb->GetName()) + "_psi2sdenpbpb");
-               hjpsidenpp->Sumw2(true); hjpsipp->Divide(hjpsidenpp);
-               hpsi2sdenpp->Sumw2(true); hpsi2spp->Divide(hpsi2sdenpp);
+
+               if (icoll==0 && idep==1) { // centrality for pp... fill all the bins
+                  fixCentPp(hjpsipp);
+                  fixCentPp(hpsi2spp);
+                  fixCentPp(hjpsidenpp);
+                  fixCentPp(hpsi2sdenpp);
+               }
+
+               // hjpsipp->Sumw2(true); hjpsidenpp->Sumw2(true); hjpsipp->Divide(hjpsidenpp);
+               // hpsi2spp->Sumw2(true); hpsi2sdenpp->Sumw2(true); hpsi2spp->Divide(hpsi2sdenpp);
+               setErr(hjpsipp); setErr(hjpsidenpp); hjpsipp->Divide(hjpsidenpp);
+               setErr(hpsi2spp); setErr(hpsi2sdenpp); hpsi2spp->Divide(hpsi2sdenpp);
                hjpsipbpb->Divide(hjpsidenpbpb);
                hpsi2spbpb->Divide(hpsi2sdenpbpb);
-               cout << hpsi2spp->GetBinContent(2) << " / " << hjpsipp->GetBinContent(2) << " = ";
                hpsi2spp->Divide(hjpsipp);
-               cout << hpsi2spp->GetBinContent(2) << endl;
                hpsi2spp->SetMarkerColor(kBlack);
                hpsi2spp->SetLineColor(kBlack);
-               cout << hpsi2spbpb->GetBinError(2) << " / " << hjpsipbpb->GetBinError(2) << " = ";
                hpsi2spbpb->Divide(hjpsipbpb);
-               cout << hpsi2spbpb->GetBinError(2) << endl;
                hpsi2spbpb->SetMarkerColor(kRed);
                hpsi2spbpb->SetLineColor(kRed);
 
@@ -125,8 +144,8 @@ void plotEffs() {
                haxes->GetYaxis()->SetRangeUser(0.5,1.5);
                haxes->SetBinContent(1,1);
                haxes->Draw();
-               hpsi2spp->Draw("E same");
-               hpsi2spbpb->Draw("E same");
+               hpsi2spp->Draw("E1 same");
+               hpsi2spbpb->Draw("E1 same");
 
                TLegend *tleg2 = new TLegend(0.7,0.17,0.89,0.31);
                tleg2->SetBorderSize(0);
@@ -151,7 +170,7 @@ void plotEffs() {
                haxes->GetYaxis()->SetTitleOffset(2);
                haxes->GetYaxis()->SetRangeUser(0.5,1.5);
                haxes->Draw();
-               hpsi2spbpb->Draw("same");
+               hpsi2spbpb->Draw("E1 same");
                tl.DrawLatex((idep==0) ? 1.5 : 10, 1.4, ((irap==0) ? "|y|<1.6" : "|y|>1.6") + TString(", ") 
                      + ((icut==0) ? "no cut" : "ctau3D cut"));
                cname = "doubleratio_" + deptag + "_" + raptag + "_" + cuttag;
@@ -168,4 +187,21 @@ void plotEffs() {
          } // irap loop (mid / fwd)
       } // idep loop (pt / centrality)
    } // icoll loop (pp / pbpb)
+}
+
+void setErr(TH1F *hist) {
+   int nbins = hist->GetNbinsX();
+   for (int i=1; i<nbins+1; i++) {
+      hist->SetBinError(i,sqrt(hist->GetBinContent(i)));
+   }
+}
+
+void fixCentPp(TH1F *hist) {
+   int nbins = hist->GetNbinsX();
+   float y = hist->GetBinContent(1);
+   float dy = hist->GetBinError(1);
+   for (int i=2; i<nbins+1; i++) {
+      hist->SetBinContent(i,y);
+      hist->SetBinError(i,dy);
+   }
 }
