@@ -21,14 +21,15 @@
 using namespace std;
 
 const char* ylabel = "(#Psi(2S)/J/#Psi)_{PbPb} / (#Psi(2S)/J/#Psi)_{pp}";
-const char* poiname = "RFrac2Svs1S_PbPbvsPP";
+const char* poiname = "RFrac2Svs1S";
+const bool  doratio = true;
 
 //////////////////
 // DECLARATIONS //
 //////////////////
 
 // function to get the param of interest from a workspace
-RooRealVar* poiFromFile(const char* filename);
+RooRealVar* poiFromFile(const char* filename, const char* token="");
 // function to get the analysis bin from a file
 anabin binFromFile(const char* filename);
 // check
@@ -36,7 +37,8 @@ bool binok(vector<anabin> thecats, string xaxis, anabin &tocheck);
 // plot
 void plotGraph(map<anabin, TGraphAsymmErrors*> theGraphs, string xaxis, string outputDir);
 void plot(vector<anabin> thecats, string xaxis, string workDirName);
-vector<TString> fileList(const char* input);
+vector<TString> fileList(const char* input, const char* token="");
+RooRealVar* ratioVar(RooRealVar *num, RooRealVar *den);
 
 
 
@@ -71,13 +73,33 @@ void plot(vector<anabin> thecats, string xaxis, string outputDir) {
    // xaxis is the variable to be plotted. "pt", "rap" or "cent"
 
    // list of files
-   vector<TString> theFiles = fileList(outputDir.c_str());
+   vector<TString> theFiles, theFiles2;
+   if (!doratio) {
+      theFiles = fileList(outputDir.c_str());
+   } else {
+      theFiles = fileList(outputDir.c_str(),"PbPb");
+      theFiles2 = fileList(outputDir.c_str(),"PP");
+
+      if (theFiles.size() != theFiles2.size()) {
+         cout << "I found a different number of pp and PbPb files!! This is no good, I give up." << endl;
+         return;
+      }
+   }
 
    map<anabin, RooRealVar*> theVars;
 
+   vector<TString>::const_iterator it,it2;
+   if (doratio) it2=theFiles2.begin();
    for (vector<TString>::const_iterator it=theFiles.begin(); it!=theFiles.end(); it++) {
       anabin thebin = binFromFile(it->Data());
-      theVars[thebin] = poiFromFile(it->Data());
+      if (!doratio) {
+         theVars[thebin] = poiFromFile(it->Data(),"_PbPbvsPP");
+      } else {
+         RooRealVar *num = poiFromFile(it->Data(),"_PbPb");
+         RooRealVar *den = poiFromFile(it2->Data(),"_PP");
+         theVars[thebin] = ratioVar(num,den);
+      }
+      it2++;
    }
 
    map<anabin, vector<anabin> > theBins;
@@ -162,7 +184,7 @@ anabin binFromFile(const char* filename) {
    return ans;
 }
 
-RooRealVar* poiFromFile(const char* filename) {
+RooRealVar* poiFromFile(const char* filename, const char* token) {
    TFile *f = new TFile(filename);
    if (!f) {
       cout << "Error, file " << filename << " does not exist." << endl;
@@ -173,8 +195,9 @@ RooRealVar* poiFromFile(const char* filename) {
       cout << "Error, file " << filename << " is bad." << endl;
       return NULL;
    }
-   RooRealVar *ans = (RooRealVar*) ws->var(poiname);
-   RooRealVar* ansc = new RooRealVar(*ans,Form("%s_from_%s",poiname,filename));
+   TString poiname_and_token = TString(poiname) + TString(token);
+   RooRealVar *ans = (RooRealVar*) ws->var(poiname_and_token);
+   RooRealVar* ansc = new RooRealVar(*ans,poiname_and_token + Form("_from_%s",filename));
    f->Close(); delete f;
    return ansc;
 }
@@ -271,7 +294,7 @@ void plotGraph(map<anabin, TGraphAsymmErrors*> theGraphs, string xaxis, string o
    delete c1;
 }
 
-vector<TString> fileList(const char* input) {
+vector<TString> fileList(const char* input, const char* token) {
    vector<TString> ans;
 
    TString basedir(Form("Output/%s/result/DATA/",input));
@@ -286,7 +309,7 @@ vector<TString> fileList(const char* input) {
 
       while ((file=(TSystemFile*)next())) {
          fname = file->GetName();
-         if (fname.EndsWith(".root")) {
+         if (fname.EndsWith(".root") && (TString(token) == "" || fname.Index(token) != kNPOS)) {
             ans.push_back(basedir+fname);
          }
       }
@@ -294,3 +317,17 @@ vector<TString> fileList(const char* input) {
 
    return ans;
 }
+
+RooRealVar* ratioVar(RooRealVar *num, RooRealVar *den) {
+   double n = num->getVal();
+   double d = den->getVal();
+   double dn = num->getError();
+   double dd = den->getError();
+
+   double r = d!=0 ? n/d : 0;
+   double dr = n!=0 && d!=0 ? r * sqrt(pow(dn/n,2) + pow(dd/d,2)) : 0;
+   RooRealVar *ans = new RooRealVar(Form("%s_over_%s",num->GetName(),den->GetName()), Form("%s / %s",num->GetTitle(),den->GetTitle()), r);
+   ans->setError(dr);
+
+   return ans;
+};
