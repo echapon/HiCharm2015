@@ -12,6 +12,8 @@
 #include <TChain.h>
 #include <TFile.h>
 
+#include <iostream>
+
 // Header file for the classes stored in the TTree if any.
 #include <TClonesArray.h>
 
@@ -279,7 +281,7 @@ string TreeName("hionia/myTree");
 
 void initOniaTree(TChain *tree)
 {
-   cout << "[INFO] Initializing TTree " << TreeName.c_str() << endl;
+   std::cout << "[INFO] Initializing TTree " << TreeName.c_str() << std::endl;
    // The Init() function is called when the selector needs to initialize
    // a new tree or chain. Typically here the branch addresses and branch
    // pointers of the tree will be set.
