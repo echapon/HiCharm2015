@@ -8,17 +8,39 @@
 #include <iostream>
 #include <fstream>
 #include <dirent.h>
+#include <vector>
+#include <map>
+#include <set>
 
 using namespace std;
 
+// let's define a few useful small class
+struct model_t {
+   string fileName;
+   string binName;
+   string modelName;
+   int npar;
+   double nll;
+   int cnt;
 
-bool printNLL(map< string, map<pair<int, string>,  double> > content, string outputFile) ;
+   bool operator<(model_t other) const { // needed for std::set
+      if (npar<other.npar) return true;
+      if (npar>other.npar) return false;
+      return fileName<other.fileName;
+   }
+};
+typedef vector<model_t> vecModels_t;
+typedef set<model_t> setModels_t;
+
+
+
+vector<string> printNLL(map< string, setModels_t > content, string outputFile) ;
 void setLines(vector<string>& strLin, vector<string> lin); 
 void printLines(vector<string> strLin, ofstream& fout); 
 bool findFiles(string dirPath, vector<string>& fileNames); 
 void splitString(string stringOriginal, const string Key, string& stringWithoutKey, string& stringWithKey); 
-bool readFiles(string dirPath, vector<string> fileNames, map< string, map<pair<int, string>,  double> >& content, string type);
-bool extractNLL(string fileName, pair<int,double>& value) ;
+bool readFiles(string dirPath, vector<string> fileNames, map<string, setModels_t>& content, string type);
+bool extractNLL(string fileName, model_t& value) ;
 
 
 void printLLRStudy(
@@ -34,77 +56,81 @@ void printLLRStudy(
   cout << "[INFO] Creating " << ((type=="Bkg")?"Background":"Signal") << " Study summary!" << endl;
   
   // Group the files based on their background model
-  map< string, map<pair<int, string>,  double> > content;
+  map<string, setModels_t> content;
   if (!readFiles(dirPath, fileNames, content, type)) { return; }
 
   // Loop over each kinematic bin and compute the LLR/AIC tests
   string outputFile = Form("%s/../LLRTest_%s.txt",dirPath.c_str(), type.c_str());
-  printNLL(content, outputFile); 
+  vector<string> bestModelFiles = printNLL(content, outputFile); 
   
   cout << "[INFO] " << ((type=="Bkg")?"Background":"Signal") << " Study summary file done!" << endl; 
     
+  cout << "The files for the best models are: " << endl;
+  for (vector<string>::iterator it = bestModelFiles.begin(); it != bestModelFiles.end(); it++) {
+     cout << *it << endl;
+  }
 
 };
 
 
-bool printNLL(map< string, map<pair<int, string>,  double> > content, string outputFile) 
+vector<string> printNLL(map< string, setModels_t > content, string outputFile) 
 { 
+  vector<string> ans;
 
   ofstream fout( outputFile );
-  map< string, map<pair<int, string>,  double> >::iterator contIt;
+  map< string, setModels_t>::iterator contIt;
 
   for ( contIt = content.begin(); contIt != content.end(); contIt++) {
       
-    string                          binName = contIt->first;
-    map<pair<int, string>,  double> binCont = contIt->second;
+    string      binName = contIt->first;
+    setModels_t binCont = contIt->second;
     
     cout << "Analzing Kinematic Bin: " << binName << endl;
     cout << " " << endl;
     fout << "Analzing Kinematic Bin: " << binName << endl;
     fout << " " << endl;
-      
-    vector<pair<pair<int, string>, double>> modelNLLB;
-    map<pair<int, string>,  double>::iterator modelNLL;
-    for (modelNLL = binCont.begin(); modelNLL != binCont.end(); modelNLL++) {  
 
+    vecModels_t modelNLLB;
+    setModels_t::iterator it;
+    for (it = binCont.begin(); it != binCont.end(); it++) {  
+
+      model_t modelNLL = *it;
       vector<string> strLin; int i = 0;
-      map<pair<int, string>,  double>::iterator modelNLLA;
-      for (modelNLLA = modelNLL; modelNLLA != binCont.end(); modelNLLA++) {
-                   
-        pair<int, string> keyA = modelNLLA->first;
-        string  modelNameA = keyA.second;
-        int     nParA      = keyA.first;
-        double  NLLA       = modelNLLA->second;
-        double  AIC        = 2*(nParA + NLLA);
-          
-        if (modelNLL==binCont.begin()) {
-          modelNLLB.push_back(make_pair(modelNLLA->first, modelNLLA->second));
+      setModels_t::iterator modelNLLA;
+      for (modelNLLA = it; modelNLLA != binCont.end(); modelNLLA++) {
 
-        }
+        string  modelNameA = modelNLLA->modelName;
+        int     nParA      = modelNLLA->npar;
+        double  NLLA       = modelNLLA->nll;
+        double  AICA       = 2*(nParA + NLLA);
 
-        pair<int, string> keyB = modelNLLB[i].first;
-        string  modelNameB = keyB.second;
-        int     nParB      = keyB.first;
-        double  NLLB       = modelNLLB[i].second;
+        if (it==binCont.begin()) modelNLLB.push_back(*modelNLLA);
+
+        string  modelNameB = modelNLLB[i].modelName;
+        int     nParB      = modelNLLB[i].npar;
+        double  NLLB       = modelNLLB[i].nll;
+        double  AICB       = 2*(nParB + NLLB);
 
         vector<string> lin;
         if (modelNameA==modelNameB) {
           lin.push_back("|------------------------");
           lin.push_back("| "+modelNameA);
-          lin.push_back(Form("|    NLL: %.4f", NLLA));
-          lin.push_back(Form("|    AIC: %.4f", AIC));
+          lin.push_back(Form("|    NLL: %.2f  ", NLLA));
+          lin.push_back(Form("|    AIC: %.2f  ", AICA));
           lin.push_back("|------------------------");
 
         } else if (nParA >= nParB) {
           double diffNLL  = -2.0*(NLLA - NLLB);
           double diffNPar =  2.0*(nParA-nParB);
-          double probChi2 = TMath::Prob(diffNLL, diffNPar);
+          double probChi2 = 100.*TMath::Prob(diffNLL, diffNPar);
+          if (diffNLL<0) probChi2 = 100.;
+          if (probChi2>5.) modelNLLB[i].cnt++;
         
           lin.push_back("| "+modelNameA);
-          lin.push_back(Form("|    NLL: %.4f", NLLA));
-          lin.push_back(Form("|    Diff: %.4f", diffNLL));
-          lin.push_back(Form("|    Prob: %.6f", probChi2));
-          lin.push_back(Form("|    AIC: %.4f", AIC));
+          lin.push_back(Form("|    NLL: %.2f  ", NLLA));
+          lin.push_back(Form("|    Diff: %.2f  ", diffNLL));
+          lin.push_back(Form("|    Prob: %.1f%s   ", probChi2, "%"));
+          lin.push_back(Form("|    AIC: %.2f  ", -(AICA-AICB)));
           lin.push_back("|------------------------");
         }
         setLines(strLin, lin);
@@ -113,11 +139,32 @@ bool printNLL(map< string, map<pair<int, string>,  double> > content, string out
       }
       printLines(strLin, fout); 
     }
-    cout << " " << endl; cout << " " << endl; cout << " " << endl;
-    fout << " " << endl; fout << " " << endl; fout << " " << endl;
-  }
 
-  return true;
+    // which is the best model for this bin?
+    string bestModelFile="NOTFOUND"; int minok=999; int maxpar=0;
+    for (vecModels_t::iterator it=modelNLLB.begin(); it!=modelNLLB.end();it++) {
+       if (it->npar > maxpar) maxpar = it->npar;
+       if (it->cnt>=2 && it->npar<minok) {
+          bestModelFile=it->fileName;
+          minok = it->npar;
+       }
+    }
+    if (minok==999) { // sometimes the best model is one of the two highest orders...
+       for (vecModels_t::iterator it=modelNLLB.begin(); it!=modelNLLB.end();it++) {
+          int npar = it->npar;
+          if (it->cnt>=maxpar-npar && npar<minok) {
+             bestModelFile=it->fileName+" WARNING, HIGH ORDER";
+             minok = it->npar;
+          }
+       }
+    }
+
+    cout << endl << " And the winner is... " << bestModelFile << endl << endl << endl;
+    fout << endl << " And the winner is... " << bestModelFile << endl << endl << endl;
+    ans.push_back(bestModelFile);
+  } // bin loop
+
+  return ans;
 };
 
 
@@ -147,9 +194,10 @@ void printLines(vector<string> strLin, ofstream& fout)
 };
 
 
-bool extractNLL(string fileName, pair<int,double>& value) 
+bool extractNLL(string fileName, model_t& value) 
 {
-  value = make_pair( -1 , -9999999.9 );
+  value.npar = -1;
+  value.nll = 1e99;
   TFile *f = new TFile( fileName.c_str() );
   if (!f) {
     cout << "[Error] " << fileName << " not found" << endl; return false;
@@ -179,7 +227,8 @@ bool extractNLL(string fileName, pair<int,double>& value)
     NLL = nll->getVal();
   }
 
-  value = make_pair( npar , NLL );
+  value.npar = npar;
+  value.nll = NLL;
 
   delete nll; delete ws;
   f->Close(); delete f;
@@ -189,7 +238,7 @@ bool extractNLL(string fileName, pair<int,double>& value)
 
 
 
-bool readFiles(string dirPath, vector<string> fileNames, map< string, map<pair<int, string>,  double> >& content, string type)
+bool readFiles(string dirPath, vector<string> fileNames, map<string, setModels_t>& content, string type)
 {
   for (vector<string>::iterator it = fileNames.begin(); it < fileNames.end(); it++) {
     string fileName = *it;
@@ -198,11 +247,14 @@ bool readFiles(string dirPath, vector<string> fileNames, map< string, map<pair<i
     string modelName; 
     splitString(fileName, type, binName, modelName); 
        
-    pair< int , double > modelNLL;
+    model_t modelNLL;
+    modelNLL.binName = binName;
+    modelNLL.modelName = modelName;
+    modelNLL.fileName = fileName;
+    modelNLL.cnt=0;
     if (extractNLL(dirPath+fileName, modelNLL) && modelName!="") {
-      int     nPar = modelNLL.first;
-      double  NLL  = modelNLL.second;
-      content[binName][make_pair(nPar, modelName)] = NLL;
+      if (content.find(binName) == content.end()) content[binName] = setModels_t();
+      content[binName].insert(modelNLL);
     } 
   }
   if (content.size()==0) {

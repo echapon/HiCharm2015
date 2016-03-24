@@ -2,6 +2,8 @@
 #include "TH1F.h"
 #include "TGraphAsymmErrors.h"
 #include "TString.h"
+#include "TCanvas.h"
+#include "TLegend.h"
 
 #include "../Fitter/Macros/CMS/CMS_lumi.C"
 #include "../Fitter/Macros/CMS/tdrstyle.C"
@@ -180,9 +182,9 @@ void plotEffs() {
 
                // clean behind ourselves
                delete c1;
-               delete tg_jpsi, tg_psi2s, tg_npjpsi;
+               delete tg_jpsi; delete tg_psi2s; delete tg_npjpsi;
                delete haxes;
-               delete tleg, tleg2;
+               delete tleg; delete tleg2;
             } // icut loop (with / without ctau cut)
          } // irap loop (mid / fwd)
       } // idep loop (pt / centrality)
