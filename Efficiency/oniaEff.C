@@ -20,8 +20,8 @@ const float bins_ptfwd[nbins_ptfwd+1] = {3, 6.5, 12, 30};
 // NP rejection cuts
 const double ctaucutmid_pp = 0.03;
 const double ctaucutfwd_pp = 0.05;
-const double ctaucutmid_pbpb = 0.04;
-const double ctaucutfwd_pbpb = 0.06;
+const double ctaucutmid_pbpb = 0.03;
+const double ctaucutfwd_pbpb = 0.05;
 
 // other settings
 const double maxdr = 0.03;
