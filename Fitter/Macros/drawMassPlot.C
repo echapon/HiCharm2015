@@ -302,9 +302,32 @@ void setRange(RooWorkspace& myws, RooPlot* frame, string dsName, int nBins, bool
   TH1* h = myws.data(dsName.c_str())->createHistogram("hist", *myws.var("invMass"), Binning(nBins));
   Double_t YMax = h->GetBinContent(h->GetMaximumBin());
   Double_t YMin = min( h->GetBinContent(h->FindFirstBinAbove(0.0, 2)), h->GetBinContent(h->FindLastBinAbove(0.0, 2)) );
-  if(setLogScale){ frame->GetYaxis()->SetRangeUser( YMin*0.3, (YMax*TMath::Power((YMax/YMin), 0.5)) ); } 
-  else{ frame->GetYaxis()->SetRangeUser(max(YMin-(YMax-YMin)*0.2,0.0), YMax+(YMax-YMin)*0.5); }
+  
+  Double_t Yup(0),Ydown(0.);
+  if(setLogScale)
+  {
+    Ydown = YMin*0.3;
+    Yup = YMax*TMath::Power((YMax/YMin), 0.5);
+  }
+  else
+  {
+    Ydown = max(YMin-(YMax-YMin)*0.2,0.0);
+    Yup = YMax+(YMax-YMin)*0.5;
+  }
+  frame->GetYaxis()->SetRangeUser(Ydown,Yup);
   delete h;
+  
+  // Create line to indicate upper fitting range for MC
+  if (dsName.find("MC")!=std::string::npos)
+  {
+    TLine* line = new TLine(3.26,Ydown,3.26,Yup);
+    line->SetLineStyle(2);
+    line->SetLineColor(1);
+    line->SetLineWidth(3);
+    
+    frame->addObject(line);
+  }
+ 
 }
 
 
