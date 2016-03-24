@@ -106,7 +106,7 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
         cent->setVal(Centrality);
         
         if (applyWeight){
-          double w = theTree->GetWeight()*getNColl(Centrality,isPP);
+          double w = theTree->GetWeight();//*getNColl(Centrality,isPP);
           weight->setVal(w);
         }
         
