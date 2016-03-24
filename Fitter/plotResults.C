@@ -22,7 +22,7 @@ using namespace std;
 
 const char* ylabel = "(#Psi(2S)/J/#Psi)_{PbPb} / (#Psi(2S)/J/#Psi)_{pp}";
 const char* poiname = "RFrac2Svs1S";
-const bool  doratio = true;
+const bool  doratio = true; // true -> look for separate PP and PbPb files, false -> input files are with simultaneous pp-PbPb fits
 
 //////////////////
 // DECLARATIONS //
