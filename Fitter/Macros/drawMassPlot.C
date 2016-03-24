@@ -399,10 +399,10 @@ void printChi2(RooWorkspace& myws, TPad* Pad, RooPlot* frame, string varLabel, s
   ndof = nFullBins - nFitPar;
   //chi2 = myws.pdf(pdfLabel.c_str())->createChi2(*((RooDataSet*)myws.data(dataLabel.c_str())))->getVal(); 
   //chi2 = frame->chiSquare(nFitPar)*ndof;
-  RooDataHist dummy("dummy", "dummy", *myws.var("invMass"), hdatact);
-  if (isWeighted) {
-    chi2 = RooChi2Var("chi2", "chi2", *myws.pdf(pdfLabel.c_str()), dummy, kFALSE, 0, 0, 8, RooFit::Interleave, kFALSE, kFALSE, RooDataHist::SumW2).getVal();
-  }  
+//  RooDataHist dummy("dummy", "dummy", *myws.var("invMass"), hdatact);
+//  if (isWeighted) {
+//    chi2 = RooChi2Var("chi2", "chi2", *myws.pdf(pdfLabel.c_str()), dummy, kFALSE, 0, 0, 8, RooFit::Interleave, kFALSE, kFALSE, RooDataHist::SumW2).getVal();
+//  }  
   t->DrawLatex(0.7, 0.85, Form("#chi^{2}/ndof = %.0f / %d", chi2, ndof));
   delete hdatact; 
   //delete hpull;
