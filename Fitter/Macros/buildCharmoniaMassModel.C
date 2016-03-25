@@ -13,7 +13,6 @@ bool buildCharmoniaMassModel(RooWorkspace& ws, struct CharmModel model, map<stri
                              bool incBkg,                 // Include background model
                              bool incJpsi,                // Include Jpsi model
                              bool incPsi2S,               // Include Psi(2S) model
-                             string label,                // pdf label
                              double  numEntries = 300000. // Number of entries in the dataset
                              )
 {
@@ -78,7 +77,6 @@ bool buildCharmoniaMassModel(RooWorkspace& ws, struct CharmModel model, map<stri
   }
   // Total PDF
   string pdfName = Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP"));
-  if (!label.empty())pdfName+=Form("_%s",label.c_str());
   if (incJpsi && incPsi2S && incBkg) {
     ws.factory(Form("SUM::%s(%s*%s, %s*%s, %s*%s)", pdfName.c_str(),
 		    parIni[Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP"))].c_str(),

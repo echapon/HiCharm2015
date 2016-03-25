@@ -36,12 +36,8 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
   string dsOSName = Form("dOS_%s_%s", DSTAG.c_str(), (isPbPb?"PbPb":"PP"));
   string dsSSName = Form("dSS_%s_%s", DSTAG.c_str(), (isPbPb?"PbPb":"PP"));
   string pdfName  = Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP"));
-  if(plotPureSMC) {
-    dsOSName = Form("dOS_%s_%s_NoBkg", DSTAG.c_str(), (isPbPb?"PbPb":"PP"));
-    dsSSName = Form("dSS_%s_%s_NoBkg", DSTAG.c_str(), (isPbPb?"PbPb":"PP"));
-    if (incBkg) pdfName  = Form("pdfMASS_Tot_%s_NoBkg", (isPbPb?"PbPb":"PP"));
-    else pdfName  = Form("pdfMASS_Sig_%s", (isPbPb?"PbPb":"PP"));
-  }
+  if(plotPureSMC) dsOSName = Form("dOS_%s_%s_NoBkg", DSTAG.c_str(), (isPbPb?"PbPb":"PP"));
+    
   bool isWeighted = myws.data(dsOSName.c_str())->isWeighted();
 
   // Create the main plot of the fit
@@ -387,7 +383,8 @@ void printChi2(RooWorkspace& myws, TPad* Pad, RooPlot* frame, string varLabel, s
   TLatex *t = new TLatex(); t->SetNDC(); t->SetTextSize(0.1); 
   unsigned int nFitPar = myws.pdf(pdfLabel.c_str())->getParameters(*myws.data(dataLabel.c_str()))->selectByAttrib("Constant",kFALSE)->getSize(); 
   TH1 *hdatact = myws.data(dataLabel.c_str())->createHistogram("hdatact", *myws.var(varLabel.c_str()), Binning(nBins));
-  RooHist *hpull = frame->pullHist(0, 0, true);
+//  RooHist *hpull = frame->pullHist("hdatact",pdfLabel.c_str(), true);
+  RooHist *hpull = frame->pullHist(0,0, true);
   double* ypulls = hpull->GetY();
   unsigned int nFullBins = 0;
   for (int i = 0; i < nBins; i++) {
@@ -403,7 +400,7 @@ void printChi2(RooWorkspace& myws, TPad* Pad, RooPlot* frame, string varLabel, s
 //  if (isWeighted) {
 //    chi2 = RooChi2Var("chi2", "chi2", *myws.pdf(pdfLabel.c_str()), dummy, kFALSE, 0, 0, 8, RooFit::Interleave, kFALSE, kFALSE, RooDataHist::SumW2).getVal();
 //  }  
-  t->DrawLatex(0.7, 0.85, Form("#chi^{2}/ndof = %.0f / %d", chi2, ndof));
+  t->DrawLatex(0.7, 0.85, Form("#chi^{2}/ndof = %.0f / %d ", chi2, ndof));
   delete hdatact; 
   //delete hpull;
 };

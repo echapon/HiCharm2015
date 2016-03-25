@@ -41,9 +41,12 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
 
   bool applyWeight = false;
   if (isMC && !isPP) applyWeight = true;
+  
+  bool isPureSDataset = false;
+  if (OutputFileName.find("_PureS")!=std::string::npos) isPureSDataset = true;
 
   if (gSystem->AccessPathName(OutputFileName.c_str()) || UpdateDS) {
-    cout << "[INFO] Creating RooDataSet for " << DSName << endl;
+    cout << "[INFO] Creating " << (isPureSDataset ? "pure signal " : "") << "RooDataSet for " << DSName << endl;
     TreeName = findMyTree(InputFileNames[0]); if(TreeName==""){return false;}
 
     TChain* theTree = new TChain(TreeName.c_str(),"");
@@ -66,14 +69,14 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
       cols   = new RooArgSet(*mass, *ctau, *ctauErr, *ptQQ, *rapQQ, *cent, *weight);
       dataOS = new RooDataSet(Form("dOS_%s", DSName.c_str()), "dOS", *cols, WeightVar(*weight), StoreAsymError(*mass));
       dataSS = new RooDataSet(Form("dSS_%s", DSName.c_str()), "dSS", *cols, WeightVar(*weight), StoreAsymError(*mass));
-      dataOSNoBkg = new RooDataSet(Form("dOS_%s_NoBkg", DSName.c_str()), "dOSNoBkg", *cols, WeightVar(*weight), StoreAsymError(*mass));
+      if (isPureSDataset) dataOSNoBkg = new RooDataSet(Form("dOS_%s_NoBkg", DSName.c_str()), "dOSNoBkg", *cols, WeightVar(*weight), StoreAsymError(*mass));
     }
     else
     {
       cols = new RooArgSet(*mass, *ctau, *ctauErr, *ptQQ, *rapQQ, *cent);                   
       dataOS = new RooDataSet(Form("dOS_%s", DSName.c_str()), "dOS", *cols, StoreAsymError(*mass));
       dataSS = new RooDataSet(Form("dSS_%s", DSName.c_str()), "dSS", *cols, StoreAsymError(*mass));
-      if (isMC) dataOSNoBkg = new RooDataSet(Form("dOS_%s_NoBkg", DSName.c_str()), "dOSNoBkg", *cols, StoreAsymError(*mass));
+      if (isMC && isPureSDataset) dataOSNoBkg = new RooDataSet(Form("dOS_%s_NoBkg", DSName.c_str()), "dOSNoBkg", *cols, StoreAsymError(*mass));
     }
     
     Long64_t nentries = theTree->GetEntries();
@@ -117,11 +120,11 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
 	    )
 	  {
 	    if (Reco_QQ_sign[iQQ]==0) { // Opposite-Sign dimuons
-	      dataOS->add(*cols, (applyWeight ? weight->getVal() : 1.0)); // Signal and background dimuons
-              if (isMC && isMatchedRecoDiMuon(iQQ)) dataOSNoBkg->add(*cols, (applyWeight ? weight->getVal() : 1.0)); // Signal-only dimuons
+        if (isMC && isPureSDataset && isMatchedRecoDiMuon(iQQ)) dataOSNoBkg->add(*cols, (applyWeight ? weight->getVal() : 1.0)); // Signal-only dimuons
+	      else dataOS->add(*cols, (applyWeight ? weight->getVal() : 1.0)); // Signal and background dimuons
 	    }
             else {                    // Like-Sign dimuons
-	      dataSS->add(*cols, (applyWeight ? weight->getVal() : 1.0));
+	      if (!isPureSDataset) dataSS->add(*cols, (applyWeight ? weight->getVal() : 1.0));
 	    }
 	  }
       }
@@ -133,9 +136,12 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     // Save all the datasets
     TFile *DBFile = TFile::Open(OutputFileName.c_str(),"RECREATE");
     DBFile->cd();
-    dataOS->Write(Form("dOS_%s", DSName.c_str()));
-    if (isMC) dataOSNoBkg->Write(Form("dOS_%s_NoBkg", DSName.c_str()));
-    dataSS->Write(Form("dSS_%s", DSName.c_str())); 
+    if (isMC && isPureSDataset) dataOSNoBkg->Write(Form("dOS_%s_NoBkg", DSName.c_str()));
+    else
+    {
+      dataOS->Write(Form("dOS_%s", DSName.c_str()));
+      dataSS->Write(Form("dSS_%s", DSName.c_str()));
+    }
     DBFile->Write(); DBFile->Close(); delete DBFile;
   }
   else {
@@ -143,15 +149,27 @@ bool tree2DataSet(RooWorkspace& Workspace, vector<string> InputFileNames, string
     cout << "[INFO] Loading RooDataSet from " << OutputFileName << endl;
     
     TFile *DBFile = TFile::Open(OutputFileName.c_str(),"READ");
-    dataOS = (RooDataSet*)DBFile->Get(Form("dOS_%s", DSName.c_str()));
-    if (isMC) dataOSNoBkg = (RooDataSet*)DBFile->Get(Form("dOS_%s_NoBkg", DSName.c_str()));
-    dataSS = (RooDataSet*)DBFile->Get(Form("dSS_%s", DSName.c_str()));
-    DBFile->Close(); delete DBFile; 
+    if (isMC && isPureSDataset) dataOSNoBkg = (RooDataSet*)DBFile->Get(Form("dOS_%s_NoBkg", DSName.c_str()));
+    else
+    {
+      dataOS = (RooDataSet*)DBFile->Get(Form("dOS_%s", DSName.c_str()));
+      dataSS = (RooDataSet*)DBFile->Get(Form("dSS_%s", DSName.c_str()));
+    }
+    DBFile->Close(); delete DBFile;
   }
 
-  if(!dataOS || !dataSS || (isMC && !dataOSNoBkg) ){ cout << "[ERROR] " << DSName << " was not found" << endl; return false; }
-  Workspace.import(*dataOS); Workspace.import(*dataSS);
-  if(isMC) Workspace.import(*dataOSNoBkg);
+  // Import datasets to workspace
+  if (isMC && isPureSDataset)
+  {
+    if (!dataOSNoBkg) { cout << "[ERROR] " << DSName << " was not found" << endl; return false; }
+    Workspace.import(*dataOSNoBkg);
+  }
+  else
+  {
+    if(!dataOS || !dataSS) { cout << "[ERROR] " << DSName << " was not found" << endl; return false; }
+    Workspace.import(*dataOS);
+    Workspace.import(*dataSS);
+  }
 
   // delete the local datasets
   delete dataSS; delete dataOS; delete dataOSNoBkg;

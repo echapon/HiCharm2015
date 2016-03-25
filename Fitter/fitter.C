@@ -99,6 +99,11 @@ void fitter(
       OutputFileName = DIR["dataset"] + "DATASET_" + FILETAG + ".root";
       if(!tree2DataSet(Workspace[DSTAG], InputFileNames, FILETAG, OutputFileName)){ return; }
       if (!aDSTAG->FindObject(DSTAG.c_str())) aDSTAG->Add(new TObjString(DSTAG.c_str()));
+      if (wantPureSMC)
+      {
+        OutputFileName = DIR["dataset"] + "DATASET_" + FILETAG + "_PureS" + ".root";
+        if(!tree2DataSet(Workspace[Form("%s_PureS",DSTAG.c_str())], InputFileNames, FILETAG, OutputFileName)){ return; }
+      }
     } 
   }
   if (Workspace.size()==0) {
@@ -210,7 +215,7 @@ void fitter(
                                // Select the fitting options
                                cutCtau,         // Apply prompt ctau cuts
                                false,           // Do simultaneous fit
-                               wantPureSMC,     // Flag to indicate if we want to fit pure signal MC
+                               false,     // Flag to indicate if we want to fit pure signal MC
                                numCores,        // Number of cores used for fitting
                                // Select the drawing options
                                setLogScale,     // Draw plot with log scale
@@ -220,6 +225,30 @@ void fitter(
                                false            // Compute the mean PT (NEED TO FIX)
                                )
                 ) { return; }
+            if (DSTAG.Contains("MC") && wantPureSMC)
+            {
+              if (!fitCharmonia( Workspace[Form("%s_PureS",DSTAG.Data())], cutVector.at(i), parIniVector.at(i), outputDir,
+                                // Select the type of datasets to fit
+                                DSTAG.Data(),
+                                true,            // In this case we are fitting PbPb
+                                // Select the type of object to fit
+                                incJpsi,         // Includes Jpsi model
+                                incPsi2S,        // Includes Psi(2S) model
+                                incBkg,          // Includes Background model
+                                // Select the fitting options
+                                cutCtau,         // Apply prompt ctau cuts
+                                false,           // Do simultaneous fit
+                                true,            // Flag to indicate if we want to fit pure signal MC
+                                numCores,        // Number of cores used for fitting
+                                // Select the drawing options
+                                setLogScale,     // Draw plot with log scale
+                                incSS,           // Include Same Sign data
+                                zoomPsi,         // Zoom Psi(2S) peak on extra pad
+                                nBins,           // Number of bins used for plotting
+                                false            // Compute the mean PT (NEED TO FIX)
+                                )
+                  ) { return; }
+            }
           }
           if (fitPP) {
             if (!fitCharmonia( Workspace[DSTAG.Data()], cutVector.at(i), parIniVector.at(i), outputDir,
@@ -233,7 +262,7 @@ void fitter(
                                // Select the fitting options
                                cutCtau,         // Apply prompt ctau cuts
                                false,           // Do simultaneous fit
-                               wantPureSMC,     // Flag to indicate if we want to fit pure signal MC
+                               false,           // Flag to indicate if we want to fit pure signal MC
                                numCores,        // Number of cores used for fitting
                                // Select the drawing options
                                setLogScale,     // Draw plot with log scale
@@ -243,6 +272,30 @@ void fitter(
                                false            // Compute the mean PT (NEED TO FIX)
                                )
                 ) { return; }
+            if (DSTAG.Contains("MC") && wantPureSMC)
+            {
+              if (!fitCharmonia( Workspace[Form("%s_PureS",DSTAG.Data())], cutVector.at(i), parIniVector.at(i), outputDir,
+                                // Select the type of datasets to fit
+                                DSTAG.Data(),
+                                false,           // In this case we are fitting PP
+                                // Select the type of object to fit
+                                incJpsi,         // Includes Jpsi model
+                                incPsi2S,        // Includes Psi(2S) model
+                                incBkg,          // Includes Background model
+                                // Select the fitting options
+                                cutCtau,         // Apply prompt ctau cuts
+                                false,           // Do simultaneous fit
+                                true,            // Flag to indicate if we want to fit pure signal MC
+                                numCores,        // Number of cores used for fitting
+                                // Select the drawing options
+                                setLogScale,     // Draw plot with log scale
+                                incSS,           // Include Same Sign data
+                                zoomPsi,         // Zoom Psi(2S) peak on extra pad
+                                nBins,           // Number of bins used for plotting
+                                false            // Compute the mean PT (NEED TO FIX)
+                                )
+                  ) { return; }
+            }
           }
         }
       } else {
