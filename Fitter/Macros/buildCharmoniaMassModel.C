@@ -30,7 +30,7 @@ bool buildCharmoniaMassModel(RooWorkspace& ws, struct CharmModel model, map<stri
     if (doSimulFit && isPbPb) {
 
       // Fix mean, alpha and n parameters in PbPb to PP values 
-      fixPbPbtoPP(parIni);
+      // fixPbPbtoPP(parIni);
 
       // create parameters related to the double ratio
       ws.factory( parIni["RFrac2Svs1S_PbPbvsPP"].c_str() );                     // Double Ratio
