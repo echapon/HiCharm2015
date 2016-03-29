@@ -151,7 +151,7 @@ bool addBackgroundMassModel(RooWorkspace& ws, string object, MassModel model, ma
   
   switch(model) 
     {  
-    case (MassModel::FirstOrderChebychev): 
+    case (MassModel::Chebychev1): 
 
       // check that all input parameters are defined 
       if (!( 
@@ -170,7 +170,7 @@ bool addBackgroundMassModel(RooWorkspace& ws, string object, MassModel model, ma
 
       cout << Form("[INFO] %s Background 1st Order Chebychev PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break;
  
-    case (MassModel::SecondOrderChebychev): 
+    case (MassModel::Chebychev2): 
 
       // check that all input parameters are defined 
       if (!( 
@@ -192,7 +192,7 @@ bool addBackgroundMassModel(RooWorkspace& ws, string object, MassModel model, ma
 
       cout << Form("[INFO] %s Background 2nd Order Chebychev PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break; 
 
-    case (MassModel::ThirdOrderChebychev): 
+    case (MassModel::Chebychev3): 
 
       // check that all input parameters are defined 
       if (!( 
@@ -217,7 +217,7 @@ bool addBackgroundMassModel(RooWorkspace& ws, string object, MassModel model, ma
 
       cout << Form("[INFO] %s Background 3rd Order Polynomial PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break; 
 
-    case (MassModel::FourthOrderChebychev): 
+    case (MassModel::Chebychev4): 
 
       // check that all input parameters are defined 
       if (!( 
@@ -245,7 +245,7 @@ bool addBackgroundMassModel(RooWorkspace& ws, string object, MassModel model, ma
 
       cout << Form("[INFO] %s Background 4th Order Chebychev PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break; 
 
-    case (MassModel::FifthOrderChebychev): 
+    case (MassModel::Chebychev5): 
 
       // check that all input parameters are defined 
       if (!( 
@@ -276,7 +276,7 @@ bool addBackgroundMassModel(RooWorkspace& ws, string object, MassModel model, ma
 
       cout << Form("[INFO] %s Background 5th Order Chebychev PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break; 
 
-    case (MassModel::SixthOrderChebychev): 
+    case (MassModel::Chebychev6): 
 
       // check that all input parameters are defined 
       if (!( 

@@ -11,7 +11,7 @@ bool setModel( struct OniaModel& model, map<string, string>  parIni, bool isPbPb
 
 void setOptions(struct InputOpt* opt);
 
-bool isFitAlreadyFound(RooArgSet *newpars, string outputDir, string plotLabel, string TAG, struct KinCuts cut, bool isPbPb);
+bool isFitAlreadyFound(RooArgSet *newpars, string outputDir, string plotLabel, string TAG, struct KinCuts cut, bool isPbPb, bool doSimulFit);
 bool compareSnapshots(RooArgSet *pars1, const RooArgSet *pars2);
 
 bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the input RooDatasets
@@ -57,6 +57,8 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
   }
   // Apply the ctau cuts to reject non-prompt charmonia
   if (cutCtau) { setCtauCuts(cut, isPbPb); }  
+
+  
 
 
   // Check if input dataset is MC
@@ -127,9 +129,7 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
       // check if we have already done this fit. If yes, do nothing and return true.
       bool found = true;
       RooArgSet *newpars = myws.pdf("pdfMASS_Tot_PbPb")->getParameters(*(myws.var("invMass")));
-      found = found && isFitAlreadyFound(newpars, outputDir, plotLabelPbPb, DSTAG, cut, true);
-      newpars = myws.pdf("pdfMASS_Tot_PP")->getParameters(*(myws.var("invMass")));
-      found = found && isFitAlreadyFound(newpars, outputDir, plotLabelPP, DSTAG, cut, false);
+      found = found && isFitAlreadyFound(newpars, outputDir, plotLabelPbPb, DSTAG, cut, true, true);
       if (found) {
         cout << "[INFO] This fit was already done, so I'll just go to the next one." << endl;
         return true;
@@ -165,7 +165,7 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
 
         // check if we have already done this fit. If yes, do nothing and return true.
         RooArgSet *newpars = myws.pdf(pdfName.c_str())->getParameters(*(myws.var("invMass")));
-        bool found =  isFitAlreadyFound(newpars, outputDir, wantPureSMC ? (plotLabelPbPb+"_NoBkg") : plotLabelPbPb, DSTAG, cut, true);
+        bool found =  isFitAlreadyFound(newpars, outputDir, wantPureSMC ? (plotLabelPbPb+"_NoBkg") : plotLabelPbPb, DSTAG, cut, true, false);
         if (found) {
           cout << "[INFO] This fit was already done, so I'll just go to the next one." << endl;
           return true;
@@ -191,6 +191,8 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
         drawMassPlot(myws, outputDir, opt, cut, wantPureSMC ? (plotLabelPbPb+"_NoBkg") : plotLabelPbPb, DSTAG, true, incJpsi, incPsi2S, incBkg, cutCtau, doSimulFit, wantPureSMC, setLogScale, incSS, zoomPsi, nBins, getMeanPT);
       }
       else {
+        cut.Centrality.Start = 0;
+        cut.Centrality.End = 200;
         
         string pdfName = "pdfMASS_Tot_PP";
         string dsName = Form("dOS_%s_PP", DSTAG.c_str());
@@ -198,7 +200,7 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
         
         // check if we have already done this fit. If yes, do nothing and return true.
         RooArgSet *newpars = myws.pdf(pdfName.c_str())->getParameters(*(myws.var("invMass")));
-        bool found =  isFitAlreadyFound(newpars, outputDir, wantPureSMC ? (plotLabelPP+"_NoBkg") : plotLabelPP, DSTAG, cut, false);
+        bool found =  isFitAlreadyFound(newpars, outputDir, wantPureSMC ? (plotLabelPP+"_NoBkg") : plotLabelPP, DSTAG, cut, false, false);
         if (found) {
           cout << "[INFO] This fit was already done, so I'll just go to the next one." << endl;
           return true;
@@ -382,8 +384,13 @@ void setOptions(struct InputOpt* opt)
   return;
 };
 
-bool isFitAlreadyFound(RooArgSet *newpars, string outputDir, string plotLabel, string TAG, struct KinCuts cut, bool isPbPb) {
-  string FileName = Form("%sresult/%s/FIT_%s_%s_%s%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.root", outputDir.c_str(), TAG.c_str(), TAG.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End);
+bool isFitAlreadyFound(RooArgSet *newpars, string outputDir, string plotLabel, string TAG, struct KinCuts cut, bool isPbPb, bool doSimulFit) {
+  string FileName = "";
+  if (doSimulFit) {
+   FileName = Form("%sresult/%s/FIT_%s_%s_%s%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.root", outputDir.c_str(), TAG.c_str(), TAG.c_str(), "Psi2SJpsi", "COMB", plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End);
+  } else {
+    FileName = Form("%sresult/%s/FIT_%s_%s_%s%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.root", outputDir.c_str(), TAG.c_str(), TAG.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End);
+  }
 
   if (gSystem->AccessPathName(FileName.c_str())) return false; // File was not found
 

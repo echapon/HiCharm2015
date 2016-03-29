@@ -18,8 +18,8 @@ fcn_signal2_pp=["DoubleCrystalBall","GaussianAndCrystalBall"]
 fcn_signal2_pbpb=["DoubleCrystalBall","GaussianAndCrystalBall"]
 
 # provide the background model for pp and PbPb
-fcn_bkg_pp=["SecondOrderChebychev","SecondOrderPolynomial"]
-fcn_bkg_pbpb=["SecondOrderChebychev","SecondOrderPolynomial"]
+fcn_bkg_pp=["Chebychev2","Chebychev3"]
+fcn_bkg_pbpb=["Chebychev2","Chebychev3"]
 
 # provide the name of the parameters of your models
 parnames_signal_pp="N_Jpsi_PP;sigma1_Jpsi_PP;rSigma21_Jpsi_PP;m_Jpsi_PP;alpha_Jpsi_PP;n_Jpsi_PP;f_Jpsi_PP"
