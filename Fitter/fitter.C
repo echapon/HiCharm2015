@@ -14,15 +14,15 @@ bool iniWorkEnv(map<string,string>& DIR, const string workDirName);
 bool existDir(string dir);
 bool readFile(string FileName, vector< vector<string> >& content, const int nCol=-1, int nRow=-1);
 bool getInputFileNames(const string InputTrees, map<string, vector<string> >& InputFileCollection);
-bool setParameters(map<string, string> row, struct KinCuts& cut, map<string, string>& parIni);
-bool addParameters(string InputFile,  vector< struct KinCuts >& cutVector, vector< map<string, string> >&  parIniVector);
+bool setParameters(map<string, string> row, struct KinCuts& cut, map<string, string>& parIni, bool isPbPb);
+bool addParameters(string InputFile,  vector< struct KinCuts >& cutVector, vector< map<string, string> >&  parIniVector, bool isPbPb);
 
 
 void fitter(
             const string workDirName="Test", // Working directory
             // Select the type of datasets to fit
             bool fitData     = true,         // Fits Data if true, otherwise fits MC
-            bool fitPbPb     = true,         // Fits PbPb datasets
+            bool fitPbPb     = false,         // Fits PbPb datasets
             bool fitPP       = true,         // Fits PP datasets
             // Select the type of object to fit
             bool incJpsi     = true,         // Includes Jpsi model
@@ -124,32 +124,32 @@ void fitter(
   if (fitPbPb && incBkg) {
     // Add initial parameters for PbPb background models
     InputFile = (DIR["input"] + "InitialParam_MASS_BKG_PbPb.csv");
-    if (!addParameters(InputFile, cutVector, parIniVector)) { return; }
+    if (!addParameters(InputFile, cutVector, parIniVector, true)) { return; }
   } 
   if (fitPbPb && incJpsi) {
     // Add initial parameters for PbPb jpsi models
     InputFile = (DIR["input"] + "InitialParam_MASS_JPSI_PbPb.csv");
-    if (!addParameters(InputFile, cutVector, parIniVector)) { return; }
+    if (!addParameters(InputFile, cutVector, parIniVector, true)) { return; }
   } 
   if (fitPbPb && incPsi2S) {
     // Add initial parameters for PbPb psi(2S) models
     InputFile = (DIR["input"] + "InitialParam_MASS_PSI2S_PbPb.csv");
-    if (!addParameters(InputFile, cutVector, parIniVector)) { return; }
+    if (!addParameters(InputFile, cutVector, parIniVector, true)) { return; }
   } 
   if (fitPP && incBkg) {
     // Add initial parameters for PP background models
     InputFile = (DIR["input"] + "InitialParam_MASS_BKG_PP.csv");
-    if (!addParameters(InputFile, cutVector, parIniVector)) { return; }
+    if (!addParameters(InputFile, cutVector, parIniVector, false)) { return; }
   } 
   if (fitPP && incJpsi) {
     // Add initial parameters for PP jpsi models
     InputFile = (DIR["input"] + "InitialParam_MASS_JPSI_PP.csv");
-    if (!addParameters(InputFile, cutVector, parIniVector)) { return; }
+    if (!addParameters(InputFile, cutVector, parIniVector, false)) { return; }
   } 
   if (fitPP && incPsi2S) {
     // Add initial parameters for PP psi(2S) models
     InputFile = (DIR["input"] + "InitialParam_MASS_PSI2S_PP.csv");
-    if (!addParameters(InputFile, cutVector, parIniVector)) { return; }
+    if (!addParameters(InputFile, cutVector, parIniVector, false)) { return; }
   }
 
   // -------------------------------------------------------------------------------  
@@ -308,7 +308,7 @@ void fitter(
 };
 
 
-bool addParameters(string InputFile,  vector< struct KinCuts >& cutVector, vector< map<string, string> >&  parIniVector)
+bool addParameters(string InputFile,  vector< struct KinCuts >& cutVector, vector< map<string, string> >&  parIniVector, bool isPbPb)
 {
   vector< map<string, string> >  data;
   if(!parseFile(InputFile, data)) { return false; }
@@ -316,7 +316,7 @@ bool addParameters(string InputFile,  vector< struct KinCuts >& cutVector, vecto
   if (cutVector.size()==0) {
     for(vector< map<string, string> >::iterator row=data.begin(); row!=data.end(); ++row) {
       struct KinCuts cut; map<string, string> parIni;
-      if(!setParameters(*row, cut, parIni)) { return false; }
+      if(!setParameters(*row, cut, parIni, isPbPb)) { return false; }
       cutVector.push_back(cut);  parIniVector.push_back(parIni);
     }
   }
@@ -324,8 +324,8 @@ bool addParameters(string InputFile,  vector< struct KinCuts >& cutVector, vecto
     if (data.size()!=cutVector.size()) { cout << "[ERROR] The initial parameters in file " << InputFile << " are not consistent with previous files!" << endl; return false; }
     for (unsigned int i=0; i<data.size(); i++) {
       struct KinCuts cut;
-      if (!setParameters(data.at(i), cut, parIniVector.at(i))) { return false; };
-      if (!isEqualKinCuts(cut, cutVector.at(i))) { cout << "[ERROR] The bins in file " << InputFile << " are not consistent with previous files!" << endl; return false; }
+      if (!setParameters(data.at(i), cut, parIniVector.at(i), isPbPb)) { return false; };
+      if (!isEqualKinCuts(cut, cutVector.at(i), isPbPb)) { cout << "[ERROR] The bins in file " << InputFile << " are not consistent with previous files!" << endl; return false; }
     }
   }
 
@@ -333,7 +333,7 @@ bool addParameters(string InputFile,  vector< struct KinCuts >& cutVector, vecto
 };
 
 
-bool setParameters(map<string, string> row, struct KinCuts& cut, map<string, string>& parIni)
+bool setParameters(map<string, string> row, struct KinCuts& cut, map<string, string>& parIni, bool isPbPb)
 {
 
   // set initial parameters
@@ -382,16 +382,18 @@ bool setParameters(map<string, string> row, struct KinCuts& cut, map<string, str
       cut.dMuon.Pt.Max = v.at(1);
     } 
     else if (label=="cent"){
-      if (col->second=="" || col->second.find("-")==std::string::npos) {
-        cout << "[ERROR] Input column 'cent' has invalid value: " << col->second << endl; return false;
+      if (isPbPb) {
+        if (col->second=="" || col->second.find("-")==std::string::npos) {
+          cout << "[ERROR] Input column 'cent' has invalid value: " << col->second << endl; return false;
+        }
+        std::vector<double> v;
+        if(!parseString(col->second, "-", v)) { return false; }
+        if (v.size()!=2) {
+          cout << "[ERROR] Input column 'cent' has incorrect number of values, it should have 2 values but has: " << v.size() << endl; return false;
+        }
+        cut.Centrality.Start = (int) (2.0*v.at(0));
+        cut.Centrality.End = (int) (2.0*v.at(1));
       }
-      std::vector<double> v; 
-      if(!parseString(col->second, "-", v)) { return false; }
-      if (v.size()!=2) {
-        cout << "[ERROR] Input column 'cent' has incorrect number of values, it should have 2 values but has: " << v.size() << endl; return false;
-      }  
-      cut.Centrality.Start = (int) (2.0*v.at(0)); 
-      cut.Centrality.End = (int) (2.0*v.at(1));
     } 
     else if (label=="mass"){
       if (col->second=="" || col->second.find("-")==std::string::npos) {

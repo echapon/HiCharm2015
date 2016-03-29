@@ -91,12 +91,14 @@ typedef struct KinCuts {
   DiMuonPar  dMuon;
 } KinCuts;
 
-bool isEqualKinCuts(struct KinCuts cutA, struct KinCuts cutB) 
+bool isEqualKinCuts(struct KinCuts cutA, struct KinCuts cutB, bool isPbPb) 
 {
   bool cond = true;
 
-  cond = cond && (cutA.Centrality.Start    == cutB.Centrality.Start);
-  cond = cond && (cutA.Centrality.End      == cutB.Centrality.End);
+  if (isPbPb) {
+    cond = cond && (cutA.Centrality.Start    == cutB.Centrality.Start);
+    cond = cond && (cutA.Centrality.End      == cutB.Centrality.End);
+  }
 
   cond = cond && (cutA.sMuon.Pt.Min        == cutB.sMuon.Pt.Min);
   cond = cond && (cutA.sMuon.Pt.Max        == cutB.sMuon.Pt.Max);
