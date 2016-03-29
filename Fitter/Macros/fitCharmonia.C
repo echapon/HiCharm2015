@@ -230,10 +230,10 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
 void setCtauCuts(struct KinCuts& cut, bool isPbPb) 
 {
   if (cut.dMuon.AbsRap.Max<=1.6 && isPbPb) {
-    cut.dMuon.ctau.Max = 0.04;
+    cut.dMuon.ctau.Max = 0.03;
   }
   if (cut.dMuon.AbsRap.Min>=1.6 && isPbPb) {
-    cut.dMuon.ctau.Max = 0.06;
+    cut.dMuon.ctau.Max = 0.05;
   }
   if (cut.dMuon.AbsRap.Max<=1.6 && !isPbPb) {
     cut.dMuon.ctau.Max = 0.03;
