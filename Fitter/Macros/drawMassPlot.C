@@ -282,7 +282,12 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
   
   // Save the workspace
   gSystem->mkdir(Form("%sresult/%s/", outputDir.c_str(), DSTAG.c_str()), kTRUE); 
-  TFile *file = new TFile(Form("%sresult/%s/FIT_%s_%s_%s%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.root", outputDir.c_str(), DSTAG.c_str(), DSTAG.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End), "RECREATE");
+  TFile *file = NULL;
+  if (doSimulFit) {
+   file = new TFile(Form("%sresult/%s/FIT_%s_%s_%s%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.root", outputDir.c_str(), DSTAG.c_str(), DSTAG.c_str(), "Psi2SJpsi", "COMB", plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End), "RECREATE");
+  } else {
+   file = new TFile(Form("%sresult/%s/FIT_%s_%s_%s%s_pt%.0f%.0f_rap%.0f%.0f_cent%d%d.root", outputDir.c_str(), DSTAG.c_str(), DSTAG.c_str(), "Psi2SJpsi", (isPbPb?"PbPb":"PP"), plotLabel.c_str(), (cut.dMuon.Pt.Min*10.0), (cut.dMuon.Pt.Max*10.0), (cut.dMuon.AbsRap.Min*10.0), (cut.dMuon.AbsRap.Max*10.0), cut.Centrality.Start, cut.Centrality.End), "RECREATE");
+  }
   if (!file) { 
     cout << "[ERROR] Output root file with fit results could not be created!" << endl; 
   } else {
@@ -301,9 +306,9 @@ void setRange(RooWorkspace& myws, RooPlot* frame, string dsName, int nBins, bool
   // Find maximum and minimum points of Plot to rescale Y axis
   TH1* h = myws.data(dsName.c_str())->createHistogram("hist", *myws.var("invMass"), Binning(nBins));
   Double_t YMax = h->GetBinContent(h->GetMaximumBin());
-  Double_t YMin = min( h->GetBinContent(h->FindFirstBinAbove(0.0, 2)), h->GetBinContent(h->FindLastBinAbove(0.0, 2)) );
+  Double_t YMin = min( h->GetBinContent(h->FindFirstBinAbove(0.0)), h->GetBinContent(h->FindLastBinAbove(0.0)) );
   
-  Double_t Yup(0),Ydown(0.);
+  Double_t Yup(0.),Ydown(0.);
   if(setLogScale)
   {
     Ydown = YMin*0.3;
@@ -406,5 +411,5 @@ void printChi2(RooWorkspace& myws, TPad* Pad, RooPlot* frame, string varLabel, s
 //  }  
   t->DrawLatex(0.7, 0.85, Form("#chi^{2}/ndof = %.0f / %d ", chi2, ndof));
   delete hdatact; 
-  //delete hpull;
+  delete hpull;
 };

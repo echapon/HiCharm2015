@@ -22,7 +22,7 @@ void fitter(
             const string workDirName="Test", // Working directory
             // Select the type of datasets to fit
             bool fitData     = true,         // Fits Data if true, otherwise fits MC
-            bool fitPbPb     = false,         // Fits PbPb datasets
+            bool fitPbPb     = true,         // Fits PbPb datasets
             bool fitPP       = true,         // Fits PP datasets
             // Select the type of object to fit
             bool incJpsi     = true,         // Includes Jpsi model
