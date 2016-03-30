@@ -3,7 +3,7 @@
 
 #include "Utilities/initClasses.h"
 
-void setRange(RooWorkspace& myws, RooPlot* frame, string dsName, int nBins, bool setLogScale);
+void setRange(RooWorkspace& myws, RooPlot* frame, string dsName, int nBins, bool setLogScale, double dMuonYmin = -1.);
 void printParameters(RooWorkspace myws, TPad* Pad, bool isPbPb, string pdfName, bool isWeighted);
 void printChi2(RooWorkspace& myws, TPad* Pad, RooPlot* frame, string varLabel, string dataLabel, string pdfLabel, int nBins, bool isWeighted); 
 
@@ -225,7 +225,7 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
   frame->GetYaxis()->SetTitleSize(0.04);
   frame->GetYaxis()->SetTitleOffset(1.7);
   frame->GetYaxis()->SetTitleFont(42);
-  setRange(myws, frame, dsOSName, nBins, setLogScale);
+  setRange(myws, frame, dsOSName, nBins, setLogScale, cut.dMuon.AbsRap.Min);
  
   cFig->cd();
   pad2->SetTopMargin(0.02);
@@ -313,7 +313,7 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
     framezoom->GetXaxis()->SetLabelSize(0.06);
     framezoom->GetYaxis()->SetTitleSize(0.072);
     framezoom->GetXaxis()->SetTitleSize(0.072);
-    setRange(myws, framezoom, dsOSName, nBins, setLogScale);
+    setRange(myws, framezoom, dsOSName, nBins, setLogScale, cut.dMuon.AbsRap.Min);
 
     pad4->Draw();
     pad4->cd();
@@ -380,7 +380,7 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
 #endif // #ifndef drawMassPlot_C
 
 
-void setRange(RooWorkspace& myws, RooPlot* frame, string dsName, int nBins, bool setLogScale) 
+void setRange(RooWorkspace& myws, RooPlot* frame, string dsName, int nBins, bool setLogScale, double dMuonYmin)
 { 
   // Find maximum and minimum points of Plot to rescale Y axis
   TH1* h = myws.data(dsName.c_str())->createHistogram("hist", *myws.var("invMass"), Binning(nBins));
@@ -404,7 +404,9 @@ void setRange(RooWorkspace& myws, RooPlot* frame, string dsName, int nBins, bool
   // Create line to indicate upper fitting range for MC
   if (dsName.find("MC")!=std::string::npos)
   {
-    TLine* line = new TLine(3.26,Ydown,3.26,Yup);
+    TLine* line(0x0);
+    if (dMuonYmin >= 1.6) line = new TLine(3.32,Ydown,3.32,Yup);
+    else line = new TLine(3.26,Ydown,3.26,Yup);
     line->SetLineStyle(2);
     line->SetLineColor(1);
     line->SetLineWidth(3);

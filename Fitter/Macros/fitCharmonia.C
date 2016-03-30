@@ -366,7 +366,12 @@ int importDataset(RooWorkspace& myws, RooWorkspace& inputWS, struct KinCuts cut,
     myws.var("cent")->setMax(cut.Centrality.End);
   }
 
-  if (label.find("MC")!=std::string::npos) myws.var("invMass")->setRange("MassWindow", cut.dMuon.M.Min, 3.26);
+  if (label.find("MC")!=std::string::npos)
+  {
+    if (cut.dMuon.AbsRap.Min >= 1.6) myws.var("invMass")->setRange("MassWindow", cut.dMuon.M.Min, 3.32);
+    else myws.var("invMass")->setRange("MassWindow", cut.dMuon.M.Min, 3.26);
+   
+  }
   else myws.var("invMass")->setRange("MassWindow", cut.dMuon.M.Min, cut.dMuon.M.Max);
   
   if (cut.dMuon.M.Min<2.8) { myws.var("invMass")->setRange("SideBand1",  cut.dMuon.M.Min, 2.8); }
