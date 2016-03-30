@@ -9,6 +9,7 @@
 #include "../Fitter/Macros/CMS/tdrstyle.C"
 
 #include <iostream>
+#include <fstream>
 
 using namespace std;
 
@@ -16,12 +17,17 @@ void setErr(TH1F *hist);
 void fixCentPp(TH1F *hist);
 
 void plotEffs() {
-   TFile *fjpsi_pp = new TFile("histos_jpsi_pp.root");
-   TFile *fpsi2s_pp = new TFile("histos_psi2s_pp.root");
-   TFile *fnpjpsi_pp = new TFile("histos_npjpsi_pp.root");
-   TFile *fjpsi_pbpb = new TFile("histos_jpsi_pbpb.root");
-   TFile *fpsi2s_pbpb = new TFile("histos_psi2s_pbpb.root");
-   TFile *fnpjpsi_pbpb = new TFile("histos_npjpsi_pbpb.root");
+   TFile *fjpsi_pp = new TFile("files/histos_jpsi_pp.root");
+   TFile *fpsi2s_pp = new TFile("files/histos_psi2s_pp.root");
+   TFile *fnpjpsi_pp = new TFile("files/histos_npjpsi_pp.root");
+   TFile *fjpsi_pbpb = new TFile("files/histos_jpsi_pbpb.root");
+   TFile *fpsi2s_pbpb = new TFile("files/histos_psi2s_pbpb.root");
+   TFile *fnpjpsi_pbpb = new TFile("files/histos_npjpsi_pbpb.root");
+
+   ofstream file_nocut("files/syst_PbPb_eff_MCstat_nocut.csv");
+   ofstream file_ctaucut("files/syst_PbPb_eff_MCstat_ctaucut.csv");
+   file_nocut << "MC statistics in efficiency (no ctau cut)" << endl;
+   file_ctaucut << "MC statistics in efficiency (with ctau cut)" << endl;
 
    // first, let's draw simple efficiencies
    // we'll draw on the same plot the efficiencies for prompt and non-prompt J/psi, and psi(2S)
@@ -30,11 +36,11 @@ void plotEffs() {
    TString colltag, deptag, raptag, cuttag;
    for (int icoll=0; icoll<2; icoll++) {
       colltag = (icoll==0) ? "pp" : "pbpb";
-      TString name = "histos_jpsi_" + colltag + ".root";
+      TString name = "files/histos_jpsi_" + colltag + ".root";
       TFile *fjpsi = new TFile(name);
-      name = "histos_psi2s_" + colltag + ".root";
+      name = "files/histos_psi2s_" + colltag + ".root";
       TFile *fpsi2s = new TFile(name);
-      name = "histos_npjpsi_" + colltag + ".root";
+      name = "files/histos_npjpsi_" + colltag + ".root";
       TFile *fnpjpsi = new TFile(name);
 
       for (int idep=0; idep<2; idep++) {
@@ -101,7 +107,7 @@ void plotEffs() {
                      + ((irap==0) ? "|y|<1.6" : "|y|>1.6") + TString(", ") 
                      + ((icut==0) ? "no cut" : "ctau3D cut"));
 
-               TString cname = "singleff_" + colltag + "_" + deptag + "_" + raptag + "_" + cuttag;
+               TString cname = "files/singleff_" + colltag + "_" + deptag + "_" + raptag + "_" + cuttag;
 
                c1->SaveAs(cname + ".root");
                c1->SaveAs(cname + ".png");
@@ -158,7 +164,7 @@ void plotEffs() {
                tl.DrawLatex((idep==0) ? 1.5 : 10, 1.4, ((irap==0) ? "|y|<1.6" : "|y|>1.6") + TString(", ") 
                      + ((icut==0) ? "no cut" : "ctau3D cut"));
 
-               cname = "simpleratio_" + deptag + "_" + raptag + "_" + cuttag;
+               cname = "files/simpleratio_" + deptag + "_" + raptag + "_" + cuttag;
 
                c1->SaveAs(cname + ".root");
                c1->SaveAs(cname + ".png");
@@ -175,20 +181,48 @@ void plotEffs() {
                hpsi2spbpb->Draw("E1 same");
                tl.DrawLatex((idep==0) ? 1.5 : 10, 1.4, ((irap==0) ? "|y|<1.6" : "|y|>1.6") + TString(", ") 
                      + ((icut==0) ? "no cut" : "ctau3D cut"));
-               cname = "doubleratio_" + deptag + "_" + raptag + "_" + cuttag;
+               cname = "files/doubleratio_" + deptag + "_" + raptag + "_" + cuttag;
                c1->SaveAs(cname + ".root");
                c1->SaveAs(cname + ".png");
                c1->SaveAs(cname + ".pdf");
+
+               // print the uncertainty values to the csv
+               ofstream *file = (icut==0) ? &file_nocut : &file_ctaucut;
+               double rapmin, rapmax, ptmin, ptmax, centmin, centmax, value;
+               rapmin = (irap==0) ? 0 : 1.6;
+               rapmax = (irap==0) ? 1.6 : 2.4;
+               if (idep==0) {
+                  centmin = 0;
+                  centmax = 200;
+                  for (int ibin=1; ibin<hpsi2spbpb->GetNbinsX()+1; ibin++) {
+                     ptmin = hpsi2spbpb->GetXaxis()->GetBinLowEdge(ibin);
+                     ptmax = hpsi2spbpb->GetXaxis()->GetBinUpEdge(ibin);
+                     value = hpsi2spbpb->GetBinError(ibin);
+                     *file << rapmin << ", " << rapmax << ", " << ptmin << ", " << ptmax << ", " << centmin << ", " << centmax << ", " << value << endl;
+                  }
+               } else {
+                  ptmin = (irap==0) ? 6.5 : 3;
+                  ptmax = 30;
+                  for (int ibin=1; ibin<hpsi2spbpb->GetNbinsX()+1; ibin++) {
+                     centmin = hpsi2spbpb->GetXaxis()->GetBinLowEdge(ibin);
+                     centmax = hpsi2spbpb->GetXaxis()->GetBinUpEdge(ibin);
+                     value = hpsi2spbpb->GetBinError(ibin);
+                     *file << rapmin << ", " << rapmax << ", " << ptmin << ", " << ptmax << ", " << centmin << ", " << centmax << ", " << value << endl;
+                  }
+               }
 
                // clean behind ourselves
                delete c1;
                delete tg_jpsi; delete tg_psi2s; delete tg_npjpsi;
                delete haxes;
                delete tleg; delete tleg2;
-            } // icut loop (with / without ctau cut)
+            } // icut loop (without / with ctau cut)
          } // irap loop (mid / fwd)
       } // idep loop (pt / centrality)
    } // icoll loop (pp / pbpb)
+
+   file_nocut.close();
+   file_ctaucut.close();
 }
 
 void setErr(TH1F *hist) {

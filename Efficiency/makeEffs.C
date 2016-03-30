@@ -42,20 +42,20 @@ void makeEffs() {
    // make the efficiency histos
    cout << "Efficiencies for pp prompt Jpsi" << endl;
    oniaEff obj_jpsi_pp(tch_jpsi_pp);
-   obj_jpsi_pp.Loop("histos_jpsi_pp.root",false);
+   obj_jpsi_pp.Loop("files/histos_jpsi_pp.root",false);
    cout << "Efficiencies for pp prompt Psi(2S)" << endl;
    oniaEff obj_psi2s_pp(tch_psi2s_pp);
-   obj_psi2s_pp.Loop("histos_psi2s_pp.root",false);
+   obj_psi2s_pp.Loop("files/histos_psi2s_pp.root",false);
    cout << "Efficiencies for pp non-prompt Jpsi" << endl;
    oniaEff obj_npjpsi_pp(tch_npjpsi_pp);
-   obj_npjpsi_pp.Loop("histos_npjpsi_pp.root",false);
+   obj_npjpsi_pp.Loop("files/histos_npjpsi_pp.root",false);
    cout << "Efficiencies for pbpb prompt Jpsi" << endl;
    oniaEff obj_jpsi_pbpb(tch_jpsi_pbpb);
-   obj_jpsi_pbpb.Loop("histos_jpsi_pbpb.root",true);
+   obj_jpsi_pbpb.Loop("files/histos_jpsi_pbpb.root",true);
    cout << "Efficiencies for pbpb prompt Psi(2S)" << endl;
    oniaEff obj_psi2s_pbpb(tch_psi2s_pbpb);
-   obj_psi2s_pbpb.Loop("histos_psi2s_pbpb.root",true);
+   obj_psi2s_pbpb.Loop("files/histos_psi2s_pbpb.root",true);
    cout << "Efficiencies for pbpb non-prompt Jpsi" << endl;
    oniaEff obj_npjpsi_pbpb(tch_npjpsi_pbpb);
-   obj_npjpsi_pbpb.Loop("histos_npjpsi_pbpb.root",true);
+   obj_npjpsi_pbpb.Loop("files/histos_npjpsi_pbpb.root",true);
 }
