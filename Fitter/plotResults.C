@@ -5,6 +5,7 @@
 
 #include "Macros/Utilities/initClasses.h"
 #include "Macros/Utilities/resultUtils.h"
+#include "Systematics/syst.h"
 
 #include <vector>
 #include <map>
@@ -31,7 +32,7 @@ const bool  doratio = true; // true -> look for separate PP and PbPb files, fals
 
 RooRealVar* poiFromFile(const char* filename, const char* token="");
 // plot
-void plotGraph(map<anabin, TGraphAsymmErrors*> theGraphs, string xaxis, string outputDir);
+void plotGraph(map<anabin, TGraphAsymmErrors*> theGraphs, map<anabin, TGraphAsymmErrors*> theGraphs_syst, string xaxis, string outputDir, map<anabin, syst> gsyst);
 void plot(vector<anabin> thecats, string xaxis, string workDirName);
 
 
@@ -74,31 +75,48 @@ void plot(vector<anabin> thecats, string xaxis, string outputDir) {
       theFiles = fileList(outputDir.c_str(),"PbPb");
       theFiles2 = fileList(outputDir.c_str(),"PP");
 
-      if (theFiles.size() != theFiles2.size()) {
-         cout << "I found a different number of pp and PbPb files!! This is no good, I give up." << endl;
-         return;
-      }
+      // if (theFiles.size() != theFiles2.size()) {
+      //    cout << "I found a different number of pp and PbPb files!! This is no good, I give up." << endl;
+      //    return;
+      // }
    }
 
    map<anabin, RooRealVar*> theVars;
 
    vector<TString>::const_iterator it,it2;
-   if (doratio) it2=theFiles2.begin();
    for (vector<TString>::const_iterator it=theFiles.begin(); it!=theFiles.end(); it++) {
       anabin thebin = binFromFile(it->Data());
       if (!doratio) {
          theVars[thebin] = poiFromFile(it->Data(),"_PbPbvsPP");
       } else {
          RooRealVar *num = poiFromFile(it->Data(),"_PbPb");
+
+         // force the centrality to 0-200 for pp
+         anabin thebinpp = thebin;
+         binI centbin(0,200);
+         thebinpp.setcentbin(centbin);
+
+         // look for the pp file corresponding to the pbpb one
+         bool found=false;
+         for (it2=theFiles2.begin(); it2!=theFiles2.end(); it2++) {
+            if (binFromFile(it2->Data()) == thebinpp) {
+               found=true;
+               break;
+            }
+         }
+         if (!found) {
+            cout << "Error! I did not find the PP file for " << *it << endl;
+            return;
+         }
          RooRealVar *den = poiFromFile(it2->Data(),"_PP");
          theVars[thebin] = ratioVar(num,den);
       }
-      it2++;
    }
 
    map<anabin, vector<anabin> > theBins;
    map<anabin, vector<RooRealVar*> > theVarsBinned;
    map<anabin, TGraphAsymmErrors* > theGraphs;
+   map<anabin, TGraphAsymmErrors* > theGraphs_syst;
 
    // initialize the maps
    for (vector<anabin>::const_iterator it=thecats.begin(); it!=thecats.end(); it++) {
@@ -113,6 +131,10 @@ void plot(vector<anabin> thecats, string xaxis, string outputDir) {
       theVarsBinned[thebin].push_back(it->second);
    }
 
+   // systematics
+   map<anabin, syst> syst_PP = readSyst_all("PP");
+   map<anabin, syst> syst_PbPb = readSyst_all("PbPb");
+
    // make TGraphAsymmErrors
    int cnt=0;
    for (vector<anabin>::const_iterator it=thecats.begin(); it!=thecats.end(); it++) {
@@ -122,37 +144,50 @@ void plot(vector<anabin> thecats, string xaxis, string outputDir) {
          theGraphs[*it] = NULL;
          continue;
       }
+
       theGraphs[*it] = new TGraphAsymmErrors(n);
       theGraphs[*it]->SetName(Form("bin_%i",cnt));
+      theGraphs_syst[*it] = new TGraphAsymmErrors(n);
+      theGraphs_syst[*it]->SetName(Form("bin_%i_syst",cnt));
+
       for (int i=0; i<n; i++) {
          double x, exl, exh, y, eyl, eyh;
+         double exsyst, eysyst;
          double low, high; 
+         anabin thebin = theBins[*it][i];
          if (xaxis=="pt") {
-            low= theBins[*it][i].ptbin().low();
-            high = theBins[*it][i].ptbin().high();
+            low= thebin.ptbin().low();
+            high = thebin.ptbin().high();
             x = (low+high)/2.;
             exh = (high-low)/2.;
             exl = (high-low)/2.;
+            exsyst = 0.5;
+            eysyst = sqrt(pow(syst_PP[thebin].value,2) + pow(syst_PbPb[thebin].value,2)); // quadratic sum of PP and PbPb systs
          }
          if (xaxis=="cent") {
-            low= theBins[*it][i].centbin().low();
-            high = theBins[*it][i].centbin().high();
+            low= thebin.centbin().low();
+            high = thebin.centbin().high();
             x = HI::findNpartAverage(low,high);
             exl = 0.;
             exh = 0.;
+            exsyst = 5;
+            eysyst = syst_PbPb[thebin].value; // only PbPb syst: the PP one will go to a dedicated box
          }
          y = theVarsBinned[*it][i]->getVal();
          eyl = fabs(theVarsBinned[*it][i]->getErrorLo());
          eyh = theVarsBinned[*it][i]->getErrorHi();
+         eysyst = y*eysyst;
          theGraphs[*it]->SetPoint(i,x,y);
          theGraphs[*it]->SetPointError(i,exl,exh,eyl,eyh);
-         cout << x << " " << y << " " << eyl << " " << eyh << endl;
+         theGraphs_syst[*it]->SetPoint(i,x,y);
+         theGraphs_syst[*it]->SetPointError(i,exsyst,exsyst,eysyst,eysyst);
+         cout << x << " " << y << " " << eyl << " " << eyh << " " << eysyst << endl;
       }
       cnt++;
    }
 
    // plot
-   plotGraph(theGraphs, xaxis, outputDir);
+   plotGraph(theGraphs, theGraphs_syst, xaxis, outputDir, syst_PP);
 }
 
 RooRealVar* poiFromFile(const char* filename, const char* token) {
@@ -160,7 +195,7 @@ RooRealVar* poiFromFile(const char* filename, const char* token) {
 }
 
 
-void plotGraph(map<anabin, TGraphAsymmErrors*> theGraphs, string xaxis, string outputDir) {
+void plotGraph(map<anabin, TGraphAsymmErrors*> theGraphs, map<anabin, TGraphAsymmErrors*> theGraphs_syst, string xaxis, string outputDir, map<anabin, syst> gsyst) {
    setTDRStyle();
 
    TCanvas *c1 = new TCanvas("c1","c1",600,600);
@@ -182,36 +217,64 @@ void plotGraph(map<anabin, TGraphAsymmErrors*> theGraphs, string xaxis, string o
    haxes->Draw();
    line.Draw();
 
-   TLegend *tleg = new TLegend(0.51,0.14,0.85,0.34);
+   TLegend *tleg = new TLegend(0.16,0.73,0.50,0.89);
    tleg->SetBorderSize(0);
+   tleg->SetTextSize(0.03);
 
    int cnt=0;
-   for (map<anabin, TGraphAsymmErrors*>::const_iterator it=theGraphs.begin(); it!=theGraphs.end(); it++) {
+   map<anabin, TGraphAsymmErrors*>::const_iterator it=theGraphs.begin();
+   map<anabin, TGraphAsymmErrors*>::const_iterator it_syst=theGraphs_syst.begin();
+   for (; it!=theGraphs.end(); it++) {
       TGraphAsymmErrors* tg = it->second;
-      if (!tg) continue;
+      TGraphAsymmErrors* tg_syst = it_syst->second;
+      if (!tg || !tg_syst) continue;
 
       if (cnt==0) {
          tg->SetMarkerStyle(kFullSquare);
          tg->SetMarkerColor(kRed);
          tg->SetLineColor(kRed);
+         tg_syst->SetFillColorAlpha(kRed, 0.5);
       } else if (cnt==1) {
          tg->SetMarkerStyle(kFullCircle);
          tg->SetMarkerColor(kBlue);
          tg->SetLineColor(kBlue);
+         tg_syst->SetFillColorAlpha(kBlue, 0.5);
       } else if (cnt==2) {
          tg->SetMarkerStyle(kFullTriangleUp);
          tg->SetMarkerColor(kGreen);
          tg->SetLineColor(kGreen);
+         tg_syst->SetFillColorAlpha(kGreen, 0.5);
       }
+      tg_syst->Draw("2");      
       tg->Draw("P");      
 
-      TString raplabel = Form("%.1f < |y| < %.1f ; ",it->first.rapbin().low(),it->first.rapbin().high());
+      TString raplabel = Form("%.1f < |y| < %.1f, ",it->first.rapbin().low(),it->first.rapbin().high());
       TString otherlabel = "BWAA";
-      if (xaxis == "pt") otherlabel = Form("%i\%-%i\%",(int) (it->first.centbin().low()/2.), (int) (it->first.centbin().high()/2.));
-      if (xaxis == "cent") otherlabel = Form("%.1f\%-%.1f\%",it->first.ptbin().low(), it->first.ptbin().high());
+      if (xaxis == "pt") otherlabel.Form("%i%s-%i%s",(int) (it->first.centbin().low()/2.), "%", (int) (it->first.centbin().high()/2.), "%");
+      if (xaxis == "cent") otherlabel.Form("%.1f < p_{T} < %.1f GeV/c",it->first.ptbin().low(), it->first.ptbin().high());
       tleg->AddEntry(tg, (raplabel + otherlabel), "p");
 
+      // in the case where the centrality dependence is plotted: treat the PP uncertainties as global systematics
+      if (xaxis == "cent") {
+         double x, dx, y, dy;
+         dx = 10;
+         x = 2*dx*cnt + dx;
+         y = 1;
+         anabin thebin(it->first.rapbin().low(),
+               it->first.rapbin().high(),
+               it->first.ptbin().low(),
+               it->first.ptbin().high(),
+               0,200);
+         dy = gsyst[thebin].value;
+         TBox *tbox = new TBox(x-dx,y-dy,x+dx,y+dy);
+         if (cnt==0) tbox->SetFillColorAlpha(kRed, 0.5);
+         else if (cnt==1) tbox->SetFillColorAlpha(kBlue, 0.5);
+         else if (cnt==2) tbox->SetFillColorAlpha(kRed, 0.5);
+         tbox->Draw();
+      }
+
       cnt++;
+      it_syst++;
    }
 
    tleg->Draw();
