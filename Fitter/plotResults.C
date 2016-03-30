@@ -82,6 +82,7 @@ void plot(vector<anabin> thecats, string xaxis, string outputDir) {
    }
 
    map<anabin, RooRealVar*> theVars;
+   map<anabin,syst> stat_PP; // statistical uncertainty on PP fits (useful for the case of the centrality dependence)
 
    vector<TString>::const_iterator it,it2;
    for (vector<TString>::const_iterator it=theFiles.begin(); it!=theFiles.end(); it++) {
@@ -109,7 +110,11 @@ void plot(vector<anabin> thecats, string xaxis, string outputDir) {
             return;
          }
          RooRealVar *den = poiFromFile(it2->Data(),"_PP");
-         theVars[thebin] = ratioVar(num,den);
+         theVars[thebin] = ratioVar(num,den,!(xaxis=="cent")); // if plotting the centrality dependence, do not put the pp stat
+         syst thestat_PP;
+         thestat_PP.name = "stat_PP";
+         thestat_PP.value = den->getVal() != 0 ? den->getError()/den->getVal() : 0;
+         stat_PP[thebinpp] = thestat_PP;
       }
    }
 
@@ -133,6 +138,12 @@ void plot(vector<anabin> thecats, string xaxis, string outputDir) {
 
    // systematics
    map<anabin, syst> syst_PP = readSyst_all("PP");
+   if (doratio && xaxis=="cent") { // put the PP stat error into the PP syst, that will go into a box at 1
+      vector< map<anabin, syst> > all_PP;
+      all_PP.push_back(syst_PP);
+      all_PP.push_back(stat_PP);
+      syst_PP = combineSyst(all_PP,"statsyst_PP");
+   }
    map<anabin, syst> syst_PbPb = readSyst_all("PbPb");
 
    // make TGraphAsymmErrors
@@ -172,6 +183,7 @@ void plot(vector<anabin> thecats, string xaxis, string outputDir) {
             exh = 0.;
             exsyst = 5;
             eysyst = syst_PbPb[thebin].value; // only PbPb syst: the PP one will go to a dedicated box
+            // also add
          }
          y = theVarsBinned[*it][i]->getVal();
          eyl = fabs(theVarsBinned[*it][i]->getErrorLo());
@@ -266,6 +278,7 @@ void plotGraph(map<anabin, TGraphAsymmErrors*> theGraphs, map<anabin, TGraphAsym
                it->first.ptbin().high(),
                0,200);
          dy = gsyst[thebin].value;
+         cout << "global syst: " << dy << endl;
          TBox *tbox = new TBox(x-dx,y-dy,x+dx,y+dy);
          if (cnt==0) tbox->SetFillColorAlpha(kRed, 0.5);
          else if (cnt==1) tbox->SetFillColorAlpha(kBlue, 0.5);
