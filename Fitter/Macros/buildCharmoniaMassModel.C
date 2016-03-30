@@ -343,6 +343,219 @@ bool addBackgroundMassModel(RooWorkspace& ws, string object, MassModel model, ma
 
       cout << Form("[INFO] %s Background 6th Order Chebychev PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break; 
 
+    case (MassModel::ExpChebychev1): 
+
+      // check that all input parameters are defined 
+      if (!( 
+            parIni.count(Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))) 
+             )) { 
+	cout << Form("[ERROR] Initial parameters where not found for %s Background First Order Exponential Chebychev in %s", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; return false;
+      }
+
+      // create the variables for this model        
+      ws.factory( parIni[Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+
+      // create the PDF                 
+      ws.factory(Form("Chebychev::%s(%s, {%s})", Form("pdfMASSPol_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
+		      Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
+		      ));
+
+      ws.factory(Form("Exponential::%s(%s, One[1.0])", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("pdfMASSPol_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
+                      ));
+
+      ws.factory(Form("RooExtendPdf::%s(%s,%s)", Form("pdfMASSTot_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      parIni[Form("N_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+                      ));
+
+      cout << Form("[INFO] %s Background 1st Order Exponential Chebychev PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break; 
+   
+    case (MassModel::ExpChebychev2): 
+
+      // check that all input parameters are defined 
+      if (!( 
+            parIni.count(Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))),
+            parIni.count(Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")))  
+             )) { 
+	cout << Form("[ERROR] Initial parameters where not found for %s Background Second Order Exponential Chebychev in %s", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; return false;
+      }
+
+      // create the variables for this model        
+      ws.factory( parIni[Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+
+      // create the PDF                 
+      ws.factory(Form("Chebychev::%s(%s, {%s, %s})", Form("pdfMASSPol_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
+		      Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
+		      ));
+
+      ws.factory(Form("Exponential::%s(%s, One[1.0])", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("pdfMASSPol_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
+                      ));
+
+      ws.factory(Form("RooExtendPdf::%s(%s,%s)", Form("pdfMASSTot_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      parIni[Form("N_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+                      ));
+
+      cout << Form("[INFO] %s Background 2nd Order Exponential Chebychev PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break; 
+   
+    case (MassModel::ExpChebychev3): 
+
+      // check that all input parameters are defined 
+      if (!( 
+            parIni.count(Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))),
+            parIni.count(Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))),
+            parIni.count(Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")))  
+             )) { 
+	cout << Form("[ERROR] Initial parameters where not found for %s Background Third Order Exponential Chebychev in %s", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; return false;
+      }
+
+      // create the variables for this model        
+      ws.factory( parIni[Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+
+      // create the PDF                 
+      ws.factory(Form("Chebychev::%s(%s, {%s, %s, %s})", Form("pdfMASSPol_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
+		      Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
+		      ));
+
+      ws.factory(Form("Exponential::%s(%s, One[1.0])", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("pdfMASSPol_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
+                      ));
+
+      ws.factory(Form("RooExtendPdf::%s(%s,%s)", Form("pdfMASSTot_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      parIni[Form("N_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+                      ));
+
+      cout << Form("[INFO] %s Background 3rd Order Exponential Chebychev PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break; 
+   
+    case (MassModel::ExpChebychev4): 
+
+      // check that all input parameters are defined 
+      if (!( 
+            parIni.count(Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))),
+            parIni.count(Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))),
+            parIni.count(Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))),
+            parIni.count(Form("lambda4_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")))    
+             )) { 
+	cout << Form("[ERROR] Initial parameters where not found for %s Background Fourth Order Exponential Chebychev in %s", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; return false;
+      }
+
+      // create the variables for this model        
+      ws.factory( parIni[Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("lambda4_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+
+      // create the PDF                 
+      ws.factory(Form("Chebychev::%s(%s, {%s, %s, %s, %s})", Form("pdfMASSPol_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
+		      Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("lambda4_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
+		      ));
+
+      ws.factory(Form("Exponential::%s(%s, One[1.0])", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("pdfMASSPol_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
+                      ));
+
+      ws.factory(Form("RooExtendPdf::%s(%s,%s)", Form("pdfMASSTot_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      parIni[Form("N_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+                      ));
+
+      cout << Form("[INFO] %s Background 4th Order Exponential Chebychev PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break; 
+   
+    case (MassModel::ExpChebychev5): 
+
+      // check that all input parameters are defined 
+      if (!( 
+            parIni.count(Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))),
+            parIni.count(Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))),
+            parIni.count(Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))),
+            parIni.count(Form("lambda4_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))),
+            parIni.count(Form("lambda5_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")))    
+             )) { 
+	cout << Form("[ERROR] Initial parameters where not found for %s Background Fifth Order Exponential Chebychev in %s", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; return false;
+      }
+
+      // create the variables for this model        
+      ws.factory( parIni[Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("lambda4_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("lambda5_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+
+      // create the PDF                 
+      ws.factory(Form("Chebychev::%s(%s, {%s, %s, %s, %s, %s})", Form("pdfMASSPol_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
+		      Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("lambda4_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("lambda5_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
+		      ));
+
+      ws.factory(Form("Exponential::%s(%s, One[1.0])", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("pdfMASSPol_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
+                      ));
+
+      ws.factory(Form("RooExtendPdf::%s(%s,%s)", Form("pdfMASSTot_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      parIni[Form("N_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+                      ));
+
+      cout << Form("[INFO] %s Background 5th Order Exponential Chebychev PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break; 
+   
+    case (MassModel::ExpChebychev6): 
+
+      // check that all input parameters are defined 
+      if (!( 
+            parIni.count(Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))),
+            parIni.count(Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))),
+            parIni.count(Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))),
+            parIni.count(Form("lambda4_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))),
+            parIni.count(Form("lambda5_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))),
+            parIni.count(Form("lambda6_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")))     
+             )) { 
+	cout << Form("[ERROR] Initial parameters where not found for %s Background Sixth Order Exponential Chebychev in %s", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; return false;
+      }
+
+      // create the variables for this model        
+      ws.factory( parIni[Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("lambda4_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("lambda5_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+      ws.factory( parIni[Form("lambda6_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
+
+      // create the PDF                 
+      ws.factory(Form("Chebychev::%s(%s, {%s, %s, %s, %s, %s, %s})", Form("pdfMASSPol_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
+		      Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("lambda4_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("lambda5_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
+		      Form("lambda6_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
+		      ));
+
+      ws.factory(Form("Exponential::%s(%s, One[1.0])", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("pdfMASSPol_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
+                      ));
+
+      ws.factory(Form("RooExtendPdf::%s(%s,%s)", Form("pdfMASSTot_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      parIni[Form("N_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+                      ));
+
+      cout << Form("[INFO] %s Background 6th Order Exponential Chebychev PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break; 
+   
     case (MassModel::Exponential): 
 
       // check that all input parameters are defined 
@@ -366,7 +579,7 @@ bool addBackgroundMassModel(RooWorkspace& ws, string object, MassModel model, ma
                       ));
 
       cout << Form("[INFO] %s Background Exponential PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break;
-      
+   
     default :
       
       cout << "[ERROR] Selected Background Mass Model: " << parIni[Form("Model_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))] << " has not been implemented" << endl; return false;
@@ -718,9 +931,31 @@ void setDefaultParameters(map<string, string> &parIni, bool isPbPb, double numEn
       parIni[Form("lambda6_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda6_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.0, -1.0, 1.0);
     }
   } 
+  // DEFAULT BACKGROUND MASS MODEL PARAMETERS
+  else if (parIni[Form("Model_Bkg_%s",(isPbPb?"PbPb":"PP"))].find("ExpChebychev")!=std::string::npos) {
+    if (parIni.count(Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP"))]=="") { 
+      parIni[Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.0, -1.0, 1.0);
+    }
+    if (parIni.count(Form("lambda2_Bkg_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("lambda2_Bkg_%s", (isPbPb?"PbPb":"PP"))]=="") { 
+      parIni[Form("lambda2_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda2_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.0, -1.0, 1.0);
+    }
+    if (parIni.count(Form("lambda3_Bkg_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("lambda3_Bkg_%s", (isPbPb?"PbPb":"PP"))]=="") { 
+      parIni[Form("lambda3_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda3_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.0, -1.0, 1.0);
+    }
+    if (parIni.count(Form("lambda4_Bkg_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("lambda4_Bkg_%s", (isPbPb?"PbPb":"PP"))]=="") { 
+      parIni[Form("lambda4_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda4_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.0, -1.0, 1.0);
+    }
+    if (parIni.count(Form("lambda5_Bkg_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("lambda5_Bkg_%s", (isPbPb?"PbPb":"PP"))]=="") { 
+      parIni[Form("lambda5_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda5_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.0, -1.0, 1.0);
+    }
+    if (parIni.count(Form("lambda6_Bkg_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("lambda6_Bkg_%s", (isPbPb?"PbPb":"PP"))]=="") { 
+      parIni[Form("lambda6_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda6_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.0, -1.0, 1.0);
+    }
+  } 
+
   else if (parIni[Form("Model_Bkg_%s",(isPbPb?"PbPb":"PP"))].find("Exponential")!=std::string::npos) {
     if (parIni.count(Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP"))]=="") { 
-      parIni[Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.05, -100.0, 100.0);
+      parIni[Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("lambda1_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.0, -1.0, 1.0);
     }
   }
  

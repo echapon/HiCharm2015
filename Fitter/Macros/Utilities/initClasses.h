@@ -138,7 +138,13 @@ enum class MassModel
     Chebychev4=9,
     Chebychev5=10,
     Chebychev6=11,
-    Exponential=12
+    ExpChebychev1=12,
+    ExpChebychev2=13,
+    ExpChebychev3=14,
+    ExpChebychev4=15,
+    ExpChebychev5=16,
+    ExpChebychev6=17,
+    Exponential=18
 };
 map< string , MassModel > MassModelDictionary = {
   {"InvalidModel",            MassModel::InvalidModel},
@@ -153,6 +159,12 @@ map< string , MassModel > MassModelDictionary = {
   {"Chebychev4",              MassModel::Chebychev4},
   {"Chebychev5",              MassModel::Chebychev5},
   {"Chebychev6",              MassModel::Chebychev6},
+  {"ExpChebychev1",           MassModel::ExpChebychev1},
+  {"ExpChebychev2",           MassModel::ExpChebychev2},
+  {"ExpChebychev3",           MassModel::ExpChebychev3},
+  {"ExpChebychev4",           MassModel::ExpChebychev4},
+  {"ExpChebychev5",           MassModel::ExpChebychev5},
+  {"ExpChebychev6",           MassModel::ExpChebychev6},
   {"Exponential",             MassModel::Exponential}
 };
 
