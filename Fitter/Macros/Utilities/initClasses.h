@@ -91,12 +91,14 @@ typedef struct KinCuts {
   DiMuonPar  dMuon;
 } KinCuts;
 
-bool isEqualKinCuts(struct KinCuts cutA, struct KinCuts cutB) 
+bool isEqualKinCuts(struct KinCuts cutA, struct KinCuts cutB, bool isPbPb) 
 {
   bool cond = true;
 
-  cond = cond && (cutA.Centrality.Start    == cutB.Centrality.Start);
-  cond = cond && (cutA.Centrality.End      == cutB.Centrality.End);
+  if (isPbPb) {
+    cond = cond && (cutA.Centrality.Start    == cutB.Centrality.Start);
+    cond = cond && (cutA.Centrality.End      == cutB.Centrality.End);
+  }
 
   cond = cond && (cutA.sMuon.Pt.Min        == cutB.sMuon.Pt.Min);
   cond = cond && (cutA.sMuon.Pt.Max        == cutB.sMuon.Pt.Max);
@@ -130,12 +132,12 @@ enum class MassModel
     SingleCrystalBall=3, 
     DoubleCrystalBall=4, 
     GaussianAndCrystalBall=5, 
-    FirstOrderChebychev=6, 
-    SecondOrderChebychev=7, 
-    ThirdOrderChebychev=8, 
-    FourthOrderChebychev=9,
-    FifthOrderChebychev=10,
-    SixthOrderChebychev=11,
+    Chebychev1=6, 
+    Chebychev2=7, 
+    Chebychev3=8, 
+    Chebychev4=9,
+    Chebychev5=10,
+    Chebychev6=11,
     Exponential=12
 };
 map< string , MassModel > MassModelDictionary = {
@@ -145,12 +147,12 @@ map< string , MassModel > MassModelDictionary = {
   {"SingleCrystalBall",       MassModel::SingleCrystalBall},
   {"DoubleCrystalBall",       MassModel::DoubleCrystalBall},
   {"GaussianAndCrystalBall",  MassModel::GaussianAndCrystalBall},
-  {"FirstOrderChebychev",     MassModel::FirstOrderChebychev},
-  {"SecondOrderChebychev",    MassModel::SecondOrderChebychev},
-  {"ThirdOrderChebychev",     MassModel::ThirdOrderChebychev},
-  {"FourthOrderChebychev",    MassModel::FourthOrderChebychev},
-  {"FifthOrderChebychev",     MassModel::FifthOrderChebychev},
-  {"SixthOrderChebychev",     MassModel::SixthOrderChebychev},
+  {"Chebychev1",              MassModel::Chebychev1},
+  {"Chebychev2",              MassModel::Chebychev2},
+  {"Chebychev3",              MassModel::Chebychev3},
+  {"Chebychev4",              MassModel::Chebychev4},
+  {"Chebychev5",              MassModel::Chebychev5},
+  {"Chebychev6",              MassModel::Chebychev6},
   {"Exponential",             MassModel::Exponential}
 };
 

@@ -77,65 +77,68 @@ bool buildCharmoniaMassModel(RooWorkspace& ws, struct CharmModel model, map<stri
   }
   // Total PDF
   string pdfName = Form("pdfMASS_Tot_%s", (isPbPb?"PbPb":"PP"));
+  RooAbsPdf *themodel = NULL;
   if (incJpsi && incPsi2S && incBkg) {
-    ws.factory(Form("SUM::%s(%s*%s, %s*%s, %s*%s)", pdfName.c_str(),
-		    parIni[Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP"))].c_str(),
-		    Form("pdfMASS_Jpsi_%s", (isPbPb?"PbPb":"PP")),
-		    parIni[Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP"))].c_str(),
-		    Form("pdfMASS_Psi2S_%s", (isPbPb?"PbPb":"PP")),
-		    parIni[Form("N_Bkg_%s", (isPbPb?"PbPb":"PP"))].c_str(),
-		    Form("pdfMASS_Bkg_%s", (isPbPb?"PbPb":"PP"))
-		    ));
+    themodel = new RooAddPdf(pdfName.c_str(), pdfName.c_str(), 
+                      RooArgList( 
+                                 *ws.pdf(Form("pdfMASSTot_Jpsi_%s", (isPbPb?"PbPb":"PP"))), 
+                                 *ws.pdf(Form("pdfMASSTot_Psi2S_%s", (isPbPb?"PbPb":"PP"))), 
+                                 *ws.pdf(Form("pdfMASSTot_Bkg_%s", (isPbPb?"PbPb":"PP"))) 
+                                  )
+                      );
   }
   if (incJpsi && incPsi2S && !incBkg) {
-    ws.factory(Form("SUM::%s(%s*%s, %s*%s)", pdfName.c_str(),
-		    parIni[Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP"))].c_str(),
-		    Form("pdfMASS_Jpsi_%s", (isPbPb?"PbPb":"PP")),
-		    parIni[Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP"))].c_str(),
-		    Form("pdfMASS_Psi2S_%s", (isPbPb?"PbPb":"PP"))
-		    ));
+    themodel = new RooAddPdf(pdfName.c_str(), pdfName.c_str(), 
+                      RooArgList( 
+                                 *ws.pdf(Form("pdfMASSTot_Jpsi_%s", (isPbPb?"PbPb":"PP"))), 
+                                 *ws.pdf(Form("pdfMASSTot_Psi2S_%s", (isPbPb?"PbPb":"PP")))
+                                  )
+                      );
   }
   if (incJpsi && !incPsi2S && incBkg) {
-    ws.factory(Form("SUM::%s(%s*%s, %s*%s)", pdfName.c_str(),
-		    parIni[Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP"))].c_str(),
-		    Form("pdfMASS_Jpsi_%s", (isPbPb?"PbPb":"PP")),
-		    parIni[Form("N_Bkg_%s", (isPbPb?"PbPb":"PP"))].c_str(),
-		    Form("pdfMASS_Bkg_%s", (isPbPb?"PbPb":"PP"))
-		    ));
+    themodel = new RooAddPdf(pdfName.c_str(), pdfName.c_str(), 
+                      RooArgList( 
+                                 *ws.pdf(Form("pdfMASSTot_Jpsi_%s", (isPbPb?"PbPb":"PP"))), 
+                                 *ws.pdf(Form("pdfMASSTot_Bkg_%s", (isPbPb?"PbPb":"PP")))
+                                  )
+                      );
   }
   if (!incJpsi && incPsi2S && incBkg) {
-    ws.factory(Form("SUM::%s(%s*%s, %s*%s)", pdfName.c_str(),
-		    parIni[Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP"))].c_str(),
-		    Form("pdfMASS_Psi2S_%s", (isPbPb?"PbPb":"PP")),
-		    parIni[Form("N_Bkg_%s", (isPbPb?"PbPb":"PP"))].c_str(),
-		    Form("pdfMASS_Bkg_%s", (isPbPb?"PbPb":"PP"))
-		    ));
+    themodel = new RooAddPdf(pdfName.c_str(), pdfName.c_str(), 
+                      RooArgList( 
+                                 *ws.pdf(Form("pdfMASSTot_Psi2S_%s", (isPbPb?"PbPb":"PP"))), 
+                                 *ws.pdf(Form("pdfMASSTot_Bkg_%s", (isPbPb?"PbPb":"PP")))
+                                  )
+                      );
   }
   if (incJpsi && !incPsi2S && !incBkg) {
-    ws.factory(Form("SUM::%s(%s*%s)", pdfName.c_str(),
-		    parIni[Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP"))].c_str(),
-		    Form("pdfMASS_Jpsi_%s", (isPbPb?"PbPb":"PP"))
-                    ));
+    themodel = new RooAddPdf(pdfName.c_str(), pdfName.c_str(), 
+                      RooArgList( 
+                                 *ws.pdf(Form("pdfMASSTot_Jpsi_%s", (isPbPb?"PbPb":"PP")))
+                                  )
+                      );
   }
   if (!incJpsi && incPsi2S && !incBkg) {
-    ws.factory(Form("SUM::%s(%s*%s)", pdfName.c_str(),
-		    parIni[Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP"))].c_str(),
-		    Form("pdfMASS_Psi2S_%s", (isPbPb?"PbPb":"PP"))
-		    ));
+    themodel = new RooAddPdf(pdfName.c_str(), pdfName.c_str(), 
+                      RooArgList( 
+                                 *ws.pdf(Form("pdfMASSTot_Psi2S_%s", (isPbPb?"PbPb":"PP")))
+                                  )
+                      );
   }
   if (!incJpsi && !incPsi2S && incBkg) {
-    ws.factory(Form("SUM::%s(%s*%s)", pdfName.c_str(),
-		    parIni[Form("N_Bkg_%s", (isPbPb?"PbPb":"PP"))].c_str(),
-		    Form("pdfMASS_Bkg_%s", (isPbPb?"PbPb":"PP"))
-		    ));
+    themodel = new RooAddPdf(pdfName.c_str(), pdfName.c_str(), 
+                      RooArgList( 
+                                 *ws.pdf(Form("pdfMASSTot_Bkg_%s", (isPbPb?"PbPb":"PP")))
+                                  )
+                      );
   }
   if (!incJpsi && !incPsi2S && !incBkg) {
     cout << "[ERROR] User did not include any model, please fix your input settings!" << endl; return false;
   }
+  ws.import(*themodel);
   ws.pdf(pdfName.c_str())->setNormRange("MassWindow");
 
   // save the initial values of the model we've just created
-  RooAbsPdf *themodel = ws.pdf(pdfName.c_str());
   RooRealVar *x = ws.var("invMass");
   RooArgSet* params = (RooArgSet*) themodel->getParameters(*x) ;
   pdfName+="_parIni";
@@ -151,7 +154,7 @@ bool addBackgroundMassModel(RooWorkspace& ws, string object, MassModel model, ma
   
   switch(model) 
     {  
-    case (MassModel::FirstOrderChebychev): 
+    case (MassModel::Chebychev1): 
 
       // check that all input parameters are defined 
       if (!( 
@@ -168,9 +171,14 @@ bool addBackgroundMassModel(RooWorkspace& ws, string object, MassModel model, ma
 		      Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
 		      ));
 
+      ws.factory(Form("RooExtendPdf::%s(%s,%s)", Form("pdfMASSTot_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      parIni[Form("N_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+                      ));
+
       cout << Form("[INFO] %s Background 1st Order Chebychev PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break;
  
-    case (MassModel::SecondOrderChebychev): 
+    case (MassModel::Chebychev2): 
 
       // check that all input parameters are defined 
       if (!( 
@@ -190,9 +198,14 @@ bool addBackgroundMassModel(RooWorkspace& ws, string object, MassModel model, ma
 		      Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
 		      ));
 
+      ws.factory(Form("RooExtendPdf::%s(%s,%s)", Form("pdfMASSTot_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      parIni[Form("N_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+                      ));
+
       cout << Form("[INFO] %s Background 2nd Order Chebychev PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break; 
 
-    case (MassModel::ThirdOrderChebychev): 
+    case (MassModel::Chebychev3): 
 
       // check that all input parameters are defined 
       if (!( 
@@ -215,9 +228,14 @@ bool addBackgroundMassModel(RooWorkspace& ws, string object, MassModel model, ma
 		      Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
 		      ));
 
-      cout << Form("[INFO] %s Background 3rd Order Polynomial PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break; 
+      ws.factory(Form("RooExtendPdf::%s(%s,%s)", Form("pdfMASSTot_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      parIni[Form("N_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+                      ));
 
-    case (MassModel::FourthOrderChebychev): 
+      cout << Form("[INFO] %s Background 3rd Order Chebychev PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break; 
+
+    case (MassModel::Chebychev4): 
 
       // check that all input parameters are defined 
       if (!( 
@@ -236,16 +254,21 @@ bool addBackgroundMassModel(RooWorkspace& ws, string object, MassModel model, ma
       ws.factory( parIni[Form("lambda4_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
 
       // create the PDF                 
-      ws.factory(Form("Polynomial::%s(%s, {%s, %s, %s, %s})", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
+      ws.factory(Form("Chebychev::%s(%s, {%s, %s, %s, %s})", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
 		      Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
 		      Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
 		      Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
 		      Form("lambda4_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
 		      ));
 
+      ws.factory(Form("RooExtendPdf::%s(%s,%s)", Form("pdfMASSTot_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      parIni[Form("N_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+                      ));
+
       cout << Form("[INFO] %s Background 4th Order Chebychev PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break; 
 
-    case (MassModel::FifthOrderChebychev): 
+    case (MassModel::Chebychev5): 
 
       // check that all input parameters are defined 
       if (!( 
@@ -266,7 +289,7 @@ bool addBackgroundMassModel(RooWorkspace& ws, string object, MassModel model, ma
       ws.factory( parIni[Form("lambda5_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
 
       // create the PDF                 
-      ws.factory(Form("Polynomial::%s(%s, {%s, %s, %s, %s, %s})", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
+      ws.factory(Form("Chebychev::%s(%s, {%s, %s, %s, %s, %s})", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
 		      Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
 		      Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
 		      Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
@@ -274,9 +297,14 @@ bool addBackgroundMassModel(RooWorkspace& ws, string object, MassModel model, ma
 		      Form("lambda5_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
 		      ));
 
+      ws.factory(Form("RooExtendPdf::%s(%s,%s)", Form("pdfMASSTot_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      parIni[Form("N_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+                      ));
+
       cout << Form("[INFO] %s Background 5th Order Chebychev PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break; 
 
-    case (MassModel::SixthOrderChebychev): 
+    case (MassModel::Chebychev6): 
 
       // check that all input parameters are defined 
       if (!( 
@@ -299,7 +327,7 @@ bool addBackgroundMassModel(RooWorkspace& ws, string object, MassModel model, ma
       ws.factory( parIni[Form("lambda6_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
 
       // create the PDF                 
-      ws.factory(Form("Polynomial::%s(%s, {%s, %s, %s, %s, %s, %s})", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
+      ws.factory(Form("Chebychev::%s(%s, {%s, %s, %s, %s, %s, %s})", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
 		      Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
 		      Form("lambda2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
 		      Form("lambda3_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
@@ -307,6 +335,11 @@ bool addBackgroundMassModel(RooWorkspace& ws, string object, MassModel model, ma
 		      Form("lambda5_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
 		      Form("lambda6_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
 		      ));
+
+      ws.factory(Form("RooExtendPdf::%s(%s,%s)", Form("pdfMASSTot_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      parIni[Form("N_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+                      ));
 
       cout << Form("[INFO] %s Background 6th Order Chebychev PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break; 
 
@@ -326,6 +359,11 @@ bool addBackgroundMassModel(RooWorkspace& ws, string object, MassModel model, ma
       ws.factory(Form("Exponential::%s(%s, %s)", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
 		      Form("lambda1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
 		      ));
+
+      ws.factory(Form("RooExtendPdf::%s(%s,%s)", Form("pdfMASSTot_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      parIni[Form("N_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+                      ));
 
       cout << Form("[INFO] %s Background Exponential PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break;
       
@@ -364,6 +402,11 @@ bool addSignalMassModel(RooWorkspace& ws, string object, MassModel model, map<st
 		      Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
 		      Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
 		      ));
+
+      ws.factory(Form("RooExtendPdf::%s(%s,%s)", Form("pdfMASSTot_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      parIni[Form("N_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+                      ));
     
       cout << Form("[INFO] %s Single Gaussian PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break;  
       
@@ -386,21 +429,26 @@ bool addSignalMassModel(RooWorkspace& ws, string object, MassModel model, map<st
       ws.factory( parIni[Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
 
       // create the two PDFs             
-      ws.factory(Form("Gaussian::%s(%s, %s, %s)", Form("pdfMASSG1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
+      ws.factory(Form("Gaussian::%s(%s, %s, %s)", Form("pdfMASS1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
                       Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
                       Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
-                      ));    
-      ws.factory(Form("Gaussian::%s(%s, %s, %s)", Form("pdfMASSG2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
+                      ));
+      ws.factory(Form("Gaussian::%s(%s, %s, %s)", Form("pdfMASS2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
                       Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
                       Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
-                      ));               
+                      ));
 
       // Sum the PDFs to get the signal PDF
       ws.factory(Form("SUM::%s(%s*%s, %s)", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
 		      Form("f_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
-		      Form("pdfMASSG1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
-		      Form("pdfMASSG2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
+		      Form("pdfMASS1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+		      Form("pdfMASS2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
 		      ));
+
+      ws.factory(Form("RooExtendPdf::%s(%s,%s)", Form("pdfMASSTot_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      parIni[Form("N_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+                      ));
 
       cout << Form("[INFO] %s Double Gaussian PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break; 
 
@@ -430,6 +478,11 @@ bool addSignalMassModel(RooWorkspace& ws, string object, MassModel model, map<st
 		      Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
 		      ));
 
+      ws.factory(Form("RooExtendPdf::%s(%s,%s)", Form("pdfMASSTot_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      parIni[Form("N_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+                      ));
+
       cout << Form("[INFO] %s Single Crystal Ball PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break;
       
     case (MassModel::DoubleCrystalBall): 
@@ -455,25 +508,30 @@ bool addSignalMassModel(RooWorkspace& ws, string object, MassModel model, map<st
       ws.factory( parIni[Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
 
       // create the two PDFs
-      ws.factory(Form("CBShape::%s(%s, %s, %s, %s, %s)", Form("pdfMASSCB1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
+      ws.factory(Form("CBShape::%s(%s, %s, %s, %s, %s)", Form("pdfMASS1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
                       Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
                       Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
                       Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
                       Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
-                      ));   
-      ws.factory(Form("CBShape::%s(%s, %s, %s, %s, %s)", Form("pdfMASSCB2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
+                      ));
+      ws.factory(Form("CBShape::%s(%s, %s, %s, %s, %s)", Form("pdfMASS2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
                       Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
                       Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
                       Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
                       Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
-                      ));   
+                      ));
 
       // Sum the PDFs to get the signal PDF
       ws.factory(Form("SUM::%s(%s*%s, %s)", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
 		      Form("f_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
-		      Form("pdfMASSCB1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
-		      Form("pdfMASSCB2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
-		      ));   
+		      Form("pdfMASS1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+		      Form("pdfMASS2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
+		      ));
+
+      ws.factory(Form("RooExtendPdf::%s(%s,%s)", Form("pdfMASSTot_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      parIni[Form("N_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+                      ));
 
       cout << Form("[INFO] %s Double Crystal Ball PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break;
       
@@ -500,24 +558,29 @@ bool addSignalMassModel(RooWorkspace& ws, string object, MassModel model, map<st
       ws.factory( parIni[Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
       
       // create the two PDFs 
-      ws.factory(Form("Gaussian::%s(%s, %s, %s)", Form("pdfMASSG1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
+      ws.factory(Form("Gaussian::%s(%s, %s, %s)", Form("pdfMASS1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
                       Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
                       Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
-                      ));   
+                      ));
 
-      ws.factory(Form("CBShape::%s(%s, %s, %s, %s, %s)", Form("pdfMASSCB1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
+      ws.factory(Form("CBShape::%s(%s, %s, %s, %s, %s)", Form("pdfMASS2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
                       Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
                       Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
                       Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
                       Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
-                      ));   
+                      ));
  
       // Sum the PDFs to get the signal PDF 
       ws.factory(Form("SUM::%s(%s*%s, %s)", Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
 		      Form("f_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
-		      Form("pdfMASSG1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
-		      Form("pdfMASSCB1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
-		      ));   
+		      Form("pdfMASS1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+		      Form("pdfMASS2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
+		      ));
+
+      ws.factory(Form("RooExtendPdf::%s(%s,%s)", Form("pdfMASSTot_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      Form("pdfMASS_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                      parIni[Form("N_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str()
+                      ));
 
       cout << Form("[INFO] %s Gaussian and Crystal Ball PDF in %s included", object.c_str(), (isPbPb?"PbPb":"PP")) << endl; break;
 	
@@ -533,15 +596,13 @@ bool addSignalMassModel(RooWorkspace& ws, string object, MassModel model, map<st
 void fixPbPbtoPP(map<string, string>& parIni)
 {
   parIni["m_Jpsi_PbPb"]  = Form("RooFormulaVar::%s('@0',{%s})", "m_Jpsi_PbPb", "m_Jpsi_PP");
-  parIni["m_Psi2S_PbPb"] = Form("RooFormulaVar::%s('@0',{%s})", "m_Psi2S_PbPb", "m_Psi2S_PP");
   //parIni["sigma1_Jpsi_PbPb"]  = Form("RooFormulaVar::%s('@0',{%s})", "sigma1_Jpsi_PbPb", "sigma1_JpsiPP");
   //parIni["sigma1_Psi2S_PbPb"] = Form("RooFormulaVar::%s('@0',{%s})", "sigma1_Psi2S_PbPb", "sigma1_Psi2SPP");
-  //parIni["sigma2_Jpsi_PbPb"]  = Form("RooFormulaVar::%s('@0',{%s})", "sigma2_Jpsi_PbPb", "sigma2_JpsiPP");
-  //parIni["sigma2_Psi2S_PbPb"] = Form("RooFormulaVar::%s('@0',{%s})", "sigma2_Jpsi_PbPb", "sigma2_Psi2SPP");
+  if (parIni.count("rSigma21_Jpsi_PbPb")!=0 && parIni.count("rSigma21_Jpsi_PP")!=0) {
+    parIni["sigma2_Jpsi_PbPb"] = Form("RooFormulaVar::%s('@0*@1',{%s,%s})", "sigma2_Jpsi_PbPb", "sigma1_Jpsi_PbPb", "rSigma21_Jpsi_PP");
+  }
   parIni["alpha_Jpsi_PbPb"]  = Form("RooFormulaVar::%s('@0',{%s})", "alpha_Jpsi_PbPb", "alpha_Jpsi_PP");
-  parIni["alpha_Psi2S_PbPb"] = Form("RooFormulaVar::%s('@0',{%s})", "alpha_Psi2S_PbPb", "alpha_Jpsi_PP");
   parIni["n_Jpsi_PbPb"] = Form("RooFormulaVar::%s('@0',{%s})", "n_Jpsi_PbPb", "n_Jpsi_PP");
-  parIni["n_Psi2S_PbPb"] = Form("RooFormulaVar::%s('@0',{%s})", "n_Psi2S_PbPb", "n_Jpsi_PP");
   //parIni["f_Jpsi_PbPb"] = Form("RooFormulaVar::%s('@0',{%s})", "f_Jpsi_PbPb", "f_Jpsi_PP");
   //parIni["f_Psi2S_PbPb"] = Form("RooFormulaVar::%s('@0',{%s})", "f_Psi2S_PbPb", "f_Jpsi_PP");  
 };
@@ -573,13 +634,13 @@ void setDefaultParameters(map<string, string> &parIni, bool isPbPb, double numEn
 
   // DEFAULT RANGE OF NUMBER OF EVENTS
   if (parIni.count(Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP"))]=="") { 
-    parIni[Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP"))]  = Form("%s[%.10f,%.10f]", Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP")), 0.0, numEntries*10.0);
+    parIni[Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP"))]  = Form("%s[%.10f,%.10f,%.10f]", Form("N_Jpsi_%s", (isPbPb?"PbPb":"PP")), numEntries, 0.0, numEntries*2.0);
   }
   if (parIni.count(Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP"))]=="") { 
-    parIni[Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP"))]  = Form("%s[%.10f,%.10f]", Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP")), 0.0, numEntries*10.0);
+    parIni[Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP"))]  = Form("%s[%.10f,%.10f,%.10f]", Form("N_Psi2S_%s", (isPbPb?"PbPb":"PP")), numEntries, 0.0, numEntries*2.0);
   }
   if (parIni.count(Form("N_Bkg_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("N_Bkg_%s", (isPbPb?"PbPb":"PP"))]=="") { 
-    parIni[Form("N_Bkg_%s", (isPbPb?"PbPb":"PP"))]  = Form("%s[%.10f,%.10f]", Form("N_Bkg_%s", (isPbPb?"PbPb":"PP")), 0.0, numEntries);
+    parIni[Form("N_Bkg_%s", (isPbPb?"PbPb":"PP"))]  = Form("%s[%.10f,%.10f,%.10f]", Form("N_Bkg_%s", (isPbPb?"PbPb":"PP")), numEntries, 0.0, numEntries*2.0);
   }
 
   // DEFAULT SIGNAL MASS MODEL PARAMETERS 
@@ -630,10 +691,10 @@ void setDefaultParameters(map<string, string> &parIni, bool isPbPb, double numEn
     parIni[Form("n_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("n_Psi2S_%s", (isPbPb?"PbPb":"PP")), 2., 0.5, 30.0);
   }
   if (parIni.count(Form("f_Jpsi_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("f_Jpsi_%s", (isPbPb?"PbPb":"PP"))]=="") {
-    parIni[Form("f_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("f_Jpsi_%s", (isPbPb?"PbPb":"PP")), 0.3, 0.0, 1.0);
+    parIni[Form("f_Jpsi_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("f_Jpsi_%s", (isPbPb?"PbPb":"PP")), 0.5, 0.0, 1.0);
   }
   if (parIni.count(Form("f_Psi2S_%s", (isPbPb?"PbPb":"PP")))==0 || parIni[Form("f_Psi2S_%s", (isPbPb?"PbPb":"PP"))]=="") {
-    parIni[Form("f_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("f_Psi2S_%s", (isPbPb?"PbPb":"PP")), 0.3, 0.0, 1.0);
+    parIni[Form("f_Psi2S_%s", (isPbPb?"PbPb":"PP"))] = Form("%s[%.4f,%.4f,%.4f]", Form("f_Psi2S_%s", (isPbPb?"PbPb":"PP")), 0.5, 0.0, 1.0);
   }
 
   // DEFAULT BACKGROUND MASS MODEL PARAMETERS
