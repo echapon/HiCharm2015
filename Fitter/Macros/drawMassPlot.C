@@ -431,7 +431,8 @@ void printParameters(RooWorkspace myws, TPad* Pad, bool isPbPb, string pdfName, 
     stringstream ss(it->GetName()); string s1, s2, s3, label; 
     getline(ss, s1, '_'); getline(ss, s2, '_'); getline(ss, s3, '_');
     // Parse the parameter's labels
-    if(s1=="invMass"){continue;} else if(s1=="MassRatio"){continue;} else if(s1=="One"){continue;}
+    if(s1=="invMass"){continue;} else if(s1=="MassRatio"){continue;} 
+    else if(s1=="One"){continue;} else if(s1=="mMin"){continue;} else if(s1=="mMax"){continue;}
     if(s1=="RFrac2Svs1S"){ s1="R_{#psi(2S)/J/#psi}"; } 
     else if(s1=="rSigma21"){ s1="(#sigma_{2}/#sigma_{1})"; } 
     else if(s1.find("sigma")!=std::string::npos || s1.find("lambda")!=std::string::npos || s1.find("alpha")!=std::string::npos){
