@@ -18,7 +18,7 @@ void fixCentPp(TH1F *hist);
 TH1F* integrateHist(TH1F *hist);
 void printHist(vector<TH1F*> hist, const char* filename);
 void printGraph(vector<TGraphAsymmErrors*> tg, const char* filename);
-void inittex(const char* filename, string xname, vector<string> yname);
+void inittex(const char* filename, const char* xname, vector<string> yname);
 void closetex(const char* filename);
 
 void plotEffs() {
@@ -72,12 +72,12 @@ void plotEffs() {
                TH1F *hnpjpsiden = (TH1F*) fnpjpsi->Get(hname);
 
                if (idep==2) {
-                  integrateHist(hjpsinum);
-                  integrateHist(hpsi2snum);
-                  integrateHist(hnpjpsinum);
-                  integrateHist(hjpsiden);
-                  integrateHist(hpsi2sden);
-                  integrateHist(hnpjpsiden);
+                  hjpsinum = integrateHist(hjpsinum);
+                  hpsi2snum = integrateHist(hpsi2snum);
+                  hnpjpsinum = integrateHist(hnpjpsinum);
+                  hjpsiden = integrateHist(hjpsiden);
+                  hpsi2sden = integrateHist(hpsi2sden);
+                  hnpjpsiden = integrateHist(hnpjpsiden);
                }
 
                if (icoll==0 && idep==1) { // centrality for pp... fill all the bins
@@ -103,8 +103,11 @@ void plotEffs() {
                haxes->GetYaxis()->SetTitle("Efficiency");
                haxes->GetXaxis()->SetTitle((idep==1) ? "Centrality bin" : "p_{T}");
                TLatex tl; TString cname;
+               cname = "files/singleff_" + colltag + "_" + deptag + "_" + raptag + "_" + cuttag;
+               TString texname = cname + ".tex";
 
                if (idep<2) {
+                  // plot
                   haxes->Draw();
                   tg_jpsi->Draw("P");
                   tg_psi2s->Draw("P");
@@ -122,11 +125,26 @@ void plotEffs() {
                         + ((irap==0) ? "|y|<1.6" : "|y|>1.6") + TString(", ") 
                         + ((icut==0) ? "no cut" : "ctau3D cut"));
 
-                  cname = "files/singleff_" + colltag + "_" + deptag + "_" + raptag + "_" + cuttag;
 
                   c1->SaveAs(cname + ".root");
                   c1->SaveAs(cname + ".png");
                   c1->SaveAs(cname + ".pdf");
+
+                  // print tex
+                  vector<string> yname;
+                  yname.push_back("prompt \\Jpsi");
+                  yname.push_back("\\psiP");
+                  yname.push_back("non-prompt \\Jpsi");
+                  vector<TGraphAsymmErrors*> tgs;
+                  tgs.push_back(tg_jpsi); tgs.push_back(tg_psi2s); tgs.push_back(tg_npjpsi);
+                  inittex(texname.Data(), deptag=="pt" ? "\\pt" : "Centrality bin", yname);
+                  printGraph(tgs, texname.Data());
+                  if (idep==0) closetex(texname.Data());
+               } else {
+                  vector<TGraphAsymmErrors*> tgs;
+                  tgs.push_back(tg_jpsi); tgs.push_back(tg_psi2s); tgs.push_back(tg_npjpsi);
+                  printGraph(tgs, texname.Data());
+                  closetex(texname.Data());
                }
 
 
@@ -144,27 +162,51 @@ void plotEffs() {
                TH1F *hjpsidenpbpb = (TH1F*) fjpsi_pbpb->Get(hname); hjpsipbpb->SetName(TString(hjpsidenpbpb->GetName()) + "_jpsidenpbpb");
                TH1F *hpsi2sdenpbpb = (TH1F*) fpsi2s_pbpb->Get(hname); hpsi2sdenpbpb->SetName(TString(hpsi2sdenpbpb->GetName()) + "_psi2sdenpbpb");
 
-               if (icoll==0 && idep==1) { // centrality for pp... fill all the bins
+               if (idep==2) {
+                  hjpsipp = integrateHist(hjpsipp);
+                  hpsi2spp = integrateHist(hpsi2spp);
+                  hjpsipbpb = integrateHist(hjpsipbpb);
+                  hpsi2spbpb = integrateHist(hpsi2spbpb);
+                  hjpsidenpp = integrateHist(hjpsidenpp);
+                  hpsi2sdenpp = integrateHist(hpsi2sdenpp);
+                  hjpsidenpbpb = integrateHist(hjpsidenpbpb);
+                  hpsi2sdenpbpb = integrateHist(hpsi2sdenpbpb);
+               }
+
+               if (idep==1) { // centrality for pp... fill all the bins
                   fixCentPp(hjpsipp);
                   fixCentPp(hpsi2spp);
                   fixCentPp(hjpsidenpp);
                   fixCentPp(hpsi2sdenpp);
                }
 
-               // hjpsipp->Sumw2(true); hjpsidenpp->Sumw2(true); hjpsipp->Divide(hjpsidenpp);
-               // hpsi2spp->Sumw2(true); hpsi2sdenpp->Sumw2(true); hpsi2spp->Divide(hpsi2sdenpp);
-               setErr(hjpsipp); setErr(hjpsidenpp); hjpsipp->Divide(hjpsidenpp);
-               setErr(hpsi2spp); setErr(hpsi2sdenpp); hpsi2spp->Divide(hpsi2sdenpp);
-               hjpsipbpb->Divide(hjpsidenpbpb);
-               hpsi2spbpb->Divide(hpsi2sdenpbpb);
+               hjpsipp->Sumw2(true); hjpsidenpp->Sumw2(true);
+               hpsi2spp->Sumw2(true); hpsi2sdenpp->Sumw2(true);
+               cout << hjpsipp->GetBinContent(1) << "+-" << hjpsipp->GetBinError(1) << " / " 
+                  << hjpsidenpp->GetBinContent(1) << "+-" << hjpsidenpp->GetBinError(1) << " = ";
+               // setErr(hjpsipp); setErr(hjpsidenpp); 
+               hjpsipp->Divide(hjpsipp,hjpsidenpp,1,1,"B");
+               cout << hjpsipp->GetBinContent(1) << "+-" << hjpsipp->GetBinError(1) << endl; 
+               cout << hpsi2spp->GetBinContent(1) << "+-" << hpsi2spp->GetBinError(1) << " / " 
+                  << hpsi2sdenpp->GetBinContent(1) << "+-" << hpsi2sdenpp->GetBinError(1) << " = ";
+               // setErr(hpsi2spp); setErr(hpsi2sdenpp); 
+               hpsi2spp->Divide(hpsi2spp,hpsi2sdenpp,1,1,"B");
+               cout << hpsi2spp->GetBinContent(1) << "+-" << hpsi2spp->GetBinError(1) << endl; 
+               hjpsipbpb->Divide(hjpsipbpb,hjpsidenpbpb,1,1,"B");
+               hpsi2spbpb->Divide(hpsi2spbpb,hpsi2sdenpbpb,1,1,"B");
                hpsi2spp->Divide(hjpsipp);
+               cout << hpsi2spp->GetBinContent(1) << "+-" << hpsi2spp->GetBinError(1) << endl; 
                hpsi2spp->SetMarkerColor(kBlack);
                hpsi2spp->SetLineColor(kBlack);
                hpsi2spbpb->Divide(hjpsipbpb);
                hpsi2spbpb->SetMarkerColor(kRed);
                hpsi2spbpb->SetLineColor(kRed);
 
+               cname = "files/simpleratio_" + deptag + "_" + raptag + "_" + cuttag;
+               texname = cname + ".tex";
+
                if (idep<2) {
+                  // plot
                   haxes->GetYaxis()->SetTitle("Eff(#psi(2S)) / Eff(J/#psi)");
                   haxes->GetYaxis()->SetRangeUser(0.5,1.5);
                   haxes->SetBinContent(1,1);
@@ -181,18 +223,35 @@ void plotEffs() {
                   tl.DrawLatex((idep==0) ? 1.5 : 10, 1.4, ((irap==0) ? "|y|<1.6" : "|y|>1.6") + TString(", ") 
                         + ((icut==0) ? "no cut" : "ctau3D cut"));
 
-                  cname = "files/simpleratio_" + deptag + "_" + raptag + "_" + cuttag;
-
                   c1->SaveAs(cname + ".root");
                   c1->SaveAs(cname + ".png");
                   c1->SaveAs(cname + ".pdf");
+
+                  // print tex
+                  vector<string> yname;
+                  yname.push_back("\\pp");
+                  yname.push_back("\\pbpb");
+                  vector<TH1F*> ths;
+                  ths.push_back(hpsi2spp); ths.push_back(hpsi2spbpb);
+                  inittex(texname.Data(), deptag=="pt" ? "\\pt" : "Centrality bin", yname);
+                  printHist(ths, texname.Data());
+                  if (idep==0) closetex(texname.Data());
+               } else {
+                  vector<TH1F*> ths;
+                  ths.push_back(hpsi2spp); ths.push_back(hpsi2spbpb);
+                  printHist(ths, texname.Data());
+                  closetex(texname.Data());
                }
+
 
 
                // at last, the double ratio
                hpsi2spbpb->Divide(hpsi2spp);
+               cname = "files/doubleratio_" + deptag + "_" + raptag + "_" + cuttag;
+               texname = cname + ".tex";
 
                if (idep<2) {
+                  // plot
                   haxes->GetYaxis()->SetTitle("[Eff(#psi(2S)) / Eff(J/#psi)]_{PbPb} / [Eff(#psi(2S)) / Eff(J/#psi)]_{pp}");
                   haxes->GetYaxis()->SetTitleSize(0.04);
                   haxes->GetYaxis()->SetTitleOffset(2);
@@ -201,10 +260,23 @@ void plotEffs() {
                   hpsi2spbpb->Draw("E1 same");
                   tl.DrawLatex((idep==0) ? 1.5 : 10, 1.4, ((irap==0) ? "|y|<1.6" : "|y|>1.6") + TString(", ") 
                         + ((icut==0) ? "no cut" : "ctau3D cut"));
-                  cname = "files/doubleratio_" + deptag + "_" + raptag + "_" + cuttag;
                   c1->SaveAs(cname + ".root");
                   c1->SaveAs(cname + ".png");
                   c1->SaveAs(cname + ".pdf");
+
+                  // print tex
+                  vector<string> yname;
+                  yname.push_back("Double ratio of efficiencies");
+                  vector<TH1F*> ths;
+                  ths.push_back(hpsi2spbpb);
+                  inittex(texname.Data(), deptag=="pt" ? "\\pt" : "Centrality bin", yname);
+                  printHist(ths, texname.Data());
+                  if (idep==0) closetex(texname.Data());
+               } else {
+                  vector<TH1F*> ths;
+                  ths.push_back(hpsi2spbpb);
+                  printHist(ths, texname.Data());
+                  closetex(texname.Data());
                }
 
                // print the uncertainty values to the csv
@@ -284,46 +356,49 @@ TH1F* integrateHist(TH1F *hist) {
 
 void printHist(vector<TH1F*> hist, const char* filename) {
    ofstream file(filename, ofstream::app);
-   file.setprecision(3);
+   file.precision(3);
    if (hist.size()==0) return;
    int nbins = hist[0]->GetNbinsX();
+   file << "\\hline" << endl;
    for (int ibin=1; ibin<nbins+1; ibin++) {
       file << "[" << hist[0]->GetXaxis()->GetBinLowEdge(ibin) << "-" << hist[0]->GetXaxis()->GetBinUpEdge(ibin) << "]";
+      file.setf(ios::fixed);
       for (vector<TH1F*>::const_iterator ith=hist.begin(); ith!=hist.end(); ith++) {
-         file << " & $" << ith->GetBinContent(ibin) << " \\pm " << ith->GetBinError(ibin) << "$";
+         file << " & $" << (*ith)->GetBinContent(ibin) << " \\pm " << (*ith)->GetBinError(ibin) << "$";
       }
+      file.unsetf(ios::fixed);
       file << "\\\\" << endl;
    }
-   delete hist_int;
    file.close();
 }
 
 void printGraph(vector<TGraphAsymmErrors*> tg, const char* filename) {
    ofstream file(filename, ofstream::app);
-   file.setprecision(3);
-   if (hist.size()==0) return;
+   file.precision(3);
+   if (tg.size()==0) return;
    int nbins = tg[0]->GetN();
+   file << "\\hline" << endl;
    for (int ibin=0; ibin<nbins; ibin++) {
-      file << "[" << tg[0]->GetX()[ibin]-tg[0]->GetErrorXlow(ibin) << "-" << tg[0]->GetX()[ibin]-tg[0]->GetErrorXhigh(ibin);
+      file << "[" << tg[0]->GetX()[ibin]-tg[0]->GetErrorXlow(ibin) << "-" << tg[0]->GetX()[ibin]+tg[0]->GetErrorXhigh(ibin) << "]";
+      file.setf(ios::fixed);
       for (vector<TGraphAsymmErrors*>::const_iterator itg=tg.begin(); itg!=tg.end(); itg++) {
-         file << " & $" << itg->GetY()[ibin] << "_{-" << itg->GetErrorYlow(ibin) << "}^{+" << itg->GetErrorYhigh(ibin) << "} $";
+         file << " & $" << (*itg)->GetY()[ibin] << "_{-" << (*itg)->GetErrorYlow(ibin) << "}^{+" << (*itg)->GetErrorYhigh(ibin) << "} $";
       }
+      file.unsetf(ios::fixed);
       file << "\\\\" << endl;
    }
-   delete hist_int;
    file.close();
 }
 
-void inittex(const char* filename, string xname, vector<string> yname) {
+void inittex(const char* filename, const char* xname, vector<string> yname) {
    ofstream file(filename);
    file << "\\begin{tabular}{c"; 
-   for (int i=0; i<yname.size; i++) file << "c";
+   for (int i=0; i<yname.size(); i++) file << "c";
    file << "}" << endl;
    file << "\\hline" << endl;
    file << xname;
    for (int i=0; i<yname.size(); i++) file << " & " << yname[i];
    file<< "\\\\" << endl;
-   file << "\\hline" << endl;
    file.close();
 }
 
