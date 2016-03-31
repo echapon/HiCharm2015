@@ -45,38 +45,42 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
   myws.data(dsOSName.c_str())->plotOn(frame, Name("dOS"), DataError(RooAbsData::SumW2), XErrorSize(0), MarkerColor(kBlack), LineColor(kBlack), MarkerSize(1.2));
   
   Double_t norm = myws.data(dsOSName.c_str())->sumEntries();
-  if (plotPureSMC) norm = myws.data(dsOSName.c_str())->reduce("invMass<3.26")->sumEntries();
+  if (plotPureSMC)
+  {
+    if (cut.dMuon.AbsRap.Min >= 1.6) norm = myws.data(dsOSName.c_str())->reduce("invMass<3.32")->sumEntries();
+    else norm = myws.data(dsOSName.c_str())->reduce("invMass<3.26")->sumEntries();
+  }
     
   if (incJpsi) {
     if (incBkg) {
       if ( myws.pdf(Form("pdfMASS2_Jpsi_%s", (isPbPb?"PbPb":"PP"))) ) {
         myws.pdf(pdfName.c_str())->plotOn(frame,Name("JPSI1"), Components(RooArgSet(*myws.pdf(Form("pdfMASS1_Jpsi_%s", (isPbPb?"PbPb":"PP"))),*myws.pdf(Form("pdfMASSTot_Bkg_%s", (isPbPb?"PbPb":"PP"))))),
-                                          Normalization(myws.data(dsOSName.c_str())->sumEntries(), RooAbsReal::NumEvent), 
+                                          Normalization(norm, RooAbsReal::NumEvent), 
                                           LineColor(kGreen+3), LineStyle(1), Precision(1e-4), Range(cut.dMuon.M.Min, cut.dMuon.M.Max)
                                           );
         myws.pdf(pdfName.c_str())->plotOn(frame,Name("JPSI2"),Components(RooArgSet(*myws.pdf(Form("pdfMASS2_Jpsi_%s", (isPbPb?"PbPb":"PP"))),*myws.pdf(Form("pdfMASSTot_Bkg_%s", (isPbPb?"PbPb":"PP"))))),
-                                          Normalization(myws.data(dsOSName.c_str())->sumEntries(), RooAbsReal::NumEvent), 
+                                          Normalization(norm, RooAbsReal::NumEvent), 
                                           LineColor(kOrange+2), LineStyle(1), Precision(1e-4), Range(cut.dMuon.M.Min, cut.dMuon.M.Max)
                                           );
       } else {
         myws.pdf(pdfName.c_str())->plotOn(frame,Name("JPSI1"),Components(RooArgSet(*myws.pdf(Form("pdfMASSTot_Jpsi_%s", (isPbPb?"PbPb":"PP"))),*myws.pdf(Form("pdfMASSTot_Bkg_%s", (isPbPb?"PbPb":"PP"))))),
-                                          Normalization(myws.data(dsOSName.c_str())->sumEntries(), RooAbsReal::NumEvent), 
+                                          Normalization(norm, RooAbsReal::NumEvent), 
                                           LineColor(kGreen+3), LineStyle(1), Precision(1e-4), Range(cut.dMuon.M.Min, cut.dMuon.M.Max)
                                           );
       }
     } else {
       if ( myws.pdf(Form("pdfMASS2_Jpsi_%s", (isPbPb?"PbPb":"PP"))) ) {
         myws.pdf(pdfName.c_str())->plotOn(frame,Name("JPSI1"),Components(RooArgSet(*myws.pdf(Form("pdfMASS1_Jpsi_%s", (isPbPb?"PbPb":"PP"))))),
-                                          Normalization(myws.data(dsOSName.c_str())->sumEntries(), RooAbsReal::NumEvent), 
+                                          Normalization(norm, RooAbsReal::NumEvent), 
                                           LineColor(kGreen+3), LineStyle(1), Precision(1e-4), Range(cut.dMuon.M.Min, cut.dMuon.M.Max)
                                           );
         myws.pdf(pdfName.c_str())->plotOn(frame,Name("JPSI2"),Components(RooArgSet(*myws.pdf(Form("pdfMASS2_Jpsi_%s", (isPbPb?"PbPb":"PP"))))),
-                                          Normalization(myws.data(dsOSName.c_str())->sumEntries(), RooAbsReal::NumEvent), 
+                                          Normalization(norm, RooAbsReal::NumEvent), 
                                           LineColor(kOrange+2), LineStyle(1), Precision(1e-4), Range(cut.dMuon.M.Min, cut.dMuon.M.Max)
                                           );
       } else {
         myws.pdf(pdfName.c_str())->plotOn(frame,Name("JPSI1"),Components(RooArgSet(*myws.pdf(Form("pdfMASSTot_Jpsi_%s", (isPbPb?"PbPb":"PP"))))),
-                                          Normalization(myws.data(dsOSName.c_str())->sumEntries(), RooAbsReal::NumEvent), 
+                                          Normalization(norm, RooAbsReal::NumEvent), 
                                           LineColor(kGreen+3), LineStyle(1), Precision(1e-4), Range(cut.dMuon.M.Min, cut.dMuon.M.Max)
                                           );
       }
@@ -86,32 +90,32 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
     if (incBkg) {
       if ( myws.pdf(Form("pdfMASS2_Psi2S_%s", (isPbPb?"PbPb":"PP"))) ) {
         myws.pdf(pdfName.c_str())->plotOn(frame,Name("PSI2S1"),Components(RooArgSet(*myws.pdf(Form("pdfMASS1_Psi2S_%s", (isPbPb?"PbPb":"PP"))),*myws.pdf(Form("pdfMASSTot_Bkg_%s", (isPbPb?"PbPb":"PP"))))),
-                                          Normalization(myws.data(dsOSName.c_str())->sumEntries(), RooAbsReal::NumEvent), 
+                                          Normalization(norm, RooAbsReal::NumEvent), 
                                           LineColor(kGreen+3), LineStyle(1), Precision(1e-4), Range(cut.dMuon.M.Min, cut.dMuon.M.Max)
                                           );
         myws.pdf(pdfName.c_str())->plotOn(frame,Name("PSI2S2"),Components(RooArgSet(*myws.pdf(Form("pdfMASS2_Psi2S_%s", (isPbPb?"PbPb":"PP"))),*myws.pdf(Form("pdfMASSTot_Bkg_%s", (isPbPb?"PbPb":"PP"))))),
-                                          Normalization(myws.data(dsOSName.c_str())->sumEntries(), RooAbsReal::NumEvent), 
+                                          Normalization(norm, RooAbsReal::NumEvent), 
                                           LineColor(kOrange+2), LineStyle(1), Precision(1e-4), Range(cut.dMuon.M.Min, cut.dMuon.M.Max)
                                           );
       } else {
         myws.pdf(pdfName.c_str())->plotOn(frame,Name("PSI2S1"),Components(RooArgSet(*myws.pdf(Form("pdfMASSTot_Psi2S_%s", (isPbPb?"PbPb":"PP"))),*myws.pdf(Form("pdfMASSTot_Bkg_%s", (isPbPb?"PbPb":"PP"))))),
-                                          Normalization(myws.data(dsOSName.c_str())->sumEntries(), RooAbsReal::NumEvent), 
+                                          Normalization(norm, RooAbsReal::NumEvent), 
                                           LineColor(kGreen+3), LineStyle(1), Precision(1e-4), Range(cut.dMuon.M.Min, cut.dMuon.M.Max)
                                           );
       }
     } else {
       if ( myws.pdf(Form("pdfMASS2_Psi2S_%s", (isPbPb?"PbPb":"PP"))) ) {
         myws.pdf(pdfName.c_str())->plotOn(frame,Name("PSI2S1"),Components(RooArgSet(*myws.pdf(Form("pdfMASS1_Psi2S_%s", (isPbPb?"PbPb":"PP"))))),
-                                          Normalization(myws.data(dsOSName.c_str())->sumEntries(), RooAbsReal::NumEvent), 
+                                          Normalization(norm, RooAbsReal::NumEvent), 
                                           LineColor(kGreen+3), LineStyle(1), Precision(1e-4), Range(cut.dMuon.M.Min, cut.dMuon.M.Max)
                                           );
         myws.pdf(pdfName.c_str())->plotOn(frame,Name("PSI2S2"),Components(RooArgSet(*myws.pdf(Form("pdfMASS2_Psi2S_%s", (isPbPb?"PbPb":"PP"))))),
-                                          Normalization(myws.data(dsOSName.c_str())->sumEntries(), RooAbsReal::NumEvent), 
+                                          Normalization(norm, RooAbsReal::NumEvent), 
                                           LineColor(kOrange+2), LineStyle(1), Precision(1e-4), Range(cut.dMuon.M.Min, cut.dMuon.M.Max)
                                           );
       } else {
         myws.pdf(pdfName.c_str())->plotOn(frame,Name("PSI2S1"),Components(RooArgSet(*myws.pdf(Form("pdfMASSTot_Psi2S_%s", (isPbPb?"PbPb":"PP"))))),
-                                          Normalization(myws.data(dsOSName.c_str())->sumEntries(), RooAbsReal::NumEvent), 
+                                          Normalization(norm, RooAbsReal::NumEvent), 
                                           LineColor(kGreen+3), LineStyle(1), Precision(1e-4), Range(cut.dMuon.M.Min, cut.dMuon.M.Max)
                                           );
       }
@@ -157,32 +161,32 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
       if (incBkg) {
         if ( myws.pdf(Form("pdfMASS2_Psi2S_%s", (isPbPb?"PbPb":"PP"))) ) {
           myws.pdf(pdfName.c_str())->plotOn(framezoom,Name("PSI2S1"),Components(RooArgSet(*myws.pdf(Form("pdfMASS1_Psi2S_%s", (isPbPb?"PbPb":"PP"))),*myws.pdf(Form("pdfMASSTot_Bkg_%s", (isPbPb?"PbPb":"PP"))))),
-                                            Normalization(myws.data(dsOSName.c_str())->sumEntries(), RooAbsReal::NumEvent), 
+                                            Normalization(norm, RooAbsReal::NumEvent), 
                                             LineColor(kGreen+3), LineStyle(1), Precision(1e-4), Range(cut.dMuon.M.Min, cut.dMuon.M.Max)
                                             );
           myws.pdf(pdfName.c_str())->plotOn(framezoom,Name("PSI2S2"),Components(RooArgSet(*myws.pdf(Form("pdfMASS2_Psi2S_%s", (isPbPb?"PbPb":"PP"))),*myws.pdf(Form("pdfMASSTot_Bkg_%s", (isPbPb?"PbPb":"PP"))))),
-                                            Normalization(myws.data(dsOSName.c_str())->sumEntries(), RooAbsReal::NumEvent), 
+                                            Normalization(norm, RooAbsReal::NumEvent), 
                                             LineColor(kOrange+2), LineStyle(1), Precision(1e-4), Range(cut.dMuon.M.Min, cut.dMuon.M.Max)
                                             );
         } else {
           myws.pdf(pdfName.c_str())->plotOn(framezoom,Name("PSI2S1"),Components(RooArgSet(*myws.pdf(Form("pdfMASSTot_Psi2S_%s", (isPbPb?"PbPb":"PP"))),*myws.pdf(Form("pdfMASSTot_Bkg_%s", (isPbPb?"PbPb":"PP"))))),
-                                            Normalization(myws.data(dsOSName.c_str())->sumEntries(), RooAbsReal::NumEvent), 
+                                            Normalization(norm, RooAbsReal::NumEvent), 
                                             LineColor(kGreen+3), LineStyle(1), Precision(1e-4), Range(cut.dMuon.M.Min, cut.dMuon.M.Max)
                                             );
         }
       } else {
         if ( myws.pdf(Form("pdfMASS2_Psi2S_%s", (isPbPb?"PbPb":"PP"))) ) {
           myws.pdf(pdfName.c_str())->plotOn(framezoom,Name("PSI2S1"),Components(RooArgSet(*myws.pdf(Form("pdfMASS1_Psi2S_%s", (isPbPb?"PbPb":"PP"))))),
-                                            Normalization(myws.data(dsOSName.c_str())->sumEntries(), RooAbsReal::NumEvent), 
+                                            Normalization(norm, RooAbsReal::NumEvent), 
                                             LineColor(kGreen+3), LineStyle(1), Precision(1e-4), Range(cut.dMuon.M.Min, cut.dMuon.M.Max)
                                             );
           myws.pdf(pdfName.c_str())->plotOn(framezoom,Name("PSI2S2"),Components(RooArgSet(*myws.pdf(Form("pdfMASS2_Psi2S_%s", (isPbPb?"PbPb":"PP"))))),
-                                            Normalization(myws.data(dsOSName.c_str())->sumEntries(), RooAbsReal::NumEvent), 
+                                            Normalization(norm, RooAbsReal::NumEvent), 
                                             LineColor(kOrange+2), LineStyle(1), Precision(1e-4), Range(cut.dMuon.M.Min, cut.dMuon.M.Max)
                                             );
         } else {
           myws.pdf(pdfName.c_str())->plotOn(framezoom,Name("PSI2S1"),Components(RooArgSet(*myws.pdf(Form("pdfMASSTot_Psi2S_%s", (isPbPb?"PbPb":"PP"))))),
-                                            Normalization(myws.data(dsOSName.c_str())->sumEntries(), RooAbsReal::NumEvent), 
+                                            Normalization(norm, RooAbsReal::NumEvent), 
                                             LineColor(kGreen+3), LineStyle(1), Precision(1e-4), Range(cut.dMuon.M.Min, cut.dMuon.M.Max)
                                             );
         }
@@ -190,11 +194,11 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
     }
     if (incBkg) {
       myws.pdf(pdfName.c_str())->plotOn(framezoom, Name("BKG"),Components(*myws.pdf(Form("pdfMASS_Bkg_%s", (isPbPb?"PbPb":"PP")))),
-                                        Normalization(myws.data(dsOSName.c_str())->sumEntries(), RooAbsReal::NumEvent), 
+                                        Normalization(norm, RooAbsReal::NumEvent), 
                                         FillStyle(1001), FillColor(kAzure-9), VLines(), DrawOption("LCF"), LineColor(kBlue), LineStyle(kDashed),Precision(1e-4));
     }
     myws.data(dsOSName.c_str())->plotOn(framezoom, Name("dOS"), DataError(RooAbsData::SumW2), XErrorSize(0), MarkerColor(kBlack), LineColor(kBlack), MarkerSize(1.2));
-    myws.pdf(pdfName.c_str())->plotOn(framezoom,Name("PDF"), Normalization(myws.data(dsOSName.c_str())->sumEntries(), RooAbsReal::NumEvent),
+    myws.pdf(pdfName.c_str())->plotOn(framezoom,Name("PDF"), Normalization(norm, RooAbsReal::NumEvent),
                                       LineColor(kBlack), LineStyle(1),Precision(1e-4));
   }			
   
