@@ -125,6 +125,7 @@ vector<string> printNLL(map< string, setModels_t > content, string outputFile)
           double probChi2 = 100.*TMath::Prob(diffNLL, diffNPar);
           if (diffNLL<0) probChi2 = 100.;
           if (probChi2>5.) modelNLLB[i].cnt++;
+          else modelNLLB[i].cnt--; // put a penalty when the higher order model is better
         
           lin.push_back("| "+modelNameA);
           lin.push_back(Form("|    NLL: %.2f  ", NLLA));
