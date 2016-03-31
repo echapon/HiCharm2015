@@ -15,7 +15,7 @@ using namespace std;
 
 RooRealVar* poiFromFile(const char* filename, const char* token, const char* thepoiname);
 vector<TString> fileList(const char* input, const char* token="");
-RooRealVar* ratioVar(RooRealVar *num, RooRealVar *den);
+RooRealVar* ratioVar(RooRealVar *num, RooRealVar *den, bool usedenerror=true);
 anabin binFromFile(const char* filename);
 bool binok(vector<anabin> thecats, string xaxis, anabin &tocheck);
 
@@ -62,7 +62,7 @@ vector<TString> fileList(const char* input, const char* token) {
    return ans;
 }
 
-RooRealVar* ratioVar(RooRealVar *num, RooRealVar *den) {
+RooRealVar* ratioVar(RooRealVar *num, RooRealVar *den, bool usedenerror) {
    double n = num->getVal();
    double d = den->getVal();
    double dn = num->getError();
@@ -70,6 +70,7 @@ RooRealVar* ratioVar(RooRealVar *num, RooRealVar *den) {
 
    double r = d!=0 ? n/d : 0;
    double dr = n!=0 && d!=0 ? r * sqrt(pow(dn/n,2) + pow(dd/d,2)) : 0;
+   if (!usedenerror && n!=0) dr = (dn/n)*r;
    RooRealVar *ans = new RooRealVar(Form("%s_over_%s",num->GetName(),den->GetName()), Form("%s / %s",num->GetTitle(),den->GetTitle()), r);
    ans->setError(dr);
 
