@@ -770,17 +770,17 @@ bool addSignalMassModel(RooWorkspace& ws, string object, MassModel model, map<st
       ws.factory( parIni[Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
       ws.factory( parIni[Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))].c_str() );
       
-      // create the two PDFs 
-      ws.factory(Form("Gaussian::%s(%s, %s, %s)", Form("pdfMASS1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
+      // create the two PDFs
+      ws.factory(Form("CBShape::%s(%s, %s, %s, %s, %s)", Form("pdfMASS1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass",
+                        Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                        Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                        Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
+                        Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
+                        ));
+        
+      ws.factory(Form("Gaussian::%s(%s, %s, %s)", Form("pdfMASS2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass",
                       Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
                       Form("sigma2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
-                      ));
-
-      ws.factory(Form("CBShape::%s(%s, %s, %s, %s, %s)", Form("pdfMASS2_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), "invMass", 
-                      Form("m_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")), 
-                      Form("sigma1_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
-                      Form("alpha_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP")),
-                      Form("n_%s_%s", object.c_str(), (isPbPb?"PbPb":"PP"))
                       ));
  
       // Sum the PDFs to get the signal PDF 
