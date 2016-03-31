@@ -182,20 +182,13 @@ void plotEffs() {
 
                hjpsipp->Sumw2(true); hjpsidenpp->Sumw2(true);
                hpsi2spp->Sumw2(true); hpsi2sdenpp->Sumw2(true);
-               cout << hjpsipp->GetBinContent(1) << "+-" << hjpsipp->GetBinError(1) << " / " 
-                  << hjpsidenpp->GetBinContent(1) << "+-" << hjpsidenpp->GetBinError(1) << " = ";
                // setErr(hjpsipp); setErr(hjpsidenpp); 
                hjpsipp->Divide(hjpsipp,hjpsidenpp,1,1,"B");
-               cout << hjpsipp->GetBinContent(1) << "+-" << hjpsipp->GetBinError(1) << endl; 
-               cout << hpsi2spp->GetBinContent(1) << "+-" << hpsi2spp->GetBinError(1) << " / " 
-                  << hpsi2sdenpp->GetBinContent(1) << "+-" << hpsi2sdenpp->GetBinError(1) << " = ";
                // setErr(hpsi2spp); setErr(hpsi2sdenpp); 
                hpsi2spp->Divide(hpsi2spp,hpsi2sdenpp,1,1,"B");
-               cout << hpsi2spp->GetBinContent(1) << "+-" << hpsi2spp->GetBinError(1) << endl; 
                hjpsipbpb->Divide(hjpsipbpb,hjpsidenpbpb,1,1,"B");
                hpsi2spbpb->Divide(hpsi2spbpb,hpsi2sdenpbpb,1,1,"B");
                hpsi2spp->Divide(hjpsipp);
-               cout << hpsi2spp->GetBinContent(1) << "+-" << hpsi2spp->GetBinError(1) << endl; 
                hpsi2spp->SetMarkerColor(kBlack);
                hpsi2spp->SetLineColor(kBlack);
                hpsi2spbpb->Divide(hjpsipbpb);
@@ -361,7 +354,7 @@ void printHist(vector<TH1F*> hist, const char* filename) {
    int nbins = hist[0]->GetNbinsX();
    file << "\\hline" << endl;
    for (int ibin=1; ibin<nbins+1; ibin++) {
-      file << "[" << hist[0]->GetXaxis()->GetBinLowEdge(ibin) << "-" << hist[0]->GetXaxis()->GetBinUpEdge(ibin) << "]";
+      file << "$[" << hist[0]->GetXaxis()->GetBinLowEdge(ibin) << "-" << hist[0]->GetXaxis()->GetBinUpEdge(ibin) << "]$";
       file.setf(ios::fixed);
       for (vector<TH1F*>::const_iterator ith=hist.begin(); ith!=hist.end(); ith++) {
          file << " & $" << (*ith)->GetBinContent(ibin) << " \\pm " << (*ith)->GetBinError(ibin) << "$";
@@ -379,7 +372,7 @@ void printGraph(vector<TGraphAsymmErrors*> tg, const char* filename) {
    int nbins = tg[0]->GetN();
    file << "\\hline" << endl;
    for (int ibin=0; ibin<nbins; ibin++) {
-      file << "[" << tg[0]->GetX()[ibin]-tg[0]->GetErrorXlow(ibin) << "-" << tg[0]->GetX()[ibin]+tg[0]->GetErrorXhigh(ibin) << "]";
+      file << "$[" << tg[0]->GetX()[ibin]-tg[0]->GetErrorXlow(ibin) << "-" << tg[0]->GetX()[ibin]+tg[0]->GetErrorXhigh(ibin) << "]$";
       file.setf(ios::fixed);
       for (vector<TGraphAsymmErrors*>::const_iterator itg=tg.begin(); itg!=tg.end(); itg++) {
          file << " & $" << (*itg)->GetY()[ibin] << "_{-" << (*itg)->GetErrorYlow(ibin) << "}^{+" << (*itg)->GetErrorYhigh(ibin) << "} $";
