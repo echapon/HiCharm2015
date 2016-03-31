@@ -6,6 +6,8 @@
 #include "RooRealVar.h"
 #include "TString.h"
 #include "TFile.h"
+#include "TSystemFile.h"
+#include "TSystemDirectory.h"
 
 #include <string>
 #include <vector>
