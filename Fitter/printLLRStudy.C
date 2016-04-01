@@ -91,54 +91,57 @@ vector<string> printNLL(map< string, setModels_t > content, string outputFile)
     fout << " " << endl;
 
     vecModels_t modelNLLB;
-    setModels_t::iterator it;
-    for (it = binCont.begin(); it != binCont.end(); it++) {  
+    setModels_t::iterator modelRow;
 
-      model_t modelNLL = *it;
-      vector<string> strLin; int i = 0;
-      setModels_t::iterator modelNLLA;
-      for (modelNLLA = it; modelNLLA != binCont.end(); modelNLLA++) {
+    for (modelRow = binCont.begin(); modelRow != binCont.end(); modelRow++) {  
 
-        string  modelNameA = modelNLLA->modelName;
-        int     nParA      = modelNLLA->npar;
-        double  NLLA       = modelNLLA->nll;
+      vector<string> strLin;
+      unsigned int iB=0;
+
+      setModels_t::iterator modelCol;
+      for (modelCol = binCont.begin(); modelCol != binCont.end(); modelCol++) {
+
+        string  modelNameA = modelCol->modelName;
+        int     nParA      = modelCol->npar;
+        double  NLLA       = modelCol->nll;
         double  AICA       = 2*(nParA + NLLA);
 
-        if (it==binCont.begin()) modelNLLB.push_back(*modelNLLA);
-
-        string  modelNameB = modelNLLB[i].modelName;
-        int     nParB      = modelNLLB[i].npar;
-        double  NLLB       = modelNLLB[i].nll;
-        double  AICB       = 2*(nParB + NLLB);
+        if (modelRow==binCont.begin()) {
+          modelNLLB.push_back(*modelCol);
+        }
 
         vector<string> lin;
-        if (modelNameA==modelNameB) {
-          lin.push_back("|------------------------");
-          lin.push_back("| "+modelNameA);
-          lin.push_back(Form("|    NLL: %.2f  ", NLLA));
-          lin.push_back(Form("|    AIC: %.2f  ", AICA));
-          lin.push_back("|------------------------");
 
-        } else if (nParA >= nParB) {
-          double diffNLL  = -2.0*(NLLA - NLLB);
-          double diffNPar =  2.0*(nParA-nParB);
-          double probChi2 = 100.*TMath::Prob(diffNLL, diffNPar);
-          if (diffNLL<0) probChi2 = 100.;
-          if (probChi2>5.) modelNLLB[i].cnt++;
-        
-          lin.push_back("| "+modelNameA);
-          lin.push_back(Form("|    NLL: %.2f  ", NLLA));
-          lin.push_back(Form("|    Diff: %.2f  ", diffNLL));
-          lin.push_back(Form("|    Prob: %.1f%s   ", probChi2, "%"));
-          lin.push_back(Form("|    AIC: %.2f  ", -(AICA-AICB)));
-          lin.push_back("|------------------------");
-        }
-        setLines(strLin, lin);
-        i = i + 1;
- 
+        if (nParA>=modelRow->npar) {
+          string  modelNameB = modelNLLB[iB].modelName;
+          int     nParB      = modelNLLB[iB].npar;
+          double  NLLB       = modelNLLB[iB].nll;
+          double  AICB       = 2*(nParB + NLLB);
+          if (modelNameA==modelNameB) {
+            lin.push_back("|------------------------");
+            lin.push_back("| "+modelNameA);
+            lin.push_back(Form("|    NLL: %.2f  ", NLLA));
+            lin.push_back(Form("|    AIC: %.2f  ", AICA));
+            lin.push_back("|------------------------");
+          } else if (nParA >= nParB) {
+            double  diffNLL    = -2.0*(NLLA - NLLB);
+            double  diffNPar   =  2.0*(nParA-nParB);
+            double  probChi2   = 100.*TMath::Prob(diffNLL, diffNPar);
+            if (diffNLL<0) probChi2 = 100.;
+            if (probChi2>5. && (nParA-nParB)<=2) modelNLLB[iB].cnt++;
+            lin.push_back("| "+modelNameA);
+            lin.push_back(Form("|    NLL: %.2f  ", NLLA));
+            lin.push_back(Form("|    Diff: %.2f  ", diffNLL));
+            lin.push_back(Form("|    Prob: %.1f%s   ", probChi2, "%"));
+            lin.push_back(Form("|    AIC: %.2f  ", -(AICA-AICB)));
+            lin.push_back("|------------------------");
+          } 
+          setLines(strLin, lin); iB++;
+        } 
       }
-      printLines(strLin, fout); 
-    }
+      for (unsigned int j=0; j<strLin.size(); j++) { strLin[j] = strLin[j] + "|"; }
+      printLines(strLin, fout);
+    }      
 
     // which is the best model for this bin?
     string bestModelFile="NOTFOUND"; int minok=999; int maxpar=0;
@@ -162,6 +165,100 @@ vector<string> printNLL(map< string, setModels_t > content, string outputFile)
     cout << endl << " And the winner is... " << bestModelFile << endl << endl << endl;
     fout << endl << " And the winner is... " << bestModelFile << endl << endl << endl;
     ans.push_back(bestModelFile);
+
+    
+    vector<string> TableLatex;
+    TableLatex.push_back("\\begin{table}");
+    TableLatex.push_back("\\centering");
+    string iniLinLatex = "\\begin{tabular}{ c  c";
+    string header = "N & NLL ";
+    for (unsigned int iM=1; iM<=binCont.size(); iM++) { 
+      if ((binCont.size()-iM)>=2) {
+        iniLinLatex = iniLinLatex + " c ";
+        header = header + "& " + Form("p(H0: N = %d)",iM) + " ";
+      }
+    }
+    iniLinLatex = iniLinLatex + "}";
+    header = header + "\\\\";
+    TableLatex.push_back(iniLinLatex);
+    TableLatex.push_back(header);
+    TableLatex.push_back("\\hline");
+    
+    vector<string> strLinLatex;
+    unsigned int iR=0;
+    int nParMax = 0;
+    setModels_t::iterator model;
+    for (model = binCont.begin(); model != binCont.end(); model++) { 
+      if (model->npar > nParMax) { nParMax = model->npar; }
+    }
+    for (modelRow = binCont.begin(); modelRow != binCont.end(); modelRow++) {  
+
+      unsigned int iA=0;
+
+      setModels_t::iterator modelCol;
+      for (modelCol = binCont.begin(); modelCol != binCont.end(); modelCol++) {
+
+        string  modelNameA = modelCol->modelName;
+        int     nParA      = modelCol->npar;
+        double  NLLA       = modelCol->nll;
+        double  AICA       = 2*(nParA + NLLA);
+
+        if (modelRow==binCont.begin()) {
+          modelNLLB.push_back(*modelCol);
+          strLinLatex.push_back( Form("%d & %.2f", ++iA, NLLA) );
+        }
+
+        if (nParA<modelRow->npar) {
+          int     nParRow = modelRow->npar;
+          double  NLLRow  = modelRow->nll;
+          if ((nParMax - nParA)>=2) {
+            double  diffNLL    = -2.0*(NLLRow - NLLA);
+            double  diffNPar   =  2.0*(nParRow-nParA);
+            double  probChi2   = 100.*TMath::Prob(diffNLL, diffNPar);
+            if (diffNLL<0) probChi2 = 100.;
+            if (bestModelFile==modelCol->fileName && (nParRow-nParA)<=2) {
+              strLinLatex[iR] = strLinLatex[iR] + " & " + Form("\\textbf{%.1f%s}", probChi2, "$\\%$");
+            } else {
+              strLinLatex[iR] = strLinLatex[iR] + " & " + Form("%.1f%s", probChi2, "$\\%$");
+            } 
+          }
+        } else {
+          if ((nParMax - nParA)>=2) {
+            strLinLatex[iR] = strLinLatex[iR] + " & ";
+          }
+        } 
+      }
+      iR++;
+    }      
+    for (unsigned int j=0; j<strLinLatex.size(); j++) {  
+      strLinLatex[j] = strLinLatex[j] + "\\\\";
+      TableLatex.push_back(strLinLatex[j]);
+    }
+    TableLatex.push_back("\\end{tabular}");
+    TableLatex.push_back(Form("\\label{tab:LLRTEST_%s}", binName.c_str()));
+    string rapStr, centStr, ptStr, modelStr, colStr;
+    if (bestModelFile.find("ExpChebychev")!=std::string::npos){ modelStr = "exponential chebychev polynomials"; }
+    else if (bestModelFile.find("Chebychev")!=std::string::npos){ modelStr = "chebychev polynomials"; }
+    else { modelStr = "I DON'T KNOW"; }
+    if (binName.find("rap016")!=std::string::npos){ rapStr = "$\\abs{y} <$ 1.6"; }
+    else if (binName.find("rap1624")!=std::string::npos){ rapStr = "1.6 $\\leq \\abs{y} <$ 2.4"; }
+    if (binName.find("pt30300")!=std::string::npos){ ptStr = "3.0 $\\leq \\PT <$ 30.0 $\\GeVc$"; }
+    else if (binName.find("pt3065")!=std::string::npos){ ptStr = "3.0 $\\leq \\PT <$ 6.5 $\\GeVc$"; }
+    else if (binName.find("pt6590")!=std::string::npos){ ptStr = "6.5 $\\leq \\PT <$ 9.0 $\\GeVc$"; }
+    else if (binName.find("pt65120")!=std::string::npos){ ptStr = "6.5 $\\leq \\PT <$ 12.0 $\\GeVc$"; }
+    else if (binName.find("pt65300")!=std::string::npos){ ptStr = "6.5 $\\leq \\PT <$ 30.0 $\\GeVc$"; }
+    else if (binName.find("pt90120")!=std::string::npos){ ptStr = "9.0 $\\leq \\PT <$ 12.0 $\\GeVc$"; }
+    else if (binName.find("pt120150")!=std::string::npos){ ptStr = "12.0 $\\leq \\PT <$ 15.0 $\\GeVc$"; }
+    else if (binName.find("pt120300")!=std::string::npos){ ptStr = "12.0 $\\leq \\PT <$ 30.0 $\\GeVc$"; }
+    else if (binName.find("pt150200")!=std::string::npos){ ptStr = "15.0 $\\leq \\PT <$ 20.0 $\\GeVc$"; }
+    else if (binName.find("pt200300")!=std::string::npos){ ptStr = "20.0 $\\leq \\PT <$ 30.0 $\\GeVc$"; }
+    if (binName.find("PP")!=std::string::npos){ colStr = "pp"; }
+    else if (binName.find("PbPb")!=std::string::npos){ colStr = "PbPb"; }
+    TableLatex.push_back(Form("\\caption{Negative loglikelihoods for fits with %s of orders 1-5 of %s data in %s and %s. In addition the p-values of the LLR-test for the null-hypothesis are listed. Tests of which the null-hypothesis cannot be rejected for two consecutive orders are highlighted in bold, together with the corresponding order.}", modelStr.c_str(), colStr.c_str(), rapStr.c_str(), ptStr.c_str(), "$\\%$"));
+    TableLatex.push_back("\\end{table}");
+    printLines(TableLatex, fout);
+    cout << endl; cout << endl;
+    fout << endl; fout << endl;
   } // bin loop
 
   return ans;
@@ -181,6 +278,7 @@ void setLines(vector<string>& strLin, vector<string> lin)
   for (unsigned int i = 0; i < lin.size(); i++) {
     strLin.at(i).append(empty, 0, (25-lin.at(i).length()));
   }
+    
   return;
 };
 
@@ -188,8 +286,8 @@ void setLines(vector<string>& strLin, vector<string> lin)
 void printLines(vector<string> strLin, ofstream& fout) 
 {
   for (vector<string>::iterator line = strLin.begin(); line < strLin.end(); line++) {
-    cout << *line << "|" << endl;
-    fout << *line << "|" << endl;
+      cout << *line << endl;
+      fout << *line << endl;
   }
 };
 
