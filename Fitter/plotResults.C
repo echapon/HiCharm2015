@@ -22,9 +22,21 @@
 
 using namespace std;
 
+////////////////
+// PARAMETERS //
+////////////////
+
 const char* ylabel = "(#Psi(2S)/J/#Psi)_{PbPb} / (#Psi(2S)/J/#Psi)_{pp}";
 const char* poiname = "RFrac2Svs1S";
 const bool  doratio = true; // true -> look for separate PP and PbPb files, false -> input files are with simultaneous pp-PbPb fits
+
+
+///////////////
+// CONSTANTS //
+///////////////
+
+const double xfrac = 0.8; // for the 2-panel plot for the centrality dependence.
+
 
 //////////////////
 // DECLARATIONS //
@@ -53,8 +65,14 @@ void plotPt(string workDirName) {
 void plotCent(string workDirName) {
    string xaxis = "cent";
    vector<anabin> theCats;
+
+   // centrality dependence
    theCats.push_back(anabin(0,1.6,6.5,30,0,200));
    theCats.push_back(anabin(1.6,2.4,3,30,0,200));
+
+   // for minimum bias
+   theCats.push_back(anabin(0,1.6,6.5,30,0,-200));
+   theCats.push_back(anabin(1.6,2.4,3,30,0,-200));
 
    plot(theCats,xaxis,workDirName);
 };
@@ -155,6 +173,8 @@ void plot(vector<anabin> thecats, string xaxis, string outputDir) {
          theGraphs[*it] = NULL;
          continue;
       }
+      bool isMB = (it->centbin().low()<=0 && it->centbin().high()<=0);
+      if (isMB && n!=1) cout << "Warning, I have " << n << " bins for a MinBias category, I expected 1." << endl;
 
       theGraphs[*it] = new TGraphAsymmErrors(n);
       theGraphs[*it]->SetName(Form("bin_%i",cnt));
@@ -178,10 +198,10 @@ void plot(vector<anabin> thecats, string xaxis, string outputDir) {
          if (xaxis=="cent") {
             low= thebin.centbin().low();
             high = thebin.centbin().high();
-            x = HI::findNpartAverage(low,high);
+            x = isMB ? 150 + (150./1.6)*it->rapbin().low() : HI::findNpartAverage(low,high);
             exl = 0.;
             exh = 0.;
-            exsyst = 5;
+            exsyst = !isMB ? 5 : 5./(1.-xfrac);
             eysyst = syst_PbPb[thebin].value; // only PbPb syst: the PP one will go to a dedicated box
             // also add
          }
@@ -210,17 +230,55 @@ RooRealVar* poiFromFile(const char* filename, const char* token) {
 void plotGraph(map<anabin, TGraphAsymmErrors*> theGraphs, map<anabin, TGraphAsymmErrors*> theGraphs_syst, string xaxis, string outputDir, map<anabin, syst> gsyst) {
    setTDRStyle();
 
-   TCanvas *c1 = new TCanvas("c1","c1",600,600);
+
+   TCanvas *c1 = NULL;
+   if (xaxis=="cent") c1 = new TCanvas("c1","c1",600/xfrac,600);
+   else c1 = new TCanvas("c1","c1",600,600);
+
+   // in the case of the centrality dependence, we need the minimum bias panel on the right
+   TPad *padl=NULL, *padr=NULL;
+   if (xaxis=="cent") {
+         padl = new TPad("padl_left","",0,0,xfrac,1);
+         padl->SetLeftMargin(gStyle->GetPadLeftMargin()/xfrac);
+         padl->SetRightMargin(0);
+         // padl->SetBottomMargin(gStyle->GetPadBottomMargin());
+         // padl->SetTopMargin(gStyle->GetPadTopMargin());
+         padl->SetFrameBorderMode(0);
+         padl->SetBorderMode(0);
+         padl->SetBorderSize(0);
+         padl->Draw();
+
+         padr = new TPad("padr_right","",xfrac,0,1,1);
+         padr->SetRightMargin(gStyle->GetPadRightMargin()/(1.-xfrac));
+         padr->SetLeftMargin(0);
+         // padr->SetBottomMargin(gStyle->GetPadBottomMargin());
+         // padr->SetTopMargin(gStyle->GetPadTopMargin());
+         padr->SetFrameBorderMode(0);
+         padr->SetBorderMode(0);
+         padr->SetBorderSize(0);
+         padr->Draw();
+
+         padl->cd();
+   }
 
    // the axes
-   TH1F *haxes; TLine line;
+   TH1F *haxes=NULL, *haxesr=NULL; TLine line, liner;
    if (xaxis=="pt") {
       haxes = new TH1F("haxes","haxes",1,0,30);
       line = TLine(0,1,30,1);
    }
    if (xaxis=="cent") {
-      haxes = new TH1F("haxes","haxes",1,0,420);
+      haxes = new TH1F("haxesl","haxesl",1,0,420);
+      haxes->GetXaxis()->SetTickLength(gStyle->GetTickLength("X")/xfrac);
+      // haxes->GetYaxis()->SetTickLength(gStyle->GetTickLength("Y")*xfrac);
       line = TLine(0,1,420,1);
+      haxesr = new TH1F("haxesr","haxesr",1,0,420);
+      haxesr->GetXaxis()->SetTickLength(0);
+      haxesr->GetYaxis()->SetTickLength(gStyle->GetTickLength("Y")/(1.-xfrac));
+      haxesr->GetYaxis()->SetRangeUser(0,1.5);
+      haxesr->GetXaxis()->SetTitleSize(0);
+      haxesr->GetXaxis()->SetLabelSize(0);
+      liner = TLine(0,1,420,1);
    }
    haxes->GetYaxis()->SetRangeUser(0,1.5);
    haxes->GetYaxis()->SetTitle(ylabel);
@@ -228,8 +286,16 @@ void plotGraph(map<anabin, TGraphAsymmErrors*> theGraphs, map<anabin, TGraphAsym
    haxes->GetXaxis()->SetTitle(xlabel);
    haxes->Draw();
    line.Draw();
+   if (xaxis=="cent") {
+      padr->cd();
+      haxesr->Draw();
+      liner.Draw();
+      padl->cd();
+   }
 
-   TLegend *tleg = new TLegend(0.16,0.73,0.50,0.89);
+   double xshift=0.;
+   if (xaxis=="cent") xshift=0.05;
+   TLegend *tleg = new TLegend(0.16+xshift,0.73,0.50,0.89);
    tleg->SetBorderSize(0);
    tleg->SetTextSize(0.03);
 
@@ -237,25 +303,32 @@ void plotGraph(map<anabin, TGraphAsymmErrors*> theGraphs, map<anabin, TGraphAsym
    map<anabin, TGraphAsymmErrors*>::const_iterator it=theGraphs.begin();
    map<anabin, TGraphAsymmErrors*>::const_iterator it_syst=theGraphs_syst.begin();
    for (; it!=theGraphs.end(); it++) {
+      anabin thebin = it->first;
+      bool isMB = (thebin.centbin().low()<=0 && thebin.centbin().high()<=0);
       TGraphAsymmErrors* tg = it->second;
       TGraphAsymmErrors* tg_syst = it_syst->second;
       if (!tg || !tg_syst) continue;
 
-      if (cnt==0) {
+      if (thebin.rapbin() == binD(0.,1.6)) {
          tg->SetMarkerStyle(kFullSquare);
          tg->SetMarkerColor(kRed);
          tg->SetLineColor(kRed);
          tg_syst->SetFillColorAlpha(kRed, 0.5);
-      } else if (cnt==1) {
+      } else if (thebin.rapbin() == binD(1.6,2.4)) {
          tg->SetMarkerStyle(kFullCircle);
          tg->SetMarkerColor(kBlue);
          tg->SetLineColor(kBlue);
          tg_syst->SetFillColorAlpha(kBlue, 0.5);
-      } else if (cnt==2) {
+      } else {
          tg->SetMarkerStyle(kFullTriangleUp);
          tg->SetMarkerColor(kGreen);
          tg->SetLineColor(kGreen);
          tg_syst->SetFillColorAlpha(kGreen, 0.5);
+      }
+
+      if (xaxis=="cent") {
+         if (thebin.centbin().low()<=0 && thebin.centbin().high()<=0) padr->cd();
+         else padl->cd();
       }
       tg_syst->Draw("2");      
       tg->Draw("P");      
@@ -264,13 +337,13 @@ void plotGraph(map<anabin, TGraphAsymmErrors*> theGraphs, map<anabin, TGraphAsym
       TString otherlabel = "BWAA";
       if (xaxis == "pt") otherlabel.Form("%i%s-%i%s",(int) (it->first.centbin().low()/2.), "%", (int) (it->first.centbin().high()/2.), "%");
       if (xaxis == "cent") otherlabel.Form("%.1f < p_{T} < %.1f GeV/c",it->first.ptbin().low(), it->first.ptbin().high());
-      tleg->AddEntry(tg, (raplabel + otherlabel), "p");
+      if (!isMB) tleg->AddEntry(tg, (raplabel + otherlabel), "p");
 
       // in the case where the centrality dependence is plotted: treat the PP uncertainties as global systematics
-      if (xaxis == "cent") {
+      if (xaxis == "cent" && !isMB) {
          double x, dx, y, dy;
          dx = 10;
-         x = 2*dx*cnt + dx;
+         x = 2*dx*(thebin.rapbin().low()/1.6) + dx;
          y = 1;
          anabin thebin(it->first.rapbin().low(),
                it->first.rapbin().high(),
@@ -280,9 +353,9 @@ void plotGraph(map<anabin, TGraphAsymmErrors*> theGraphs, map<anabin, TGraphAsym
          dy = gsyst[thebin].value;
          cout << "global syst: " << dy << endl;
          TBox *tbox = new TBox(x-dx,y-dy,x+dx,y+dy);
-         if (cnt==0) tbox->SetFillColorAlpha(kRed, 0.5);
-         else if (cnt==1) tbox->SetFillColorAlpha(kBlue, 0.5);
-         else if (cnt==2) tbox->SetFillColorAlpha(kRed, 0.5);
+         if (thebin.rapbin() == binD((double) 0,1.6)) tbox->SetFillColorAlpha(kRed, 0.5);
+         else if (thebin.rapbin() == binD(1.6,2.4)) tbox->SetFillColorAlpha(kBlue, 0.5);
+         else tbox->SetFillColorAlpha(kGreen, 0.5);
          tbox->Draw();
       }
 
@@ -290,6 +363,7 @@ void plotGraph(map<anabin, TGraphAsymmErrors*> theGraphs, map<anabin, TGraphAsym
       it_syst++;
    }
 
+   if (xaxis=="cent") padl->cd();
    tleg->Draw();
 
    int iPos = 33;
