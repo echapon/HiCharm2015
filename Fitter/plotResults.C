@@ -5,11 +5,13 @@
 
 #include "Macros/Utilities/initClasses.h"
 #include "Macros/Utilities/resultUtils.h"
+#include "Macros/Utilities/texUtils.h"
 #include "Systematics/syst.h"
 
 #include <vector>
 #include <map>
 #include <string>
+#include <sstream>
 #include "TGraphAsymmErrors.h"
 #include "TCanvas.h"
 #include "TH1.h"
@@ -46,6 +48,7 @@ RooRealVar* poiFromFile(const char* filename, const char* token="");
 // plot
 void plotGraph(map<anabin, TGraphAsymmErrors*> theGraphs, map<anabin, TGraphAsymmErrors*> theGraphs_syst, string xaxis, string outputDir, map<anabin, syst> gsyst);
 void plot(vector<anabin> thecats, string xaxis, string workDirName);
+void centrality2npart(TGraphAsymmErrors* tg, bool issyst=false, bool isMB=false, double xshift=0.);
 
 
 
@@ -182,9 +185,9 @@ void plot(vector<anabin> thecats, string xaxis, string outputDir) {
       theGraphs_syst[*it]->SetName(Form("bin_%i_syst",cnt));
 
       for (int i=0; i<n; i++) {
-         double x, exl, exh, y, eyl, eyh;
-         double exsyst, eysyst;
-         double low, high; 
+         double x=0, exl=0, exh=0, y=0, eyl=0, eyh=0;
+         double exsyst=0, eysyst=0;
+         double low=0, high=0; 
          anabin thebin = theBins[*it][i];
          if (xaxis=="pt") {
             low= thebin.ptbin().low();
@@ -198,9 +201,12 @@ void plot(vector<anabin> thecats, string xaxis, string outputDir) {
          if (xaxis=="cent") {
             low= thebin.centbin().low();
             high = thebin.centbin().high();
-            x = isMB ? 150 + (150./1.6)*it->rapbin().low() : HI::findNpartAverage(low,high);
-            exl = 0.;
-            exh = 0.;
+            // x = isMB ? 150 + (150./1.6)*it->rapbin().low() : HI::findNpartAverage(low,high);
+            // exl = 0.;
+            // exh = 0.;
+            x = (low+high)/2./2.;
+            exh = (high-low)/2./2.;
+            exl = (high-low)/2./2.;
             exsyst = !isMB ? 5 : 5./(1.-xfrac);
             eysyst = syst_PbPb[thebin].value; // only PbPb syst: the PP one will go to a dedicated box
             // also add
@@ -299,6 +305,13 @@ void plotGraph(map<anabin, TGraphAsymmErrors*> theGraphs, map<anabin, TGraphAsym
    tleg->SetBorderSize(0);
    tleg->SetTextSize(0.03);
 
+   // prepare for the printing of the result tables
+   const char* xname = (xaxis=="cent") ? "Centrality" : "\\pt";
+   gSystem->mkdir(Form("Output/%s/tex/", outputDir.c_str()), kTRUE); 
+   char texname[2048]; sprintf(texname, "Output/%s/tex/result_%s.tex",outputDir.c_str(),xaxis.c_str());
+   string yname("\\doubleratio");
+   inittex(texname, xname, yname);
+
    int cnt=0;
    map<anabin, TGraphAsymmErrors*>::const_iterator it=theGraphs.begin();
    map<anabin, TGraphAsymmErrors*>::const_iterator it_syst=theGraphs_syst.begin();
@@ -337,7 +350,25 @@ void plotGraph(map<anabin, TGraphAsymmErrors*> theGraphs, map<anabin, TGraphAsym
       TString otherlabel = "BWAA";
       if (xaxis == "pt") otherlabel.Form("%i%s-%i%s",(int) (it->first.centbin().low()/2.), "%", (int) (it->first.centbin().high()/2.), "%");
       if (xaxis == "cent") otherlabel.Form("%.1f < p_{T} < %.1f GeV/c",it->first.ptbin().low(), it->first.ptbin().high());
-      if (!isMB) tleg->AddEntry(tg, (raplabel + otherlabel), "p");
+      if (!isMB) {
+         tleg->AddEntry(tg, (raplabel + otherlabel), "p");
+      }
+
+      // print tex
+      ostringstream oss;
+      oss.precision(1); oss.setf(ios::fixed);
+      oss << "$" << it->first.rapbin().low() << "<|y|<" << it->first.rapbin().high() << "$, ";
+      if (xaxis == "pt") oss << (int) (it->first.centbin().low()/2.) << "\\% - " << (int) (it->first.centbin().high()/2.) << "\\%";
+      if (xaxis == "cent") oss << "$" << it->first.ptbin().low() << "<\\pt<" << it->first.ptbin().high() << "\\GeVc $";
+
+      addline(texname,oss.str());
+      printGraph(tg, tg_syst, texname);
+
+      // for the centrality dependence: we want Npart plotted, not the centrality
+      if (xaxis == "cent") {
+         centrality2npart(tg, isMB, false);
+         centrality2npart(tg_syst, isMB, true, (150./1.6)*it->first.rapbin().low());
+      }
 
       // in the case where the centrality dependence is plotted: treat the PP uncertainties as global systematics
       if (xaxis == "cent" && !isMB) {
@@ -380,5 +411,31 @@ void plotGraph(map<anabin, TGraphAsymmErrors*> theGraphs, map<anabin, TGraphAsym
    c1->SaveAs(Form("Output/%s/plot/RESULT/pdf/result_%s.pdf",outputDir.c_str(), xaxis.c_str()));
 
    delete c1;
+
+   // close tex
+   closetex(texname);
+   cout << "Closed " << texname << endl;
 }
 
+void centrality2npart(TGraphAsymmErrors* tg, bool issyst, bool isMB, double xshift) {
+   int n = tg->GetN();
+   for (int i=0; i<n; i++) {
+      double x, y, exl, exh, eyl, eyh;
+      x = tg->GetX()[i];
+      y = tg->GetY()[i];
+      exl = tg->GetErrorXlow(i);
+      exh = tg->GetErrorXhigh(i);
+      eyl = tg->GetErrorYlow(i);
+      eyh = tg->GetErrorYhigh(i);
+      x = isMB ? 150 + xshift : HI::findNpartAverage(x-exl,x+exh);
+      if (!issyst) {
+         exl = 0.;
+         exh = 0.;
+      } else {
+         exl = !isMB ? 5 : 5./(1.-xfrac);
+         exh = exl;
+      }
+      tg->SetPoint(i,x,y);
+      tg->SetPointError(i,exl,exh,eyl,eyh);
+   }
+}
