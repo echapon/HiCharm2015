@@ -8,6 +8,7 @@
 #include "TFile.h"
 #include "TSystemFile.h"
 #include "TSystemDirectory.h"
+#include "TCanvas.h"
 
 #include <string>
 #include <vector>
@@ -116,11 +117,15 @@ bool binok(vector<anabin> thecats, string xaxis, anabin &tocheck) {
          ok=true;
          tocheck.setcentbin(it->centbin());
          break;
+      } else if ((it->centbin().low()<=0 && it->centbin().high()<=0)
+            && it->rapbin()==tocheck.rapbin() && it->ptbin()==tocheck.ptbin()
+            &&  (abs(it->centbin().low())==abs(tocheck.centbin().low()) && abs(it->centbin().high())==abs(tocheck.centbin().high()))) {
+         ok=true;
+         break;
       }
    }
 
    return ok;
 }
-
 
 #endif // ifndef resultUtils_h
