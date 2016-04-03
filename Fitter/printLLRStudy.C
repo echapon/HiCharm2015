@@ -34,7 +34,7 @@ typedef set<model_t> setModels_t;
 
 
 
-vector<string> printNLL(map< string, setModels_t > content, string outputFile) ;
+vector<string> printNLL(map< string, setModels_t > content, string dirPath, string type, string dirLabel) ;
 void setLines(vector<string>& strLin, vector<string> lin); 
 void printLines(vector<string> strLin, ofstream& fout); 
 bool findFiles(string dirPath, vector<string>& fileNames); 
@@ -60,8 +60,7 @@ void printLLRStudy(
   if (!readFiles(dirPath, fileNames, content, type)) { return; }
 
   // Loop over each kinematic bin and compute the LLR/AIC tests
-  string outputFile = Form("%s/../LLRTest_%s.txt",dirPath.c_str(), type.c_str());
-  vector<string> bestModelFiles = printNLL(content, outputFile); 
+  vector<string> bestModelFiles = printNLL(content, dirPath, type, dirLabel); 
   
   cout << "[INFO] " << ((type=="Bkg")?"Background":"Signal") << " Study summary file done!" << endl; 
     
@@ -73,11 +72,14 @@ void printLLRStudy(
 };
 
 
-vector<string> printNLL(map< string, setModels_t > content, string outputFile) 
+vector<string> printNLL(map< string, setModels_t > content, string dirPath, string type, string dirLabel) 
 { 
   vector<string> ans;
 
+  string outputFile = Form("%s/../LLRTest_%s.txt",dirPath.c_str(), type.c_str());
   ofstream fout( outputFile );
+  string outputFileTexTable = Form("%s/../LLRTest_%s_TexTables.txt",dirPath.c_str(), type.c_str());
+  ofstream foutTexTable( outputFileTexTable );
   map< string, setModels_t>::iterator contIt;
 
   for ( contIt = content.begin(); contIt != content.end(); contIt++) {
@@ -166,10 +168,9 @@ vector<string> printNLL(map< string, setModels_t > content, string outputFile)
     fout << endl << " And the winner is... " << bestModelFile << endl << endl << endl;
     ans.push_back(bestModelFile);
 
-    
-    vector<string> TableLatex;
-    TableLatex.push_back("\\begin{table}");
-    TableLatex.push_back("\\centering");
+    vector<string> TexTable;
+    TexTable.push_back("\\begin{table}");
+    TexTable.push_back("\\centering");
     string iniLinLatex = "\\begin{tabular}{ c  c";
     string header = "N & NLL ";
     for (unsigned int iM=1; iM<=binCont.size(); iM++) { 
@@ -180,9 +181,9 @@ vector<string> printNLL(map< string, setModels_t > content, string outputFile)
     }
     iniLinLatex = iniLinLatex + "}";
     header = header + "\\\\";
-    TableLatex.push_back(iniLinLatex);
-    TableLatex.push_back(header);
-    TableLatex.push_back("\\hline");
+    TexTable.push_back(iniLinLatex);
+    TexTable.push_back(header);
+    TexTable.push_back("\\hline");
     
     vector<string> strLinLatex;
     unsigned int iR=0;
@@ -232,10 +233,10 @@ vector<string> printNLL(map< string, setModels_t > content, string outputFile)
     }      
     for (unsigned int j=0; j<strLinLatex.size(); j++) {  
       strLinLatex[j] = strLinLatex[j] + "\\\\";
-      TableLatex.push_back(strLinLatex[j]);
+      TexTable.push_back(strLinLatex[j]);
     }
-    TableLatex.push_back("\\end{tabular}");
-    TableLatex.push_back(Form("\\label{tab:LLRTEST_%s}", binName.c_str()));
+    TexTable.push_back("\\end{tabular}");
+    TexTable.push_back(Form("\\label{tab:LLRTEST_%s_%s}", dirLabel.c_str(), binName.c_str()));
     string rapStr, centStr, ptStr, modelStr, colStr;
     if (bestModelFile.find("ExpChebychev")!=std::string::npos){ modelStr = "exponential chebychev polynomials"; }
     else if (bestModelFile.find("Chebychev")!=std::string::npos){ modelStr = "chebychev polynomials"; }
@@ -252,13 +253,23 @@ vector<string> printNLL(map< string, setModels_t > content, string outputFile)
     else if (binName.find("pt120300")!=std::string::npos){ ptStr = "12.0 $\\leq \\PT <$ 30.0 $\\GeVc$"; }
     else if (binName.find("pt150200")!=std::string::npos){ ptStr = "15.0 $\\leq \\PT <$ 20.0 $\\GeVc$"; }
     else if (binName.find("pt200300")!=std::string::npos){ ptStr = "20.0 $\\leq \\PT <$ 30.0 $\\GeVc$"; }
+    if (binName.find("cent020")!=std::string::npos){ centStr = "centratility bin 0-10$\\%$"; }
+    else if (binName.find("cent2040")!=std::string::npos){ centStr = "centratility bin 10-20$\\%$"; }
+    else if (binName.find("cent4060")!=std::string::npos){ centStr = "centratility bin 20-30$\\%$"; }
+    else if (binName.find("cent6080")!=std::string::npos){ centStr = "centratility bin 30-40$\\%$"; }
+    else if (binName.find("cent80100")!=std::string::npos){ centStr = "centratility bin 40-50$\\%$"; }
+    else if (binName.find("cent100200")!=std::string::npos){ centStr = "centratility bin 50-1000$\\%$"; }
+    else if (binName.find("cent040")!=std::string::npos){ centStr = "centratility bin 0-20$\\%$"; }
+    else if (binName.find("cent4080")!=std::string::npos){ centStr = "centratility bin 20-40$\\%$"; }
+    else if (binName.find("cent80200")!=std::string::npos){ centStr = "centratility bin 40-100$\\%$"; }
+    else if (binName.find("cent0200")!=std::string::npos){ centStr = "centratility bin 0-100$\\%$"; }
     if (binName.find("PP")!=std::string::npos){ colStr = "pp"; }
     else if (binName.find("PbPb")!=std::string::npos){ colStr = "PbPb"; }
-    TableLatex.push_back(Form("\\caption{Negative loglikelihoods for fits with %s of orders 1-5 of %s data in %s and %s. In addition the p-values of the LLR-test for the null-hypothesis are listed. Tests of which the null-hypothesis cannot be rejected for two consecutive orders are highlighted in bold, together with the corresponding order.}", modelStr.c_str(), colStr.c_str(), rapStr.c_str(), ptStr.c_str(), "$\\%$"));
-    TableLatex.push_back("\\end{table}");
-    printLines(TableLatex, fout);
-    cout << endl; cout << endl;
-    fout << endl; fout << endl;
+    TexTable.push_back(Form("\\caption{Negative loglikelihoods for fits with %s of orders 1-5 of %s data in %s %s. In addition the p-values of the LLR-test for the null-hypothesis are listed. Tests of which the null-hypothesis cannot be rejected for two consecutive orders are highlighted in bold, together with the corresponding order.}", modelStr.c_str(), colStr.c_str(), rapStr.c_str(), (colStr=="pp" ? Form("and %s", ptStr.c_str()) : Form(", %s and %s", ptStr.c_str(), centStr.c_str()))));
+    TexTable.push_back("\\end{table}");
+    printLines(TexTable, foutTexTable);
+    foutTexTable << endl; foutTexTable << endl;
+
   } // bin loop
 
   return ans;
