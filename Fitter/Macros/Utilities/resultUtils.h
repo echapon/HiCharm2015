@@ -4,6 +4,8 @@
 #include "bin.h"
 
 #include "RooRealVar.h"
+#include "RooAbsPdf.h"
+#include "RooAbsData.h"
 #include "TString.h"
 #include "TFile.h"
 #include "TSystemFile.h"
@@ -17,6 +19,9 @@
 using namespace std;
 
 RooRealVar* poiFromFile(const char* filename, const char* token, const char* thepoiname);
+RooRealVar* poiFromWS(RooWorkspace* ws, const char* token, const char* thepoiname);
+RooAbsPdf* pdfFromWS(RooWorkspace* ws, const char* token, const char* thepdfname);
+RooAbsData* dataFromWS(RooWorkspace* ws, const char* token, const char* thedataname);
 vector<TString> fileList(const char* input, const char* token="");
 RooRealVar* ratioVar(RooRealVar *num, RooRealVar *den, bool usedenerror=true);
 anabin binFromFile(const char* filename);
@@ -33,12 +38,30 @@ RooRealVar* poiFromFile(const char* filename, const char* token, const char* the
       cout << "Error, file " << filename << " is bad." << endl;
       return NULL;
    }
-   TString poiname_and_token = TString(thepoiname) + TString(token);
-   RooRealVar *ans = (RooRealVar*) ws->var(poiname_and_token);
+   RooRealVar *ans = poiFromWS(ws, token, thepoiname);
    if (!ans) return NULL;
+   TString poiname_and_token = TString(thepoiname) + TString(token);
    RooRealVar* ansc = new RooRealVar(*ans,poiname_and_token + Form("_from_%s",filename));
    f->Close(); delete f;
    return ansc;
+}
+
+RooRealVar* poiFromWS(RooWorkspace* ws, const char* token, const char* thepoiname) {
+   TString poiname_and_token = TString(thepoiname) + TString(token);
+   RooRealVar *ans = (RooRealVar*) ws->var(poiname_and_token);
+   return ans;
+}
+
+RooAbsPdf* pdfFromWS(RooWorkspace* ws, const char* token, const char* thepdfname) {
+   TString pdfname_and_token = TString(thepdfname) + TString(token);
+   RooAbsPdf *ans = (RooAbsPdf*) ws->pdf(pdfname_and_token);
+   return ans;
+}
+
+RooAbsData* dataFromWS(RooWorkspace* ws, const char* token, const char* thedataname) {
+   TString dataname_and_token = TString(thedataname) + TString(token);
+   RooAbsData *ans = (RooAbsData*) ws->data(dataname_and_token);
+   return ans;
 }
 
 vector<TString> fileList(const char* input, const char* token) {
