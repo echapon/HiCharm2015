@@ -3,6 +3,7 @@
 #include "Macros/CMS/CMS_lumi.C"
 #include "Macros/CMS/tdrstyle.C"
 #include "Systematics/syst.h"
+#include "results2tree.C"
 
 #include "TGraphErrors.h"
 #include "TFile.h"
@@ -19,9 +20,24 @@
 
 using namespace std;
 
-//////////////////
-// DECLARATIONS //
-//////////////////
+
+/////////////////////////////////////////////
+// MAIN FUNCTIONS TO BE CALLED BY THE USER //
+/////////////////////////////////////////////
+
+// will plot the dependence of varname in workDirName, as a function of pt, centrality or rapidity. 
+// collTag should be PP or PbPb. If collTag="", then both PP and PbPb are plotted.
+void plotPt(const char* workDirName, const char* varname, const char* collTag="", bool plotErr=true, bool isMC=false);
+void plotCent(const char* workDirName, const char* varname, const char* collTag="", bool plotErr=true, bool isMC=false);
+void plotRap(const char* workDirName, const char* varname, const char* collTag="", bool plotErr=true, bool isMC=false);
+
+// will plot the dependence of varname as a function to xaxis (=pt, cent or rap) for the file in workDirNames (of the form "dir1,dir2,dir3,...")
+void plotFiles(const char* workDirNames, const char* varname, const char* xaxis, float rapmin, float rapmax, float ptmin, float ptmax, int centmin, int centmax, 
+      const char* collTag="PP", bool plotErr=true, bool isMC=false);
+
+////////////////////////
+// OTHER DECLARATIONS //
+////////////////////////
 
 TGraphErrors* plotVar(TTree *tr, const char* varname, anabin theBin, string xaxis, string collTag, bool plotErr=true);
 vector<TGraphErrors*> plotVar(TTree *tr, const char* varname, vector<anabin> theBin, string xaxis, string collTag, bool plotErr=true);
@@ -29,13 +45,10 @@ TGraphErrors* plotVar(const char* filename, const char* varname, anabin theBin, 
 void plotGraphs(vector<TGraphErrors*> graphs, vector<string> tags, const char* workDirName);
 
 
-/////////////////////////////////////////////
-// MAIN FUNCTIONS TO BE CALLED BY THE USER //
-/////////////////////////////////////////////
 
-void plotPt(const char* workDirName, const char* varname, const char* collTag="", bool plotErr=true, bool isMC=false);
-void plotCent(const char* workDirName, const char* varname, const char* collTag="", bool plotErr=true, bool isMC=false);
-void plotRap(const char* workDirName, const char* varname, const char* collTag="", bool plotErr=true, bool isMC=false);
+////////////////////
+// IMPLEMENTATION //
+////////////////////
 
 void plotPt(const char* workDirName, const char* varname, const char* collTag, bool plotErr, bool isMC) {
    string xaxis = "pt";
@@ -44,7 +57,11 @@ void plotPt(const char* workDirName, const char* varname, const char* collTag, b
    theCats.push_back(anabin(1.6,2.4,3,30,0,200));
 
    TFile *f = new TFile(treeFileName(workDirName,isMC));
-   if (!f) return;
+   if (!f) {
+      results2tree(workDirName,isMC);
+      f = new TFile(treeFileName(workDirName,isMC));
+      if (!f) return;
+   }
    TTree *tr = (TTree*) f->Get("fitresults");
    if (!tr) return;
 
@@ -89,7 +106,11 @@ void plotCent(const char* workDirName, const char* varname, const char* collTag,
    theCats.push_back(anabin(1.6,2.4,3,30,0,200));
 
    TFile *f = new TFile(treeFileName(workDirName,isMC));
-   if (!f) return;
+   if (!f) {
+      results2tree(workDirName,isMC);
+      f = new TFile(treeFileName(workDirName,isMC));
+      if (!f) return;
+   }
    TTree *tr = (TTree*) f->Get("fitresults");
    if (!tr) return;
 
@@ -114,7 +135,11 @@ void plotRap(const char* workDirName, const char* varname, const char* collTag, 
    theCats.push_back(anabin(1.6,2.4,3,30,0,-200));
 
    TFile *f = new TFile(treeFileName(workDirName,isMC));
-   if (!f) return;
+   if (!f) {
+      results2tree(workDirName,isMC);
+      f = new TFile(treeFileName(workDirName,isMC));
+      if (!f) return;
+   }
    TTree *tr = (TTree*) f->Get("fitresults");
    if (!tr) return;
 
@@ -132,10 +157,29 @@ void plotRap(const char* workDirName, const char* varname, const char* collTag, 
    plotGraphs(tg, tags, workDirName);
 }
 
+void plotFiles(const char* workDirNames, const char* varname, const char* xaxis, float rapmin, float rapmax, float ptmin, float ptmax, int centmin, int centmax, 
+      const char* collTag, bool plotErr, bool isMC) {
 
-////////////////////
-// IMPLEMENTATION //
-////////////////////
+   vector<TGraphErrors*> tg;
+   vector<string> tags;
+   anabin theBin(rapmin, rapmax, ptmin, ptmax, centmin, centmax);
+
+   TString workDirNamesStr(workDirNames);
+   TString workDirName; Int_t from = 0;
+   while (workDirNamesStr.Tokenize(workDirName, from , ",")) {
+      TGraphErrors *tgg = plotVar(treeFileName(workDirName,isMC), varname, theBin, xaxis, collTag, plotErr);
+      if (!tgg) {
+         results2tree(workDirName,isMC);
+         tgg = plotVar(treeFileName(workDirName,isMC), varname, theBin, xaxis, collTag, plotErr);
+      }
+      if (tgg) {
+         tg.push_back(tgg);
+         tags.push_back(workDirName.Data());
+      }
+   }
+
+   if (tg.size()>0) plotGraphs(tg, tags, tags[0].c_str());
+}
 
 TGraphErrors* plotVar(TTree *tr, const char* varname, anabin theBin, string xaxis, string collTag, bool plotErr) {
    if (!tr) return NULL;
@@ -254,13 +298,11 @@ void plotGraphs(vector<TGraphErrors*> graphs, vector<string> tags, const char* w
          haxes = graphs[i]->GetHistogram();
          ymin = haxes->GetYaxis()->GetXmin();
          ymax = haxes->GetYaxis()->GetXmax();
-         cout << ymin << " " << ymax << endl;
       }
       else {
          graphs[i]->Draw("P");
          ymin = min(ymin, graphs[i]->GetYaxis()->GetXmin());
          ymax = max(ymax, graphs[i]->GetYaxis()->GetXmax());
-         cout << ymin << " " << ymax << endl;
       }
       tleg->AddEntry(graphs[i],tags[i].c_str(),"LP");
    }

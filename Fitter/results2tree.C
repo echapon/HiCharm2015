@@ -27,8 +27,8 @@ const int nBins = 54;
 
 void results2tree(
       const char* workDirName, 
-      const char* thePoiNames="RFrac2Svs1S,N_Jpsi,f_Jpsi,m_Jpsi,sigma1_Jpsi,alpha_Jpsi,n_Jpsi,sigma2_Jpsi,MassRatio,rSigma21_Jpsi,lambda1_Bkg,lambda2_Bkg,lambda3_Bkg,lambda4_Bkg,lambda5__Bkg,N_Bkg",
-      bool isMC=false
+      bool isMC=false,
+      const char* thePoiNames="RFrac2Svs1S,N_Jpsi,f_Jpsi,m_Jpsi,sigma1_Jpsi,alpha_Jpsi,n_Jpsi,sigma2_Jpsi,MassRatio,rSigma21_Jpsi,lambda1_Bkg,lambda2_Bkg,lambda3_Bkg,lambda4_Bkg,lambda5__Bkg,N_Bkg"
       ) {
    // workDirName: usual tag where to look for files in Output
    // thePoiNames: comma-separated list of parameters to store ("par1,par2,par3"). Default: all
