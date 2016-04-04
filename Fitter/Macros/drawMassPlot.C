@@ -391,10 +391,14 @@ void setRange(RooWorkspace& myws, RooPlot* frame, string dsName, int nBins, bool
   Double_t YMax = h->GetBinContent(h->GetMaximumBin());
   Double_t YMin = min( h->GetBinContent(h->FindFirstBinAbove(0.0)), h->GetBinContent(h->FindLastBinAbove(0.0)) );
   
+  bool isMC = false;
+  if (dsName.find("MC")!=std::string::npos) isMC = true;
+    
   Double_t Yup(0.),Ydown(0.);
   if(setLogScale)
   {
-    Ydown = max(1.0, YMin/(TMath::Power((YMax/YMin), 0.1)));
+    if (isMC) Ydown = YMin*0.3;
+    else Ydown = max(1.0, YMin/(TMath::Power((YMax/YMin), 0.1)));
     Yup = YMax*TMath::Power((YMax/YMin), 0.5);
   }
   else
@@ -406,7 +410,7 @@ void setRange(RooWorkspace& myws, RooPlot* frame, string dsName, int nBins, bool
   delete h;
   
   // Create line to indicate upper fitting range for MC
-  if (dsName.find("MC")!=std::string::npos)
+  if (isMC)
   {
     TLine* line(0x0);
     if (dMuonYmin >= 1.6) line = new TLine(3.32,Ydown,3.32,Yup);
