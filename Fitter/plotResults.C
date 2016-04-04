@@ -322,12 +322,12 @@ void plotGraph(map<anabin, TGraphAsymmErrors*> theGraphs, map<anabin, TGraphAsym
       TGraphAsymmErrors* tg_syst = it_syst->second;
       if (!tg || !tg_syst) continue;
 
-      if (thebin.rapbin() == binD(0.,1.6)) {
+      if (thebin.rapbin() == binF(0.,1.6)) {
          tg->SetMarkerStyle(kFullSquare);
          tg->SetMarkerColor(kRed);
          tg->SetLineColor(kRed);
          tg_syst->SetFillColorAlpha(kRed, 0.5);
-      } else if (thebin.rapbin() == binD(1.6,2.4)) {
+      } else if (thebin.rapbin() == binF(1.6,2.4)) {
          tg->SetMarkerStyle(kFullCircle);
          tg->SetMarkerColor(kBlue);
          tg->SetLineColor(kBlue);
@@ -384,8 +384,8 @@ void plotGraph(map<anabin, TGraphAsymmErrors*> theGraphs, map<anabin, TGraphAsym
          dy = gsyst[thebin].value;
          cout << "global syst: " << dy << endl;
          TBox *tbox = new TBox(x-dx,y-dy,x+dx,y+dy);
-         if (thebin.rapbin() == binD((double) 0,1.6)) tbox->SetFillColorAlpha(kRed, 0.5);
-         else if (thebin.rapbin() == binD(1.6,2.4)) tbox->SetFillColorAlpha(kBlue, 0.5);
+         if (thebin.rapbin() == binF((double) 0,1.6)) tbox->SetFillColorAlpha(kRed, 0.5);
+         else if (thebin.rapbin() == binF(1.6,2.4)) tbox->SetFillColorAlpha(kBlue, 0.5);
          else tbox->SetFillColorAlpha(kGreen, 0.5);
          tbox->Draw();
       }
