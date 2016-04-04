@@ -25,11 +25,15 @@ const double ctaucutfwd_pbpb = 0.05;
 
 // other settings
 const double maxdr = 0.03;
+const double massjpsi = 3.096;
+const double masspsip = 3.686;
+const double massdown = 0.25;
+const double massup = 0.15;
 
 using namespace HI;
 using namespace std;
 
-void oniaEff::Loop(const char* fname, bool ispbpb)
+void oniaEff::Loop(const char* fname, bool ispbpb, bool isPsip)
 {
 //   In a ROOT session, you can do:
 //      root> .L oniaEff.C
@@ -132,6 +136,10 @@ void oniaEff::Loop(const char* fname, bool ispbpb)
          if (!passQualityCuts2015(i)) continue;
          // trigger matching
          if (!isTriggerMatch(i,0)) continue; // HLT_HIL1DoubleMu0_v1
+         // mass cut
+         double mass = ((TLorentzVector*) Reco_QQ_4mom->At(i))->M();
+         double mass0 = isPsip ? masspsip : massjpsi;
+         if (mass<(mass0-massdown) || mass>(mass0+massup)) continue;
          // gen-reco matching
          TLorentzVector *tlvrecpl = (TLorentzVector*) Reco_QQ_mupl_4mom->At(i);
          TLorentzVector *tlvrecmi = (TLorentzVector*) Reco_QQ_mumi_4mom->At(i);
