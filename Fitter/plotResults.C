@@ -207,7 +207,7 @@ void plot(vector<anabin> thecats, string xaxis, string outputDir) {
             x = (low+high)/2./2.;
             exh = (high-low)/2./2.;
             exl = (high-low)/2./2.;
-            exsyst = !isMB ? 5 : 5./(1.-xfrac);
+            // exsyst = !isMB ? 5 : 5./(1.-xfrac);
             eysyst = syst_PbPb[thebin].value; // only PbPb syst: the PP one will go to a dedicated box
             // also add
          }
@@ -218,8 +218,12 @@ void plot(vector<anabin> thecats, string xaxis, string outputDir) {
          theGraphs[*it]->SetPoint(i,x,y);
          theGraphs[*it]->SetPointError(i,exl,exh,eyl,eyh);
          theGraphs_syst[*it]->SetPoint(i,x,y);
-         theGraphs_syst[*it]->SetPointError(i,exsyst,exsyst,eysyst,eysyst);
+         // theGraphs_syst[*it]->SetPointError(i,exsyst,exsyst,eysyst,eysyst);
+         theGraphs_syst[*it]->SetPointError(i,exl,exh,eysyst,eysyst);
          cout << x << " " << y << " " << eyl << " " << eyh << " " << eysyst << endl;
+
+         // theGraphs[*it]->Sort();
+         // theGraphs_syst[*it]->Sort();
       }
       cnt++;
    }
@@ -366,8 +370,8 @@ void plotGraph(map<anabin, TGraphAsymmErrors*> theGraphs, map<anabin, TGraphAsym
 
       // for the centrality dependence: we want Npart plotted, not the centrality
       if (xaxis == "cent") {
-         centrality2npart(tg, isMB, false);
-         centrality2npart(tg_syst, isMB, true, (150./1.6)*it->first.rapbin().low());
+         centrality2npart(tg, false, isMB, (150./1.6)*it->first.rapbin().low());
+         centrality2npart(tg_syst, true, isMB, (150./1.6)*it->first.rapbin().low());
       }
 
       // in the case where the centrality dependence is plotted: treat the PP uncertainties as global systematics
@@ -384,7 +388,7 @@ void plotGraph(map<anabin, TGraphAsymmErrors*> theGraphs, map<anabin, TGraphAsym
          dy = gsyst[thebin].value;
          cout << "global syst: " << dy << endl;
          TBox *tbox = new TBox(x-dx,y-dy,x+dx,y+dy);
-         if (thebin.rapbin() == binF((double) 0,1.6)) tbox->SetFillColorAlpha(kRed, 0.5);
+         if (thebin.rapbin() == binF((float) 0.,1.6)) tbox->SetFillColorAlpha(kRed, 0.5);
          else if (thebin.rapbin() == binF(1.6,2.4)) tbox->SetFillColorAlpha(kBlue, 0.5);
          else tbox->SetFillColorAlpha(kGreen, 0.5);
          tbox->Draw();
@@ -427,7 +431,7 @@ void centrality2npart(TGraphAsymmErrors* tg, bool issyst, bool isMB, double xshi
       exh = tg->GetErrorXhigh(i);
       eyl = tg->GetErrorYlow(i);
       eyh = tg->GetErrorYhigh(i);
-      x = isMB ? 150 + xshift : HI::findNpartAverage(x-exl,x+exh);
+      x = isMB ? 150 + xshift : HI::findNpartAverage(2.*(x-exl),2.*(x+exh));
       if (!issyst) {
          exl = 0.;
          exh = 0.;
