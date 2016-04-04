@@ -7,6 +7,7 @@
 
 #include "../Fitter/Macros/CMS/CMS_lumi.C"
 #include "../Fitter/Macros/CMS/tdrstyle.C"
+#include "../Fitter/Macros/Utilities/texUtils.h"
 
 #include <iostream>
 #include <fstream>
@@ -16,10 +17,6 @@ using namespace std;
 void setErr(TH1F *hist);
 void fixCentPp(TH1F *hist);
 TH1F* integrateHist(TH1F *hist);
-void printHist(vector<TH1F*> hist, const char* filename);
-void printGraph(vector<TGraphAsymmErrors*> tg, const char* filename);
-void inittex(const char* filename, const char* xname, vector<string> yname);
-void closetex(const char* filename);
 
 void plotEffs() {
    TFile *fjpsi_pp = new TFile("files/histos_jpsi_pp.root");
@@ -345,59 +342,4 @@ TH1F* integrateHist(TH1F *hist) {
    ans->SetBinContent(1,integral);
    ans->SetBinError(1,integralerror);
    return ans;
-}
-
-void printHist(vector<TH1F*> hist, const char* filename) {
-   ofstream file(filename, ofstream::app);
-   file.precision(3);
-   if (hist.size()==0) return;
-   int nbins = hist[0]->GetNbinsX();
-   file << "\\hline" << endl;
-   for (int ibin=1; ibin<nbins+1; ibin++) {
-      file << "$[" << hist[0]->GetXaxis()->GetBinLowEdge(ibin) << "-" << hist[0]->GetXaxis()->GetBinUpEdge(ibin) << "]$";
-      file.setf(ios::fixed);
-      for (vector<TH1F*>::const_iterator ith=hist.begin(); ith!=hist.end(); ith++) {
-         file << " & $" << (*ith)->GetBinContent(ibin) << " \\pm " << (*ith)->GetBinError(ibin) << "$";
-      }
-      file.unsetf(ios::fixed);
-      file << "\\\\" << endl;
-   }
-   file.close();
-}
-
-void printGraph(vector<TGraphAsymmErrors*> tg, const char* filename) {
-   ofstream file(filename, ofstream::app);
-   file.precision(3);
-   if (tg.size()==0) return;
-   int nbins = tg[0]->GetN();
-   file << "\\hline" << endl;
-   for (int ibin=0; ibin<nbins; ibin++) {
-      file << "$[" << tg[0]->GetX()[ibin]-tg[0]->GetErrorXlow(ibin) << "-" << tg[0]->GetX()[ibin]+tg[0]->GetErrorXhigh(ibin) << "]$";
-      file.setf(ios::fixed);
-      for (vector<TGraphAsymmErrors*>::const_iterator itg=tg.begin(); itg!=tg.end(); itg++) {
-         file << " & $" << (*itg)->GetY()[ibin] << "_{-" << (*itg)->GetErrorYlow(ibin) << "}^{+" << (*itg)->GetErrorYhigh(ibin) << "} $";
-      }
-      file.unsetf(ios::fixed);
-      file << "\\\\" << endl;
-   }
-   file.close();
-}
-
-void inittex(const char* filename, const char* xname, vector<string> yname) {
-   ofstream file(filename);
-   file << "\\begin{tabular}{c"; 
-   for (int i=0; i<yname.size(); i++) file << "c";
-   file << "}" << endl;
-   file << "\\hline" << endl;
-   file << xname;
-   for (int i=0; i<yname.size(); i++) file << " & " << yname[i];
-   file<< "\\\\" << endl;
-   file.close();
-}
-
-void closetex(const char* filename) {
-   ofstream file(filename, ofstream::app);
-   file << "\\hline" << endl;
-   file << "\\end{tabular}" << endl;
-   file.close();
 }

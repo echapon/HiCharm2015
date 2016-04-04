@@ -51,7 +51,7 @@ map<anabin, syst> readSyst(const char* systfile) {
    string systname; getline(file,systname);
 
    string line;
-   double rapmin, rapmax, ptmin, ptmax, centmin, centmax, value;
+   double rapmin=0, rapmax=0, ptmin=0, ptmax=0, centmin=0, centmax=0, value=0;
 
    while (file.good()) {
       getline(file,line);
