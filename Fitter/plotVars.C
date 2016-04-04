@@ -1,4 +1,5 @@
 #include "Macros/Utilities/resultUtils.h"
+#include "Macros/Utilities/texUtils.h"
 #include "Macros/Utilities/bin.h"
 #include "Macros/CMS/CMS_lumi.C"
 #include "Macros/CMS/tdrstyle.C"
@@ -253,6 +254,8 @@ TGraphErrors* plotVar(TTree *tr, const char* varname, anabin theBin, string xaxi
    haxes->GetYaxis()->SetTitleOffset(2);
    ans->SetHistogram(haxes);
 
+   ans->Sort();
+
    return ans;
 }
 
@@ -327,4 +330,36 @@ void plotGraphs(vector<TGraphErrors*> graphs, vector<string> tags, const char* w
    c1->SaveAs(Form("Output/%s/plot/RESULT/png/plot_%s_%s_vs_%s.png",workDirName, basename, yaxis.c_str(), xaxis.c_str()));
    gSystem->mkdir(Form("Output/%s/plot/RESULT/pdf/", workDirName), kTRUE);
    c1->SaveAs(Form("Output/%s/plot/RESULT/pdf/plot_%s_%s_vs_%s.pdf",workDirName, basename, yaxis.c_str(), xaxis.c_str()));
+
+   // print the result tables
+   string xname = "$|y|$";
+   if (xaxis=="cent") xname = "Centrality";
+   if (xaxis=="pt") xname = "\\pt";
+   string yname = latexSafe(yaxis); // make the name safe for LaTeX
+   gSystem->mkdir(Form("Output/%s/tex/", workDirName), kTRUE); 
+   char texname[2048]; 
+   sprintf(texname, "Output/%s/tex/result_%s_%s_vs_%s.tex",workDirName, basename, yaxis.c_str(), xaxis.c_str());
+   vector<string> tags_fixed;
+   for (vector<string>::const_iterator it=tags.begin(); it!=tags.end(); it++) {
+      string tagfixed=latexSafe(*it);
+      tags_fixed.push_back(tagfixed);
+   }
+   bool samesize=true;
+   for (unsigned int i=0; i<graphs.size(); i++) {
+      if (graphs[i]->GetN() != graphs[0]->GetN()) samesize=false;
+   }
+   if (samesize) {
+      inittex(texname, xname.c_str(), tags_fixed);
+      addline(texname,yname,graphs.size());
+      printGraph(graphs, texname);
+   } else {
+      inittex(texname, xname.c_str(), yname);
+      for (unsigned int i=0; i<graphs.size(); i++) {
+         addline(texname,tags_fixed[i]);
+         printGraph(graphs[i], texname);
+      }
+   }
+   closetex(texname);
+   cout << "Closed " << texname << endl;
+   cout << "It is advised that you check the contents of " << texname << " as it may not compile nicely as is." << endl;
 }

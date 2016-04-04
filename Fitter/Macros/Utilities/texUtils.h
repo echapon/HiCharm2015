@@ -2,6 +2,7 @@
 #define texutils_h
 
 #include "TGraphAsymmErrors.h"
+#include "TGraphErrors.h"
 #include "TH1.h"
 #include <vector>
 #include <string>
@@ -9,16 +10,24 @@
 
 using namespace std;
 
+TGraphAsymmErrors* convertGraph(TGraphErrors *tg);
+vector<TGraphAsymmErrors*> convertGraph(vector<TGraphErrors*> tg);
 void printHist(vector<TH1F*> hist, const char* filename);
 void printHist(TH1F* hist, const char* filename);
 void printGraph(vector<TGraphAsymmErrors*> tg, const char* filename);
 void printGraph(TGraphAsymmErrors* tg, const char* filename);
 void printGraph(vector<TGraphAsymmErrors*> tg, vector<TGraphAsymmErrors*> tg_syst, const char* filename);
 void printGraph(TGraphAsymmErrors* tg, TGraphAsymmErrors* tg_syst, const char* filename);
+void printGraph(vector<TGraphErrors*> tg, const char* filename) {printGraph(convertGraph(tg), filename);};
+void printGraph(TGraphErrors* tg, const char* filename) {printGraph(convertGraph(tg), filename);};
+void printGraph(vector<TGraphErrors*> tg, vector<TGraphErrors*> tg_syst, const char* filename) {printGraph(convertGraph(tg), convertGraph(tg_syst), filename);};
+void printGraph(TGraphErrors* tg, TGraphErrors* tg_syst, const char* filename) {printGraph(convertGraph(tg), convertGraph(tg_syst), filename);};
 void inittex(const char* filename, const char* xname, vector<string> yname);
 void inittex(const char* filename, const char* xname, string yname);
 void closetex(const char* filename);
 void addline(const char* filename, string line, int n=1);
+void myReplace(std::string& str, const std::string& oldStr, const std::string& newStr);
+string latexSafe(string s);
 
 void printHist(vector<TH1F*> hist, const char* filename) {
    ofstream file(filename, ofstream::app);
@@ -90,7 +99,7 @@ void printGraph(vector<TGraphAsymmErrors*> tg, vector<TGraphAsymmErrors*> tg_sys
          if (fabs(errlow-errhigh)>1e-3) {
             file << " & $" << (*itg)->GetY()[ibin] << "_{-" << errlow << "}^{+" << errhigh << "}\\textrm{ (stat.)} ";
          } else {
-            file << " & $" << (*itg)->GetY()[ibin] << " \\pm" << max(errlow,errhigh) << "\\textrm{ (stat.)} ";
+            file << " & $" << (*itg)->GetY()[ibin] << " \\pm " << max(errlow,errhigh) << "\\textrm{ (stat.)} ";
          }
          if (fabs(errlow_syst-errhigh_syst)>1e-3) {
             file << "_{-" << errlow_syst << "}^{+" << errhigh_syst << "}\\textrm{ (syst.)} $";
@@ -142,6 +151,37 @@ void addline(const char* filename, string line, int n) {
    file << "& \\multicolumn{" << n << "}{c}{" << line << "}\\\\" << endl;
    file << "\\hline" << endl;
    file.close();
+}
+
+void myReplace(std::string& str, const std::string& oldStr, const std::string& newStr){
+   size_t pos = 0;
+   while((pos = str.find(oldStr, pos)) != std::string::npos){
+      str.replace(pos, oldStr.length(), newStr);
+      pos += newStr.length();
+   }
+}
+
+TGraphAsymmErrors* convertGraph(TGraphErrors *tg) {
+   TString name = tg->GetName();
+   TGraphAsymmErrors *ans = new TGraphAsymmErrors(tg->GetN(),tg->GetX(),tg->GetY(),tg->GetEX(),tg->GetEX(),tg->GetEY(),tg->GetEY());
+   ans->SetName(name+"_symerr");
+   return ans;
+}
+
+vector<TGraphAsymmErrors*> convertGraph(vector<TGraphErrors*> tg) {
+   vector<TGraphAsymmErrors*> ans;
+   vector<TGraphErrors*>::const_iterator it;
+   for (it=tg.begin(); it!=tg.end(); it++) ans.push_back(convertGraph(*it));
+   return ans;
+}
+
+string latexSafe(string s) {
+   string ans=s;
+   myReplace(ans,"_","\\_");
+   myReplace(ans,"%","\\%");
+   myReplace(ans,"<","$<$");
+   myReplace(ans,">","$>$");
+   return ans;
 }
 
 #endif // ifndef texutils_h
