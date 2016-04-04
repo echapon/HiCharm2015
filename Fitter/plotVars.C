@@ -42,7 +42,7 @@ void plotFiles(const char* workDirNames, const char* varname, const char* xaxis,
 TGraphErrors* plotVar(TTree *tr, const char* varname, anabin theBin, string xaxis, string collTag, bool plotErr=true);
 vector<TGraphErrors*> plotVar(TTree *tr, const char* varname, vector<anabin> theBin, string xaxis, string collTag, bool plotErr=true);
 TGraphErrors* plotVar(const char* filename, const char* varname, anabin theBin, string xaxis, string collTag, bool plotErr=true);
-void plotGraphs(vector<TGraphErrors*> graphs, vector<string> tags, const char* workDirName);
+void plotGraphs(vector<TGraphErrors*> graphs, vector<string> tags, const char* workDirName, const char* basename="");
 
 
 
@@ -178,7 +178,10 @@ void plotFiles(const char* workDirNames, const char* varname, const char* xaxis,
       }
    }
 
-   if (tg.size()>0) plotGraphs(tg, tags, tags[0].c_str());
+   ostringstream oss; oss.precision(0); oss.setf(ios::fixed);
+   oss << collTag << "_pt" << ptmin*10. << ptmax*10. << "_rap" << rapmin*10. << rapmax*10. << "_cent" << centmin << centmax;
+
+   if (tg.size()>0) plotGraphs(tg, tags, tags[0].c_str(), oss.str().c_str());
 }
 
 TGraphErrors* plotVar(TTree *tr, const char* varname, anabin theBin, string xaxis, string collTag, bool plotErr) {
@@ -223,7 +226,7 @@ TGraphErrors* plotVar(TTree *tr, const char* varname, anabin theBin, string xaxi
       ey.push_back(val_err);
 
       // min and max
-      valmax = max(valmax, (float) 1.1*(val+val_err));
+      valmax = max(valmax, (float) 1.4*(val+val_err));
       valmin = min(valmin, (float) (val>0 ? 0 : 1.1*(val-val_err)));
    }
 
@@ -272,7 +275,7 @@ TGraphErrors* plotVar(const char* filename, const char* varname, anabin theBin, 
    return plotVar(tr, varname, theBin, xaxis, collTag, plotErr);
 }
 
-void plotGraphs(vector<TGraphErrors*> graphs, vector<string> tags, const char* workDirName) {
+void plotGraphs(vector<TGraphErrors*> graphs, vector<string> tags, const char* workDirName, const char* basename) {
    if (graphs.size() != tags.size()) {
       cout << "Different number of graphs and legends" << endl;
       return;
@@ -282,7 +285,7 @@ void plotGraphs(vector<TGraphErrors*> graphs, vector<string> tags, const char* w
    setTDRStyle();
    TCanvas *c1 = new TCanvas("c1","c1",600,600);
 
-   TLegend *tleg = new TLegend(0.18,0.14,0.52,0.30);
+   TLegend *tleg = new TLegend(0.18,0.73,0.52,0.89);
    tleg->SetBorderSize(0);
    tleg->SetTextSize(0.03);
 
@@ -319,9 +322,9 @@ void plotGraphs(vector<TGraphErrors*> graphs, vector<string> tags, const char* w
    if (txaxis.Index("p_{T}") != kNPOS) xaxis = "pt";
 
    gSystem->mkdir(Form("Output/%s/plot/RESULT/root/", workDirName), kTRUE); 
-   c1->SaveAs(Form("Output/%s/plot/RESULT/root/plot_%s_vs_%s.root",workDirName, yaxis.c_str(), xaxis.c_str()));
+   c1->SaveAs(Form("Output/%s/plot/RESULT/root/plot_%s_%s_vs_%s.root",workDirName, basename, yaxis.c_str(), xaxis.c_str()));
    gSystem->mkdir(Form("Output/%s/plot/RESULT/png/", workDirName), kTRUE);
-   c1->SaveAs(Form("Output/%s/plot/RESULT/png/plot_%s_vs_%s.png",workDirName, yaxis.c_str(), xaxis.c_str()));
+   c1->SaveAs(Form("Output/%s/plot/RESULT/png/plot_%s_%s_vs_%s.png",workDirName, basename, yaxis.c_str(), xaxis.c_str()));
    gSystem->mkdir(Form("Output/%s/plot/RESULT/pdf/", workDirName), kTRUE);
-   c1->SaveAs(Form("Output/%s/plot/RESULT/pdf/plot_%s_vs_%s.pdf",workDirName, yaxis.c_str(), xaxis.c_str()));
+   c1->SaveAs(Form("Output/%s/plot/RESULT/pdf/plot_%s_%s_vs_%s.pdf",workDirName, basename, yaxis.c_str(), xaxis.c_str()));
 }
