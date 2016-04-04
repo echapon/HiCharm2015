@@ -10,6 +10,7 @@
 #include "TH1.h"
 #include "TLegend.h"
 #include "TCanvas.h"
+#include "TSystem.h"
 
 #include <vector>
 #include <string>
@@ -25,24 +26,24 @@ using namespace std;
 TGraphErrors* plotVar(TTree *tr, const char* varname, anabin theBin, string xaxis, string collTag, bool plotErr=true);
 vector<TGraphErrors*> plotVar(TTree *tr, const char* varname, vector<anabin> theBin, string xaxis, string collTag, bool plotErr=true);
 TGraphErrors* plotVar(const char* filename, const char* varname, anabin theBin, string xaxis, string collTag, bool plotErr=true);
-void plotGraphs(vector<TGraphErrors*> graphs, vector<string> tags);
+void plotGraphs(vector<TGraphErrors*> graphs, vector<string> tags, const char* workDirName);
 
 
 /////////////////////////////////////////////
 // MAIN FUNCTIONS TO BE CALLED BY THE USER //
 /////////////////////////////////////////////
 
-void plotPt(const char* filename, const char* varname, const char* collTag="", bool plotErr=true);
-void plotCent(const char* filename, const char* varname, const char* collTag="", bool plotErr=true);
-void plotRap(const char* filename, const char* varname, const char* collTag="", bool plotErr=true);
+void plotPt(const char* workDirName, const char* varname, const char* collTag="", bool plotErr=true, bool isMC=false);
+void plotCent(const char* workDirName, const char* varname, const char* collTag="", bool plotErr=true, bool isMC=false);
+void plotRap(const char* workDirName, const char* varname, const char* collTag="", bool plotErr=true, bool isMC=false);
 
-void plotPt(const char* filename, const char* varname, const char* collTag, bool plotErr) {
+void plotPt(const char* workDirName, const char* varname, const char* collTag, bool plotErr, bool isMC) {
    string xaxis = "pt";
    vector<anabin> theCats;
    theCats.push_back(anabin(0,1.6,6.5,30,0,200));
    theCats.push_back(anabin(1.6,2.4,3,30,0,200));
 
-   TFile *f = new TFile(filename);
+   TFile *f = new TFile(treeFileName(workDirName,isMC));
    if (!f) return;
    TTree *tr = (TTree*) f->Get("fitresults");
    if (!tr) return;
@@ -76,10 +77,10 @@ void plotPt(const char* filename, const char* varname, const char* collTag, bool
          tags.push_back(oss.str());
       }
    }
-   plotGraphs(tg, tags);
+   plotGraphs(tg, tags, workDirName);
 }
 
-void plotCent(const char* filename, const char* varname, const char* collTag, bool plotErr) {
+void plotCent(const char* workDirName, const char* varname, const char* collTag, bool plotErr, bool isMC) {
    string xaxis = "cent";
    vector<anabin> theCats;
 
@@ -87,7 +88,7 @@ void plotCent(const char* filename, const char* varname, const char* collTag, bo
    theCats.push_back(anabin(0,1.6,6.5,30,0,200));
    theCats.push_back(anabin(1.6,2.4,3,30,0,200));
 
-   TFile *f = new TFile(filename);
+   TFile *f = new TFile(treeFileName(workDirName,isMC));
    if (!f) return;
    TTree *tr = (TTree*) f->Get("fitresults");
    if (!tr) return;
@@ -103,16 +104,16 @@ void plotCent(const char* filename, const char* varname, const char* collTag, bo
          << it->centbin().low()/2. << "%-" << it->centbin().high()/2. << "%";
       tags.push_back(oss.str());
    }
-   plotGraphs(tg, tags);
+   plotGraphs(tg, tags, workDirName);
 }
 
-void plotRap(const char* filename, const char* varname, const char* collTag, bool plotErr) {
+void plotRap(const char* workDirName, const char* varname, const char* collTag, bool plotErr, bool isMC) {
    string xaxis = "rap";
    vector<anabin> theCats;
    theCats.push_back(anabin(0,1.6,6.5,30,0,-200));
    theCats.push_back(anabin(1.6,2.4,3,30,0,-200));
 
-   TFile *f = new TFile(filename);
+   TFile *f = new TFile(treeFileName(workDirName,isMC));
    if (!f) return;
    TTree *tr = (TTree*) f->Get("fitresults");
    if (!tr) return;
@@ -128,7 +129,7 @@ void plotRap(const char* filename, const char* varname, const char* collTag, boo
          << it->ptbin().low() << " < p_{T} < " << it->ptbin().high() << " GeV/c";
       tags.push_back(oss.str());
    }
-   plotGraphs(tg, tags);
+   plotGraphs(tg, tags, workDirName);
 }
 
 
@@ -223,11 +224,12 @@ TGraphErrors* plotVar(const char* filename, const char* varname, anabin theBin, 
    return plotVar(tr, varname, theBin, xaxis, collTag, plotErr);
 }
 
-void plotGraphs(vector<TGraphErrors*> graphs, vector<string> tags) {
+void plotGraphs(vector<TGraphErrors*> graphs, vector<string> tags, const char* workDirName) {
    if (graphs.size() != tags.size()) {
       cout << "Different number of graphs and legends" << endl;
       return;
    }
+   if (graphs.size() == 0) return;
 
    setTDRStyle();
    TCanvas *c1 = new TCanvas("c1","c1",600,600);
@@ -264,7 +266,12 @@ void plotGraphs(vector<TGraphErrors*> graphs, vector<string> tags) {
 
    tleg->Draw();
 
-   c1->SaveAs("plot.pdf");
-   c1->SaveAs("plot.png");
-   c1->SaveAs("plot.root");
+   string yaxis = haxes->GetYaxis()->GetTitle();
+
+   gSystem->mkdir(Form("Output/%s/plot/RESULT/root/", workDirName), kTRUE); 
+   c1->SaveAs(Form("Output/%s/plot/RESULT/root/plot_%s.root",workDirName, yaxis.c_str()));
+   gSystem->mkdir(Form("Output/%s/plot/RESULT/png/", workDirName), kTRUE);
+   c1->SaveAs(Form("Output/%s/plot/RESULT/png/plot_%s.png",workDirName, yaxis.c_str()));
+   gSystem->mkdir(Form("Output/%s/plot/RESULT/pdf/", workDirName), kTRUE);
+   c1->SaveAs(Form("Output/%s/plot/RESULT/pdf/plot_%s.pdf",workDirName, yaxis.c_str()));
 }

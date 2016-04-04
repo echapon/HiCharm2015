@@ -12,7 +12,7 @@ Repository for code regarding charmoniun in 5.02TeV data.
  * plotPt("name of work dir"): make plot vs pt
  * plotCent("name of work dir"): make plot cs centrality
 * results2tree.C: parse an output directory and put the results into a TTree
- * results2tree("name of work dir", "somefile.root","var1,var2,var3")
+ * results2tree("name of work dir","var1,var2,var3")
  * NB: the names of the variables ("var1", etc. in the example above) should be the actual name of the variable in the workspace, without "\_PP" or "\_PbPb". e.g. "sigma1\_Jpsi"
 
 ## Efficiency

@@ -28,6 +28,7 @@ RooRealVar* ratioVar(RooRealVar *num, RooRealVar *den, bool usedenerror=true);
 anabin binFromFile(const char* filename);
 bool binok(vector<anabin> thecats, string xaxis, anabin &tocheck);
 bool binok(anabin thecat, string xaxis, anabin &tocheck);
+TString treeFileName(const char* workDirName, bool isMC=false);
 
 RooRealVar* poiFromFile(const char* filename, const char* token, const char* thepoiname) {
    TFile *f = new TFile(filename);
@@ -82,7 +83,8 @@ vector<TString> fileList(const char* input, const char* token, bool isMC) {
 
       while ((file=(TSystemFile*)next())) {
          fname = file->GetName();
-         if (fname.EndsWith(".root") && (TString(token) == "" || fname.Index(token) != kNPOS)) {
+         if (fname.EndsWith(".root") && fname.Index("FIT") != kNPOS
+               && (TString(token) == "" || fname.Index(token) != kNPOS)) {
             ans.push_back(basedir+fname);
          }
       }
@@ -159,4 +161,9 @@ bool binok(anabin thecat, string xaxis, anabin &tocheck) {
    return binok(thecats, xaxis, tocheck);
 }
 
+TString treeFileName(const char* workDirName, bool isMC) {
+   TString outputFileName = Form("Output/%s/result/DATA/tree_allvars.root",workDirName);
+   if (isMC) outputFileName = Form("Output/%s/result/MC/tree_allvars.root",workDirName);
+   return outputFileName;
+}
 #endif // ifndef resultUtils_h
