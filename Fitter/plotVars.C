@@ -150,7 +150,11 @@ TGraphErrors* plotVar(TTree *tr, const char* varname, anabin theBin, string xaxi
    tr->SetBranchAddress("ymax",&ymax);
    tr->SetBranchAddress("centmin",&centmin);
    tr->SetBranchAddress("centmax",&centmax);
-   tr->SetBranchAddress(Form("%s_val",varname),&val);
+   if (string(varname)=="nll" || string(varname)=="chi2" || string(varname)=="normchi2") {
+      tr->SetBranchAddress(varname,&val);
+   } else {
+      tr->SetBranchAddress(Form("%s_val",varname),&val);
+   }
    if (plotErr) tr->SetBranchAddress(Form("%s_err",varname),&val_err);
    tr->SetBranchAddress("collSystem",collSystem);
 
@@ -234,7 +238,7 @@ void plotGraphs(vector<TGraphErrors*> graphs, vector<string> tags, const char* w
    setTDRStyle();
    TCanvas *c1 = new TCanvas("c1","c1",600,600);
 
-   TLegend *tleg = new TLegend(0.19,0.73,0.53,0.89);
+   TLegend *tleg = new TLegend(0.18,0.14,0.52,0.30);
    tleg->SetBorderSize(0);
    tleg->SetTextSize(0.03);
 
@@ -267,11 +271,15 @@ void plotGraphs(vector<TGraphErrors*> graphs, vector<string> tags, const char* w
    tleg->Draw();
 
    string yaxis = haxes->GetYaxis()->GetTitle();
+   string xaxis = "rap";
+   TString txaxis(haxes->GetXaxis()->GetTitle());
+   if (txaxis.Index("Centrality") != kNPOS) xaxis = "cent";
+   if (txaxis.Index("p_{T}") != kNPOS) xaxis = "pt";
 
    gSystem->mkdir(Form("Output/%s/plot/RESULT/root/", workDirName), kTRUE); 
-   c1->SaveAs(Form("Output/%s/plot/RESULT/root/plot_%s.root",workDirName, yaxis.c_str()));
+   c1->SaveAs(Form("Output/%s/plot/RESULT/root/plot_%s_vs_%s.root",workDirName, yaxis.c_str(), xaxis.c_str()));
    gSystem->mkdir(Form("Output/%s/plot/RESULT/png/", workDirName), kTRUE);
-   c1->SaveAs(Form("Output/%s/plot/RESULT/png/plot_%s.png",workDirName, yaxis.c_str()));
+   c1->SaveAs(Form("Output/%s/plot/RESULT/png/plot_%s_vs_%s.png",workDirName, yaxis.c_str(), xaxis.c_str()));
    gSystem->mkdir(Form("Output/%s/plot/RESULT/pdf/", workDirName), kTRUE);
-   c1->SaveAs(Form("Output/%s/plot/RESULT/pdf/plot_%s.pdf",workDirName, yaxis.c_str()));
+   c1->SaveAs(Form("Output/%s/plot/RESULT/pdf/plot_%s_vs_%s.pdf",workDirName, yaxis.c_str(), xaxis.c_str()));
 }

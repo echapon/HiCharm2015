@@ -1,10 +1,13 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "TString.h"
+#include "TH1.h"
 #include "RooRealVar.h"
 #include "RooAbsPdf.h"
 #include "RooAbsData.h"
 #include "RooWorkspace.h"
+#include "RooPlot.h"
+#include "RooHist.h"
 
 #include <vector>
 #include <cstring>
@@ -24,14 +27,13 @@ const int nBins = 54;
 
 void results2tree(
       const char* workDirName, 
-      const char* outputFileName, 
       const char* thePoiNames="RFrac2Svs1S,N_Jpsi,f_Jpsi,m_Jpsi,sigma1_Jpsi,alpha_Jpsi,n_Jpsi,sigma2_Jpsi,MassRatio,rSigma21_Jpsi,lambda1_Bkg,lambda2_Bkg,lambda3_Bkg,lambda4_Bkg,lambda5__Bkg,N_Bkg",
       bool isMC=false
       ) {
    // workDirName: usual tag where to look for files in Output
-   // outFileName: will create a file with this name
    // thePoiNames: comma-separated list of parameters to store ("par1,par2,par3"). Default: all
-   TFile *f = new TFile(outputFileName,"RECREATE");
+
+   TFile *f = new TFile(treeFileName(workDirName,isMC),"RECREATE");
    TTree *tr = new TTree("fitresults","fit results");
 
 
@@ -42,7 +44,7 @@ void results2tree(
    // collision system
    Char_t collSystem[8];
    // goodness of fit
-   float nll, chi2; int npar, ndof;
+   float nll, chi2, normchi2; int npar, ndof;
    // parameters to store: make it a vector
    vector<poi> thePois;
    TString thePoiNamesStr(thePoiNames);
@@ -66,6 +68,7 @@ void results2tree(
    tr->Branch("collSystem",collSystem,"collSystem/C");
    tr->Branch("nll",&nll,"nll/F");
    tr->Branch("chi2",&chi2,"chi2/F");
+   tr->Branch("normchi2",&normchi2,"normchi2/F");
    tr->Branch("npar",&npar,"npar/I");
    tr->Branch("ndof",&ndof,"ndof/I");
 
@@ -75,7 +78,7 @@ void results2tree(
    }
 
    // list of files
-   vector<TString> theFiles = fileList(workDirName,isMC);
+   vector<TString> theFiles = fileList(workDirName,"",isMC);
 
    int cnt=0;
    for (vector<TString>::const_iterator it=theFiles.begin(); it!=theFiles.end(); it++) {
@@ -139,6 +142,7 @@ void results2tree(
                   }
                }
                ndof = nFullBins - npar;
+               normchi2 = chi2/ndof;
             }
          }
 
