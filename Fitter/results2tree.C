@@ -25,7 +25,8 @@ const int nBins = 54;
 void results2tree(
       const char* workDirName, 
       const char* outputFileName, 
-      const char* thePoiNames="RFrac2Svs1S,N_Jpsi,f_Jpsi,m_Jpsi,sigma1_Jpsi,alpha_Jpsi,n_Jpsi,sigma2_Jpsi,MassRatio,rSigma21_Jpsi,lambda1_Bkg,lambda2_Bkg,lambda3_Bkg,lambda4_Bkg,lambda5__Bkg,N_Bkg"
+      const char* thePoiNames="RFrac2Svs1S,N_Jpsi,f_Jpsi,m_Jpsi,sigma1_Jpsi,alpha_Jpsi,n_Jpsi,sigma2_Jpsi,MassRatio,rSigma21_Jpsi,lambda1_Bkg,lambda2_Bkg,lambda3_Bkg,lambda4_Bkg,lambda5__Bkg,N_Bkg",
+      bool isMC=false
       ) {
    // workDirName: usual tag where to look for files in Output
    // outFileName: will create a file with this name
@@ -74,7 +75,7 @@ void results2tree(
    }
 
    // list of files
-   vector<TString> theFiles = fileList(workDirName);
+   vector<TString> theFiles = fileList(workDirName,isMC);
 
    int cnt=0;
    for (vector<TString>::const_iterator it=theFiles.begin(); it!=theFiles.end(); it++) {

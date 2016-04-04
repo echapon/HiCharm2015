@@ -6,6 +6,7 @@
 #include "RooRealVar.h"
 #include "RooAbsPdf.h"
 #include "RooAbsData.h"
+#include "RooWorkspace.h"
 #include "TString.h"
 #include "TFile.h"
 #include "TSystemFile.h"
@@ -22,10 +23,11 @@ RooRealVar* poiFromFile(const char* filename, const char* token, const char* the
 RooRealVar* poiFromWS(RooWorkspace* ws, const char* token, const char* thepoiname);
 RooAbsPdf* pdfFromWS(RooWorkspace* ws, const char* token, const char* thepdfname);
 RooAbsData* dataFromWS(RooWorkspace* ws, const char* token, const char* thedataname);
-vector<TString> fileList(const char* input, const char* token="");
+vector<TString> fileList(const char* input, const char* token="", bool isMC=false);
 RooRealVar* ratioVar(RooRealVar *num, RooRealVar *den, bool usedenerror=true);
 anabin binFromFile(const char* filename);
 bool binok(vector<anabin> thecats, string xaxis, anabin &tocheck);
+bool binok(anabin thecat, string xaxis, anabin &tocheck);
 
 RooRealVar* poiFromFile(const char* filename, const char* token, const char* thepoiname) {
    TFile *f = new TFile(filename);
@@ -64,10 +66,11 @@ RooAbsData* dataFromWS(RooWorkspace* ws, const char* token, const char* thedatan
    return ans;
 }
 
-vector<TString> fileList(const char* input, const char* token) {
+vector<TString> fileList(const char* input, const char* token, bool isMC) {
    vector<TString> ans;
 
    TString basedir(Form("Output/%s/result/DATA/",input));
+   if (isMC) basedir = TString(Form("Output/%s/result/MC/",input));
    TSystemDirectory dir(input,basedir);
 
    TList *files = dir.GetListOfFiles();
@@ -140,7 +143,7 @@ bool binok(vector<anabin> thecats, string xaxis, anabin &tocheck) {
          ok=true;
          tocheck.setcentbin(it->centbin());
          break;
-      } else if ((it->centbin().low()<=0 && it->centbin().high()<=0)
+      } else if (((it->centbin().low()<=0 && it->centbin().high()<=0) || xaxis=="rap")
             && it->rapbin()==tocheck.rapbin() && it->ptbin()==tocheck.ptbin()
             &&  (abs(it->centbin().low())==abs(tocheck.centbin().low()) && abs(it->centbin().high())==abs(tocheck.centbin().high()))) {
          ok=true;
@@ -149,6 +152,11 @@ bool binok(vector<anabin> thecats, string xaxis, anabin &tocheck) {
    }
 
    return ok;
+}
+
+bool binok(anabin thecat, string xaxis, anabin &tocheck) {
+   vector<anabin> thecats; thecats.push_back(thecat);
+   return binok(thecats, xaxis, tocheck);
 }
 
 #endif // ifndef resultUtils_h
