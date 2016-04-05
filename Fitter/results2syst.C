@@ -12,8 +12,9 @@
 using namespace std;
 
 const char* poiname = "RFrac2Svs1S";
-const bool  doratio = true; // true -> look for separate PP and PbPb files, false -> input files are with simultaneous pp-PbPb fits
 
+const bool  doratio = true;
+// true -> look for separate PP and PbPb files, false -> input files are with simultaneous pp-PbPb fits
 
 //////////////////
 // DECLARATIONS //
@@ -29,20 +30,22 @@ RooRealVar* poiFromFile(const char* filename, const char* token="");
 // MAIN FUNCTION //
 ///////////////////
 
-void results2syst(const char* workDirNames, const char* systFileName, const char* systHeader, int method) {
+void results2syst(const char* workDirNames, const char* systFileName, const char* systHeader, int method, const char* collTag="") {
 // workDirNames: of the form "dir1,dir2,dir3,..."
 // systFileName: "someDir/syst_blabla.csv"
 // systHeader: this will be the header of the systematics file. A few words describing what this systematic is.
 // method: 0 -> RMS, 1 -> max difference to the first work dir (= nominal)
+// collTag: can be "PP", "PbPb" or "" (for the ratio PbPb/PP)
 
+   const bool doratio2 = (doratio && string(collTag)=="");
    map<anabin, vector<double> > mapvals;
    TString workDirNamesStr(workDirNames);
    TString workDirName; Int_t from = 0;
    while (workDirNamesStr.Tokenize(workDirName, from , ",")) {
       // list of files
       vector<TString> theFiles, theFiles2;
-      if (!doratio) {
-         theFiles = fileList(workDirName.Data());
+      if (!doratio2) {
+         theFiles = fileList(workDirName.Data(),collTag);
       } else {
          theFiles = fileList(workDirName.Data(),"PbPb");
          theFiles2 = fileList(workDirName.Data(),"PP");
@@ -54,8 +57,11 @@ void results2syst(const char* workDirNames, const char* systFileName, const char
       vector<TString>::const_iterator it,it2;
       for (vector<TString>::const_iterator it=theFiles.begin(); it!=theFiles.end(); it++) {
          anabin thebin = binFromFile(it->Data());
-         if (!doratio) {
-            theVar = poiFromFile(it->Data(),"_PbPbvsPP");
+         if (!doratio2) {
+            if (string(collTag)=="") theVar = poiFromFile(it->Data(),"_PbPbvsPP");
+            else {
+               theVar = poiFromFile(it->Data(),Form("_%s",collTag));
+            }
          } else {
             RooRealVar *num = poiFromFile(it->Data(),"_PbPb");
 
