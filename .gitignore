@@ -8,6 +8,7 @@
 *.so
 *.d
 *.pcm
+*_ACLiC_*
 
 # Packages #
 ############
@@ -20,6 +21,7 @@
 *.jar
 *.rar
 *.tar
+*.tgz
 *.zip
 
 # Logs and databases #
@@ -37,3 +39,9 @@
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Others #
+##########
+*.pdf
+*.png
+*.root
