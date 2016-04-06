@@ -47,8 +47,16 @@ void drawMassPlot(RooWorkspace& myws,   // Local workspace
   Double_t norm = myws.data(dsOSName.c_str())->sumEntries();
   if (plotPureSMC)
   {
-    if (cut.dMuon.AbsRap.Min >= 1.6) norm = myws.data(dsOSName.c_str())->reduce("invMass<3.32")->sumEntries();
-    else norm = myws.data(dsOSName.c_str())->reduce("invMass<3.26")->sumEntries();
+    if (incJpsi && !incPsi2S)
+    {
+      if (cut.dMuon.AbsRap.Min >= 1.6) norm = myws.data(dsOSName.c_str())->reduce("invMass<3.32")->sumEntries();
+      else norm = myws.data(dsOSName.c_str())->reduce("invMass<3.26")->sumEntries();
+    }
+    else if (!incJpsi && incPsi2S)
+    {
+//      if (cut.dMuon.AbsRap.Min >= 1.6) norm = myws.data(dsOSName.c_str())->reduce("invMass<3.32")->sumEntries();
+//      else norm = myws.data(dsOSName.c_str())->reduce("invMass<3.26")->sumEntries();
+    }
   }
     
   if (incJpsi) {
@@ -412,14 +420,29 @@ void setRange(RooWorkspace& myws, RooPlot* frame, string dsName, int nBins, bool
   // Create line to indicate upper fitting range for MC
   if (isMC)
   {
-    TLine* line(0x0);
-    if (dMuonYmin >= 1.6) line = new TLine(3.32,Ydown,3.32,Yup);
-    else line = new TLine(3.26,Ydown,3.26,Yup);
-    line->SetLineStyle(2);
-    line->SetLineColor(1);
-    line->SetLineWidth(3);
-    
-    frame->addObject(line);
+    if (dsName.find("JPSIP")!=std::string::npos)
+    {
+      TLine* line(0x0);
+      if (dMuonYmin >= 1.6) line = new TLine(3.32,Ydown,3.32,Yup);
+      else line = new TLine(3.26,Ydown,3.26,Yup);
+      line->SetLineStyle(2);
+      line->SetLineColor(1);
+      line->SetLineWidth(3);
+      
+      frame->addObject(line);
+    }
+    else if (dsName.find("PSI2S")!=std::string::npos)
+    {
+      TLine* line(0x0);
+      if (dMuonYmin >= 1.6) line = new TLine(3.95,Ydown,3.95,Yup);
+      else line = new TLine(3.9,Ydown,3.85,Yup);
+      line->SetLineStyle(2);
+      line->SetLineColor(1);
+      line->SetLineWidth(3);
+      
+      frame->addObject(line);
+    }
+
   }
  
 }

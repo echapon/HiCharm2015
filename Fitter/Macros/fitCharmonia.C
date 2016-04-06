@@ -47,8 +47,8 @@ bool fitCharmonia( RooWorkspace&  inputWorkspace, // Workspace with all the inpu
       cut.dMuon.M.Max = 3.5;
     }
     else if ( !incJpsi && incPsi2S) {
-      cut.dMuon.M.Min = 3.4;
-      cut.dMuon.M.Max = 4.2;
+      cut.dMuon.M.Min = 3.0;
+      cut.dMuon.M.Max = 4.1;
     }
     else {
       cut.dMuon.M.Min = 2.2;
@@ -369,8 +369,16 @@ int importDataset(RooWorkspace& myws, RooWorkspace& inputWS, struct KinCuts cut,
 
   if (label.find("MC")!=std::string::npos)
   {
-    if (cut.dMuon.AbsRap.Min >= 1.6) myws.var("invMass")->setRange("MassWindow", cut.dMuon.M.Min, 3.32);
-    else myws.var("invMass")->setRange("MassWindow", cut.dMuon.M.Min, 3.26);
+    if (label.find("PSI2S")!=std::string::npos)
+    {
+      if (cut.dMuon.AbsRap.Min >= 1.6) myws.var("invMass")->setRange("MassWindow", cut.dMuon.M.Min, 3.95);
+      else myws.var("invMass")->setRange("MassWindow", cut.dMuon.M.Min, 3.85);
+    }
+    else
+    {
+      if (cut.dMuon.AbsRap.Min >= 1.6) myws.var("invMass")->setRange("MassWindow", cut.dMuon.M.Min, 3.32);
+      else myws.var("invMass")->setRange("MassWindow", cut.dMuon.M.Min, 3.26);
+    }
    
   }
   else myws.var("invMass")->setRange("MassWindow", cut.dMuon.M.Min, cut.dMuon.M.Max);
