@@ -1,6 +1,8 @@
 # HiCharm2015
 Repository for code regarding charmoniun in 5.02TeV data.
 
+DO NOT PUSH ANYTHING HERE ANYMORE. THE CODE HAS BEEN MOVED TO https://github.com/CMS-HIN-dilepton/DimuonCADIs
+
 ## Fitter
 * See documentation in https://twiki.cern.ch/twiki/bin/view/CMS/HiCharm2015Fitter
 * fitter.C: master file
